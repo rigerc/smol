@@ -20,6 +20,8 @@ import (
 	"github.com/ishan5ain/tuiweave/stack"
 	"github.com/ishan5ain/tuiweave/textarea"
 	"github.com/muesli/cancelreader"
+	"github.com/rigerc/smol/internal/config"
+	"github.com/rigerc/smol/internal/modules"
 )
 
 var errBasic = errors.New("use numbered input")
@@ -56,6 +58,7 @@ var errCancel = errors.New("cancelled")
 var errAbort = errors.New("setup exited")
 
 type question struct {
+	preview  func(string) (config.Config, error)
 	title    string
 	choices  []string
 	value    string
@@ -65,6 +68,7 @@ type question struct {
 	validate func(string) error
 }
 type answer struct {
+	q     question
 	value string
 	err   error
 }
@@ -96,6 +100,15 @@ func newPrompt(q question, width int) promptModel {
 	m.size()
 	return m
 }
+func (m promptModel) currentValue() string {
+	if m.q.multiple {
+		return strings.Join(m.q.checked, ",")
+	}
+	if len(m.q.choices) > 0 {
+		return m.menu.SelectedID()
+	}
+	return m.editor.Value()
+}
 func (m *promptModel) rebuild() {
 	items := make([]menu.Item, 0, len(m.q.choices))
 	for _, choice := range m.q.choices {
@@ -111,11 +124,17 @@ func (m *promptModel) rebuild() {
 	}
 	m.menu.SetItems(items...)
 }
+
+// SetSize lets the session owner allocate space below its persistent header.
+func (m *promptModel) SetSize(width, height int) { m.width = width; m.height = height; m.size() }
 func (m *promptModel) size() {
 	if m.width <= 0 {
 		m.width = 80
 	}
 	rows := len(m.q.choices)
+	if m.height > 0 && rows > 0 {
+		rows = min(rows, max(3, m.height-8-len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n"))))
+	}
 	if rows == 0 {
 		rows = max(1, m.editor.ContentHeight())
 	}
@@ -250,6 +269,9 @@ func (m promptModel) Inspect() inspect.Node {
 }
 
 type terminal struct {
+	bridge  *wizardBridge
+	env     modules.Env
+	preview previewCache
 	runtime Runtime
 	out     io.Writer
 	lines   *bufio.Reader
@@ -273,6 +295,25 @@ func (t *terminal) say(text string) error {
 func (t *terminal) ask(ctx context.Context, q question) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
+	}
+	if t.bridge != nil {
+		reply := make(chan answer, 1)
+		select {
+		case t.bridge.requests <- wizardRequest{q: &q, reply: reply}:
+		case <-ctx.Done():
+			return "", ctx.Err()
+		}
+		select {
+		case result := <-reply:
+			if errors.Is(result.err, errBasic) {
+				q = result.q
+				q.value = result.value
+				return t.basic(ctx, q)
+			}
+			return result.value, result.err
+		case <-ctx.Done():
+			return "", ctx.Err()
+		}
 	}
 	basic := t.runtime.Basic || t.runtime.Width > 0 && t.runtime.Width < 40
 	// Large menus remain append-only instead of overflowing the inline renderer.
@@ -326,6 +367,20 @@ func (t *terminal) ask(ctx context.Context, q question) (string, error) {
 	return result.result.value, nil
 }
 func (t *terminal) basic(ctx context.Context, q question) (string, error) {
+	if q.preview != nil {
+		cfg, err := q.preview(q.value)
+		if q.multiple {
+			cfg, err = q.preview(strings.Join(q.checked, ","))
+		}
+		if err == nil {
+			t.preview.configure(cfg)
+			missing := t.preview.missing(cfg)
+			t.preview.remember(missing, fetchPreview(ctx, cfg, t.env, missing))
+			if _, err = fmt.Fprintln(t.out, "smol · setup\n"+previewRows(t.preview.line(cfg, t.runtime), t.runtime.Width)); err != nil {
+				return "", err
+			}
+		}
+	}
 	if t.lines == nil {
 		r, err := cancelreader.NewReader(t.runtime.Input)
 		if err != nil {

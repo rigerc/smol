@@ -40,6 +40,14 @@ func (m workModel) View() tea.View {
 // work owns the transient line, awaits its worker even on cancellation, and
 // never lets the terminal renderer race an effect's output.
 func (t *terminal) work(ctx context.Context, label string, fn func() error) error {
+	if t.bridge != nil {
+		select {
+		case t.bridge.requests <- wizardRequest{status: label + "…"}:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		return fn()
+	}
 	if t.runtime.Basic || t.runtime.Width < 40 {
 		if err := t.say(label + "..."); err != nil {
 			return err

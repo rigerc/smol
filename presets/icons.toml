@@ -1,0 +1,6 @@
+format = "{os} · {cpu} · {mem} · {uptime}"
+
+[icons]
+mode = "auto"
+set = "nerd-font"
+separator = " "

@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -28,8 +29,13 @@ func ParseShell(s string) (Shell, error) {
 
 // Style describes how a module's value is drawn.
 type Style struct {
-	FG   string `toml:"fg"`
-	Bold bool   `toml:"bold"`
+	FG        string `toml:"fg"`
+	Bold      bool   `toml:"bold"`
+	BG        string `toml:"bg,omitempty"`
+	Dim       bool   `toml:"dim,omitempty"`
+	Italic    bool   `toml:"italic,omitempty"`
+	Underline bool   `toml:"underline,omitempty"`
+	Reverse   bool   `toml:"reverse,omitempty"`
 }
 
 func colorCode(name string) (int, bool) {
@@ -50,8 +56,34 @@ func ValidColor(name string) bool {
 	if name == "" {
 		return true
 	}
-	_, ok := colorCode(name)
-	return ok
+	return colorSGR(name, false) != ""
+}
+
+// colorSGR validates structured colors before constructing terminal escapes.
+func colorSGR(value string, background bool) string {
+	if code, ok := colorCode(value); ok {
+		if background {
+			code += 10
+		}
+		return strconv.Itoa(code)
+	}
+	channel := "38"
+	if background {
+		channel = "48"
+	}
+	if index, ok := strings.CutPrefix(value, "index:"); ok {
+		n, err := strconv.Atoi(index)
+		if err == nil && n >= 0 && n <= 255 && strconv.Itoa(n) == index {
+			return channel + ";5;" + index
+		}
+	}
+	if len(value) == 7 && value[0] == '#' {
+		n, err := strconv.ParseUint(value[1:], 16, 24)
+		if err == nil {
+			return fmt.Sprintf("%s;2;%d;%d;%d", channel, n>>16, (n>>8)&255, n&255)
+		}
+	}
+	return ""
 }
 
 // ColorNames lists the accepted color names, for error messages and docs.
@@ -69,8 +101,19 @@ func (s Style) sgr() string {
 	if s.Bold {
 		parts = append(parts, "1")
 	}
-	if code, ok := colorCode(s.FG); ok {
-		parts = append(parts, fmt.Sprint(code))
+	for _, attr := range []struct {
+		enabled bool
+		code    string
+	}{{s.Dim, "2"}, {s.Italic, "3"}, {s.Underline, "4"}, {s.Reverse, "7"}} {
+		if attr.enabled {
+			parts = append(parts, attr.code)
+		}
+	}
+	if code := colorSGR(s.FG, false); code != "" {
+		parts = append(parts, code)
+	}
+	if code := colorSGR(s.BG, true); code != "" {
+		parts = append(parts, code)
 	}
 	if len(parts) == 0 {
 		return ""

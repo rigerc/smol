@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rigerc/smol/internal/icons"
 	"github.com/rigerc/smol/internal/modules"
 )
 
@@ -16,12 +17,14 @@ const DefaultTimeout = 20 * time.Millisecond
 
 // Options control rendering.
 type Options struct {
-	Debug   func(string)
-	Color   bool
-	Shell   Shell
-	Timeout time.Duration
-	Lookup  func(string) (modules.Module, bool)
-	Styles  map[string]Style // keyed by module name
+	Icons     icons.Options
+	ShowIcons bool
+	Debug     func(string)
+	Color     bool
+	Shell     Shell
+	Timeout   time.Duration
+	Lookup    func(string) (modules.Module, bool)
+	Styles    map[string]Style // keyed by module name
 }
 
 type result struct {
@@ -156,6 +159,9 @@ func Assemble(toks []Token, vals map[string]modules.Result, opts Options) string
 		}
 		if emitted {
 			b.WriteString(escapeValue(sep, opts.Shell))
+		}
+		if opts.ShowIcons {
+			v = cleanValue(opts.Icons.Prefix(t.Module, result.Fields["id"])) + v
 		}
 		v = escapeValue(v, opts.Shell)
 		if opts.Color {

@@ -56,7 +56,7 @@ func (s *session) buildReview(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	renderOpts := render.Options{Styles: s.draft.Style, Color: previewColor(s.draft.Color, s.term.runtime), Timeout: render.DefaultTimeout}
+	renderOpts := render.Options{Icons: s.draft.Icons, ShowIcons: s.draft.Icons.Enabled(s.term.runtime.StderrTTY, s.term.runtime.Getenv("TERM")), Styles: s.draft.Style, Color: previewColor(s.draft.Color, s.term.runtime), Timeout: render.DefaultTimeout}
 	env := s.env
 	env.Display = &s.draft.Display
 	moduleOpts := s.draft.Modules.Options()

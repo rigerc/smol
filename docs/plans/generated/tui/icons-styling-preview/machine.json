@@ -1,0 +1,418 @@
+{
+  "schema_version": "1.0.0",
+  "initial": "editing",
+  "states": [
+    {
+      "id": "editing",
+      "screen": "wizard",
+      "terminal": false,
+      "description": "Interactive immutable question and tentative preview."
+    },
+    {
+      "id": "working",
+      "screen": "wizard",
+      "terminal": false,
+      "description": "Preview remains visible while the workflow runs an effect."
+    },
+    {
+      "id": "basic",
+      "screen": "wizard",
+      "terminal": false,
+      "description": "Append-only numbered input; preview is printed before each question."
+    },
+    {
+      "id": "saved",
+      "screen": "result",
+      "terminal": true,
+      "exit_code": 0,
+      "description": "Workflow completed; stdout is a saved path only on success."
+    },
+    {
+      "id": "failed",
+      "screen": "result",
+      "terminal": true,
+      "exit_code": 1,
+      "description": "Workflow completed; stdout is a saved path only on success."
+    },
+    {
+      "id": "cancelled",
+      "screen": "result",
+      "terminal": true,
+      "exit_code": 130,
+      "description": "Workflow completed; stdout is a saved path only on success."
+    },
+    {
+      "id": "terminated",
+      "screen": "result",
+      "terminal": true,
+      "exit_code": 143,
+      "description": "Workflow completed; stdout is a saved path only on success."
+    }
+  ],
+  "guards": [],
+  "transitions": [
+    {
+      "id": "editing-draft-edit",
+      "event": "draft.edit",
+      "to": "editing",
+      "guard": null,
+      "commands": [
+        "preview.read"
+      ],
+      "description": "draft.edit in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-draft-accept",
+      "event": "draft.accept",
+      "to": "editing",
+      "guard": null,
+      "commands": [],
+      "description": "draft.accept in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-draft-back",
+      "event": "draft.back",
+      "to": "editing",
+      "guard": null,
+      "commands": [],
+      "description": "draft.back in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-preview-completed",
+      "event": "preview.completed",
+      "to": "editing",
+      "guard": null,
+      "commands": [],
+      "description": "preview.completed in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-terminal-resize",
+      "event": "terminal.resize",
+      "to": "editing",
+      "guard": null,
+      "commands": [],
+      "description": "terminal.resize in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-wizard-cancel",
+      "event": "wizard.cancel",
+      "to": "editing",
+      "guard": null,
+      "commands": [
+        "workflow.cancel"
+      ],
+      "description": "wizard.cancel in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-terminal-basic",
+      "event": "terminal.basic",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "terminal.basic in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-workflow-work",
+      "event": "workflow.work",
+      "to": "working",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.work in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-workflow-question",
+      "event": "workflow.question",
+      "to": "editing",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.question in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-workflow-saved",
+      "event": "workflow.saved",
+      "to": "saved",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.saved in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-workflow-failed",
+      "event": "workflow.failed",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.failed in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-workflow-cancelled",
+      "event": "workflow.cancelled",
+      "to": "cancelled",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.cancelled in editing",
+      "from": "editing"
+    },
+    {
+      "id": "editing-workflow-terminated",
+      "event": "workflow.terminated",
+      "to": "terminated",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.terminated in editing",
+      "from": "editing"
+    },
+    {
+      "id": "working-draft-edit",
+      "event": "draft.edit",
+      "to": "working",
+      "guard": null,
+      "commands": [
+        "preview.read"
+      ],
+      "description": "draft.edit in working",
+      "from": "working"
+    },
+    {
+      "id": "working-draft-accept",
+      "event": "draft.accept",
+      "to": "working",
+      "guard": null,
+      "commands": [],
+      "description": "draft.accept in working",
+      "from": "working"
+    },
+    {
+      "id": "working-draft-back",
+      "event": "draft.back",
+      "to": "working",
+      "guard": null,
+      "commands": [],
+      "description": "draft.back in working",
+      "from": "working"
+    },
+    {
+      "id": "working-preview-completed",
+      "event": "preview.completed",
+      "to": "working",
+      "guard": null,
+      "commands": [],
+      "description": "preview.completed in working",
+      "from": "working"
+    },
+    {
+      "id": "working-terminal-resize",
+      "event": "terminal.resize",
+      "to": "working",
+      "guard": null,
+      "commands": [],
+      "description": "terminal.resize in working",
+      "from": "working"
+    },
+    {
+      "id": "working-wizard-cancel",
+      "event": "wizard.cancel",
+      "to": "working",
+      "guard": null,
+      "commands": [
+        "workflow.cancel"
+      ],
+      "description": "wizard.cancel in working",
+      "from": "working"
+    },
+    {
+      "id": "working-terminal-basic",
+      "event": "terminal.basic",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "terminal.basic in working",
+      "from": "working"
+    },
+    {
+      "id": "working-workflow-work",
+      "event": "workflow.work",
+      "to": "working",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.work in working",
+      "from": "working"
+    },
+    {
+      "id": "working-workflow-question",
+      "event": "workflow.question",
+      "to": "editing",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.question in working",
+      "from": "working"
+    },
+    {
+      "id": "working-workflow-saved",
+      "event": "workflow.saved",
+      "to": "saved",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.saved in working",
+      "from": "working"
+    },
+    {
+      "id": "working-workflow-failed",
+      "event": "workflow.failed",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.failed in working",
+      "from": "working"
+    },
+    {
+      "id": "working-workflow-cancelled",
+      "event": "workflow.cancelled",
+      "to": "cancelled",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.cancelled in working",
+      "from": "working"
+    },
+    {
+      "id": "working-workflow-terminated",
+      "event": "workflow.terminated",
+      "to": "terminated",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.terminated in working",
+      "from": "working"
+    },
+    {
+      "id": "basic-draft-edit",
+      "event": "draft.edit",
+      "to": "basic",
+      "guard": null,
+      "commands": [
+        "preview.read"
+      ],
+      "description": "draft.edit in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-draft-accept",
+      "event": "draft.accept",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "draft.accept in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-draft-back",
+      "event": "draft.back",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "draft.back in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-preview-completed",
+      "event": "preview.completed",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "preview.completed in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-terminal-resize",
+      "event": "terminal.resize",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "terminal.resize in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-wizard-cancel",
+      "event": "wizard.cancel",
+      "to": "basic",
+      "guard": null,
+      "commands": [
+        "workflow.cancel"
+      ],
+      "description": "wizard.cancel in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-terminal-basic",
+      "event": "terminal.basic",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "terminal.basic in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-workflow-work",
+      "event": "workflow.work",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.work in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-workflow-question",
+      "event": "workflow.question",
+      "to": "basic",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.question in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-workflow-saved",
+      "event": "workflow.saved",
+      "to": "saved",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.saved in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-workflow-failed",
+      "event": "workflow.failed",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.failed in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-workflow-cancelled",
+      "event": "workflow.cancelled",
+      "to": "cancelled",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.cancelled in basic",
+      "from": "basic"
+    },
+    {
+      "id": "basic-workflow-terminated",
+      "event": "workflow.terminated",
+      "to": "terminated",
+      "guard": null,
+      "commands": [],
+      "description": "workflow.terminated in basic",
+      "from": "basic"
+    }
+  ]
+}

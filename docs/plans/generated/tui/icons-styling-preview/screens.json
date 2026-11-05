@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0.0",
+  "screens": [
+    {
+      "id": "wizard",
+      "title": "Persistent inline setup",
+      "purpose": "Preview icons and styling below the header while configuring and reviewing output.",
+      "regions": [
+        {
+          "id": "root",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "header",
+              "kind": "text",
+              "label": "smol · setup"
+            },
+            {
+              "id": "preview",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Preview: Ubuntu · MEM 4.6 GiB / 15.6 GiB"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Output icons: never / auto / always",
+              "focusable": true,
+              "on": {
+                "change": "draft.edit",
+                "submit": "draft.accept",
+                "back": "draft.back",
+                "cancel": "wizard.cancel"
+              }
+            },
+            {
+              "id": "feedback",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Validation feedback appears here when needed."
+            },
+            {
+              "id": "hints",
+              "kind": "text",
+              "label": "Up/down choose; Enter accepts; Esc back; Ctrl+C cancels"
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "up",
+          "event": "draft.edit",
+          "scope": "question"
+        },
+        {
+          "key": "down",
+          "event": "draft.edit",
+          "scope": "question"
+        },
+        {
+          "key": "space",
+          "event": "draft.edit",
+          "scope": "question"
+        },
+        {
+          "key": "enter",
+          "event": "draft.accept",
+          "scope": "question"
+        },
+        {
+          "key": "esc",
+          "event": "draft.back",
+          "scope": "question"
+        },
+        {
+          "key": "ctrl+c",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "editing",
+        "working",
+        "basic"
+      ],
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      }
+    },
+    {
+      "id": "result",
+      "title": "Setup result",
+      "purpose": "Complete without leaving a transient renderer or changing stdout semantics.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "result",
+          "kind": "output",
+          "stream": "stderr",
+          "label": "Saved configuration, cancelled, or failed."
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "saved",
+        "failed",
+        "cancelled",
+        "terminated"
+      ]
+    }
+  ]
+}

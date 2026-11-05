@@ -1,0 +1,5 @@
+smol · setup
+
+? Output icons: never / auto / always
+
+Up/down choose; Enter accepts; Esc back; Ctrl+C cancels

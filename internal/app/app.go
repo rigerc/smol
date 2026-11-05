@@ -52,6 +52,8 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	fl.SetOutput(stderr)
 	var (
 		format          = fl.String("format", "", "format template, e.g. \"{os} · {mem}\" (overrides config)")
+		iconsFlag       = fl.String("icons", "", "auto, always or never (overrides icon visibility)")
+		iconSet         = fl.String("icon-set", "", "nerd-font or ascii (overrides icon set)")
 		colorFlag       = fl.String("color", "", "auto, always or never (overrides config)")
 		shellFlag       = fl.String("shell", "none", "wrap color escapes for: none, bash, zsh, fish")
 		configPath      = fl.String("config", "", "config file (default ~/.config/smol/config.toml)")
@@ -179,6 +181,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 			return 2
 		}
 	}
+	if supplied["icons"] {
+		cfg.Icons.Mode = *iconsFlag
+	}
+	if supplied["icon-set"] {
+		cfg.Icons.Set = *iconSet
+	}
 	if supplied["face-preset"] && supplied["face-seed"] {
 		report(stderr, "smol: --face-preset and --face-seed are mutually exclusive")
 		return 2
@@ -231,10 +239,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	moduleOptions := cfg.Modules.Options()
 	env := modules.Env{FS: runtime.FS, Getenv: getenv, Now: runtime.Now, Statfs: runtime.Statfs, Uname: runtime.Uname, Interfaces: runtime.Interfaces, Display: &cfg.Display, Options: &moduleOptions}
 	opts := render.Options{
-		Color:   useColor(cfg.Color, getenv, stdoutIsTTY),
-		Shell:   shell,
-		Timeout: *timeout,
-		Styles:  cfg.Style,
+		Color:     useColor(cfg.Color, getenv, stdoutIsTTY),
+		Icons:     cfg.Icons,
+		ShowIcons: cfg.Icons.Enabled(stdoutIsTTY, getenv("TERM")),
+		Shell:     shell,
+		Timeout:   *timeout,
+		Styles:    cfg.Style,
 	}
 	var animation faceroll.Animation
 	if hasFace {

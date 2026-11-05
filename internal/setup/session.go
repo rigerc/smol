@@ -35,24 +35,25 @@ type Runtime struct {
 }
 
 type session struct {
-	term         *terminal
-	env          modules.Env
-	path         string
-	snap         snapshot
-	draft        config.Config
-	state        string
-	preset       string
-	selected     []string
-	fields       map[string]string
-	queue        []string
-	index        int
-	dirty        bool
-	faceMode     string
-	sampleSeed   string
-	shell        string
-	review       string
-	instructions string
-	store        store
+	term          *terminal
+	env           modules.Env
+	path          string
+	snap          snapshot
+	draft         config.Config
+	state         string
+	preset        string
+	selected      []string
+	fields        map[string]string
+	queue         []string
+	index         int
+	styleProperty string
+	dirty         bool
+	faceMode      string
+	sampleSeed    string
+	shell         string
+	review        string
+	instructions  string
+	store         store
 }
 
 // Run executes setup, keeping all interaction on stderr and emitting a saved
@@ -87,12 +88,15 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	if runtime.Getenv("TERM") == "dumb" || runtime.Getenv("TERM") == "" {
 		runtime.Basic = true
 	}
-	t := &terminal{runtime: runtime, out: stderr}
+	t := &terminal{runtime: runtime, out: stderr, env: env}
 	defer func() { _ = t.close() }()
 	if err = t.welcome(); err != nil {
 		return finishError(ctx, t, err)
 	}
 	s := session{term: t, env: env, path: path, state: "inspecting", shell: detectShell(runtime.Getenv("SHELL"))}
+	if !runtime.Basic && runtime.Width >= 40 {
+		return runWizard(ctx, &s, stdout)
+	}
 	if err = s.load(ctx); err != nil {
 		return finishError(ctx, t, err)
 	}
@@ -172,6 +176,7 @@ func (s *session) run(ctx context.Context, stdout io.Writer) int {
 			continue
 		}
 		q := s.question()
+		q.preview = s.previewDraft()
 		value, e := t.ask(ctx, q)
 		if errors.Is(e, errBack) {
 			if s.state == "destination.ready" {
@@ -287,7 +292,7 @@ func (s *session) question() question {
 	case "destination.ready":
 		q = question{title: "Config: " + s.path + "\nDestination is fixed for this session.", choices: []string{"Continue", "Cancel"}, value: "Continue"}
 	case "preset.ready":
-		choices := []string{"default", "minimal", "banner", "prompt", "server"}
+		choices := []string{"default", "minimal", "banner", "prompt", "server", "icons"}
 		if s.preset == "existing" || s.snap.exists && validConfig(s.path, s.snap.data) {
 			choices = append([]string{"existing"}, choices...)
 		}
@@ -366,7 +371,7 @@ func (s *session) question() question {
 	case "color.ready":
 		q = question{title: "Output color policy", choices: []string{"auto", "always", "never"}, value: s.draft.Color}
 	case "styles.ready":
-		q = question{title: "Foreground styles (bold and inactive styles are preserved)", choices: []string{"Keep styles", "Edit foregrounds"}, value: "Keep styles"}
+		q = question{title: "Module styles (inactive styles are preserved)", choices: []string{"Keep styles", "Edit styles", "Edit foregrounds"}, value: "Keep styles"}
 	case "style.field":
 		name := s.selected[s.index]
 		colors := append([]string{"terminal default"}, render.ColorNames()...)
@@ -378,13 +383,16 @@ func (s *session) question() question {
 	case "shell.ready":
 		q = question{title: "Print shell startup instructions (no shell files are modified)", choices: []string{"none", "bash", "zsh", "fish"}, value: s.shell}
 	case "review.ready":
-		q = question{title: "Review configuration", choices: []string{"Save", "Edit face", "Edit modules", "Edit colors", "Edit shell", "Cancel"}, value: "Save"}
+		q = question{title: "Review configuration", choices: []string{"Save", "Edit face", "Edit modules", "Edit icons", "Edit styles", "Edit colors", "Edit shell", "Cancel"}, value: "Save"}
 	case "confirm.ready":
 		verb := "Create "
 		if s.snap.exists {
 			verb = "Replace "
 		}
 		q = question{title: verb + s.path + "?", choices: []string{"No", "Yes"}, value: "No"}
+	}
+	if q.title == "" {
+		q = s.styleQuestion()
 	}
 	return q
 }
@@ -526,15 +534,18 @@ func (s *session) accept(ctx context.Context, value string) error {
 		if s.dirty {
 			s.normalize()
 		}
-		s.state = "color.ready"
+		s.state = "icons.ready"
 	case "color.ready":
 		s.draft.Color = value
 		s.state = "styles.ready"
 	case "styles.ready":
-		if value == "Edit foregrounds" {
+		switch value {
+		case "Edit styles":
+			s.state = "style.module"
+		case "Edit foregrounds":
 			s.index = 0
 			s.state = "style.field"
-		} else {
+		default:
 			s.state = "shell.ready"
 		}
 	case "style.field":
@@ -560,6 +571,10 @@ func (s *session) accept(ctx context.Context, value string) error {
 			s.state = "face.mode"
 		case "Edit modules":
 			s.state = "modules.ready"
+		case "Edit icons":
+			s.state = "icons.ready"
+		case "Edit styles":
+			s.state = "styles.ready"
 		case "Edit colors":
 			s.state = "color.ready"
 		case "Edit shell":
@@ -573,6 +588,8 @@ func (s *session) accept(ctx context.Context, value string) error {
 		} else {
 			s.state = "review.ready"
 		}
+	default:
+		s.acceptStyle(value)
 	}
 	return nil
 }
@@ -608,8 +625,12 @@ func (s *session) back() {
 			s.state = "fields.ready"
 			s.index = len(s.queue) - 1
 		}
-	case "color.ready":
+	case "icons.ready":
 		s.state = "order.ready"
+	case "icons.set":
+		s.state = "icons.ready"
+	case "color.ready":
+		s.state = "icons.set"
 	case "styles.ready":
 		s.state = "color.ready"
 	case "style.field":
@@ -618,6 +639,14 @@ func (s *session) back() {
 		} else {
 			s.state = "styles.ready"
 		}
+	case "style.module":
+		s.state = "styles.ready"
+	case "style.property":
+		s.state = "style.module"
+	case "style.color", "style.attributes":
+		s.state = "style.property"
+	case "style.custom":
+		s.state = "style.color"
 	case "shell.ready":
 		s.state = "styles.ready"
 	case "review.ready":
