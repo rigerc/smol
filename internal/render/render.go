@@ -68,19 +68,26 @@ func fetchAll(ctx context.Context, names []string, env modules.Env, lookup func(
 // leaves "· ·" or a dangling separator behind. Literals before the first
 // module and after the last one are always kept.
 func Render(ctx context.Context, toks []Token, env modules.Env, opts Options) string {
+	return Assemble(toks, Fetch(ctx, toks, env, opts), opts)
+}
+
+// Fetch reads referenced modules once under a shared deadline.
+func Fetch(ctx context.Context, toks []Token, env modules.Env, opts Options) map[string]string {
 	timeout := opts.Timeout
 	if timeout <= 0 {
 		timeout = DefaultTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-
 	lookup := opts.Lookup
 	if lookup == nil {
 		lookup = modules.Get
 	}
-	vals := fetchAll(ctx, ModuleNames(toks), env, lookup)
+	return fetchAll(ctx, ModuleNames(toks), env, lookup)
+}
 
+// Assemble formats already-fetched values; it performs no I/O.
+func Assemble(toks []Token, vals map[string]string, opts Options) string {
 	firstMod, lastMod := -1, -1
 	for i, t := range toks {
 		if t.Module != "" {
@@ -107,7 +114,8 @@ func Render(ctx context.Context, toks []Token, env modules.Env, opts Options) st
 			continue
 		}
 		v, ok := vals[t.Module]
-		if !ok {
+		v = cleanValue(v)
+		if !ok || v == "" {
 			continue
 		}
 		if emitted {

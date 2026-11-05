@@ -110,7 +110,7 @@ func TestParseOSReleaseQuoting(t *testing.T) {
 }
 
 func TestNamesSortedAndComplete(t *testing.T) {
-	want := []string{"cpu", "host", "kernel", "load", "mem", "os", "shell", "uptime", "user"}
+	want := []string{"cpu", "face", "host", "kernel", "load", "mem", "os", "shell", "uptime", "user"}
 	got := Names()
 	if len(got) != len(want) {
 		t.Fatalf("Names() = %v, want %v", got, want)

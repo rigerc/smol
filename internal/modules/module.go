@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"slices"
 )
 
 // ErrUnavailable is returned by a module that has nothing to report on this
@@ -27,7 +28,7 @@ type Module struct {
 	Fetch func(context.Context, Env) (string, error)
 }
 
-// Get returns the built-in module named name.
+// Get returns a system module. The configured face module is injected by app.
 func Get(name string) (Module, bool) {
 	switch name {
 	case "cpu":
@@ -52,7 +53,10 @@ func Get(name string) (Module, bool) {
 	return Module{}, false
 }
 
-// Names returns all module names in sorted order.
+// Known reports whether a format/style name is supported.
+func Known(name string) bool { return slices.Contains(Names(), name) }
+
+// Names returns all module names, including the configured face module, sorted.
 func Names() []string {
-	return []string{"cpu", "host", "kernel", "load", "mem", "os", "shell", "uptime", "user"}
+	return []string{"cpu", "face", "host", "kernel", "load", "mem", "os", "shell", "uptime", "user"}
 }

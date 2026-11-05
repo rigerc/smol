@@ -12,6 +12,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/rigerc/smol/internal/face"
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/render"
 )
@@ -21,6 +22,7 @@ const DefaultFormat = "{os} · {kernel} · {uptime} · {mem}"
 
 // Config is the on-disk configuration.
 type Config struct {
+	Face   face.Options            `toml:"face"`
 	Format string                  `toml:"format"`
 	Color  string                  `toml:"color"` // auto | always | never
 	Style  map[string]render.Style `toml:"style"`
@@ -32,6 +34,7 @@ type Config struct {
 func Default() Config {
 	return Config{
 		Format: DefaultFormat,
+		Face:   face.Options{State: "idle"},
 		Color:  "auto",
 		Style: map[string]render.Style{
 			"os":     {FG: "cyan", Bold: true},
@@ -110,6 +113,9 @@ func decodeError(name string, err error) error {
 
 // Validate checks values that decoding alone cannot.
 func (c Config) Validate() error {
+	if err := c.Face.Validate(); err != nil {
+		return fmt.Errorf("face: %w", err)
+	}
 	switch c.Color {
 	case "auto", "always", "never":
 	default:
@@ -124,7 +130,7 @@ func (c Config) Validate() error {
 	}
 	sort.Strings(names) // deterministic error order
 	for _, n := range names {
-		if _, ok := modules.Get(n); !ok {
+		if !modules.Known(n) {
 			return fmt.Errorf("style.%s: unknown module %q", n, n)
 		}
 		if fg := c.Style[n].FG; !render.ValidColor(fg) {
@@ -142,7 +148,7 @@ func ValidateFormat(format string) error {
 		return err
 	}
 	for _, n := range render.ModuleNames(toks) {
-		if _, ok := modules.Get(n); !ok {
+		if !modules.Known(n) {
 			return fmt.Errorf("format: unknown module %q (see `smol --list-modules`)", n)
 		}
 	}
@@ -161,6 +167,13 @@ format = "{os} · {kernel} · {uptime} · {mem}"
 # auto | always | never. "auto" disables color when output is not a terminal
 # or NO_COLOR is set.
 color = "auto"
+
+# Optional character. Add {face} to format to show it.
+[face]
+state = "idle"
+# preset = "kitty"
+# Or choose a deterministic seed (do not combine with preset):
+# seed = "smol"
 
 # Per-module styling. Entries here override smol's built-in palette for that
 # module only. Colors: black red green yellow blue magenta cyan white

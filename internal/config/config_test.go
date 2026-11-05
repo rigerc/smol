@@ -115,3 +115,24 @@ func TestDefaultConfigIsValid(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestFaceConfiguration(t *testing.T) {
+	for _, body := range []string{
+		"[face]\npreset=\"kitty\"\nseed=\"both\"\n",
+		"[face]\nstate=\"unknown\"\n",
+		"[face]\npreset=\"unknown\"\n",
+		"[face]\nseed=1\n",
+		"[face]\nextra=true\n",
+	} {
+		if _, err := Parse("face.toml", []byte(body)); err == nil {
+			t.Errorf("accepted %q", body)
+		}
+	}
+	cfg, err := Parse("face.toml", []byte("format=\"{face}\"\n[face]\nseed=\"\"\n[style]\nface={fg=\"cyan\"}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Face.Seed == nil || *cfg.Face.Seed != "" || cfg.Face.State != "idle" || cfg.Style["face"].FG != "cyan" {
+		t.Fatalf("got %+v", cfg)
+	}
+}

@@ -4,7 +4,8 @@
 
 Use Go 1.26.10 (as specified in `go.mod`) and the custom `golangci-lint` v2.10.1 with `anti-slop-go` v1.3.0.
 Application packages use the Go standard library plus `go-toml/v2` for TOML
-configuration parsing. Do not add dependencies without a specific reason.
+configuration parsing and `faceroll/go` for asciimoji generation. Do not add
+dependencies without a specific reason.
 
 ## Verification
 
@@ -27,6 +28,7 @@ dependency upgrades or releases.
 - `internal/app/` runs the CLI with injected runtime inputs and writers.
 - `internal/config/` loads and validates TOML configuration.
 - `internal/modules/` fetches system info; `internal/render/` formats output.
+- `internal/face/` builds characters; `internal/playback/` animates prepared lines.
 - `sample.env` documents environment inputs for config discovery, modules, and colors.
 - `.custom-gcl.yml` pins the custom linter and anti-slop module.
 - `.golangci.yml` configures Go linters and the enabled anti-slop rules.

@@ -8,10 +8,16 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"slices"
 	"strings"
+	"time"
+
+	faceroll "github.com/rigerc/faceroll/go"
 
 	"github.com/rigerc/smol/internal/config"
+	"github.com/rigerc/smol/internal/face"
 	"github.com/rigerc/smol/internal/modules"
+	"github.com/rigerc/smol/internal/playback"
 	"github.com/rigerc/smol/internal/render"
 )
 
@@ -21,6 +27,7 @@ type Runtime struct {
 	Getenv      func(string) string
 	StdoutIsTTY bool
 	Version     string
+	Playback    playback.Options
 }
 
 // Run executes the command and returns its process exit code.
@@ -40,6 +47,13 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		listMods    = fl.Bool("list-modules", false, "list available modules and exit")
 		checkConfig = fl.Bool("check-config", false, "validate the config file and exit")
 		printConfig = fl.Bool("print-default-config", false, "print the default config and exit")
+		facePreset  = fl.String("face-preset", "", "face preset (replaces a configured seed)")
+		faceSeed    = fl.String("face-seed", "", "deterministic face seed (replaces a configured preset)")
+		faceState   = fl.String("face-state", "", "face expression (default idle)")
+		listPresets = fl.Bool("list-face-presets", false, "list face preset identifiers and exit")
+		listStates  = fl.Bool("list-face-states", false, "list face expressions and exit")
+		animate     = fl.Bool("animate", false, "animate {face} on an interactive terminal")
+		duration    = fl.Duration("duration", 0, "animation duration; omit to run until interrupted")
 		showVersion = fl.Bool("version", false, "print version and exit")
 	)
 	if err := fl.Parse(args); err != nil {
@@ -58,6 +72,10 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		return 2
 	}
 	switch {
+	case *listPresets:
+		return writeLine(stdout, stderr, strings.Join(face.Presets(), "\n"))
+	case *listStates:
+		return writeLine(stdout, stderr, strings.Join(face.States(), "\n"))
 	case *showVersion:
 		return writeLine(stdout, stderr, "smol "+version)
 	case *listMods:
@@ -101,6 +119,32 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 			return 2
 		}
 	}
+	if supplied["face-preset"] && supplied["face-seed"] {
+		report(stderr, "smol: --face-preset and --face-seed are mutually exclusive")
+		return 2
+	}
+	if supplied["face-preset"] {
+		if *facePreset == "" {
+			report(stderr, "smol: --face-preset must not be empty")
+			return 2
+		}
+		cfg.Face.Preset, cfg.Face.Seed = *facePreset, nil
+	}
+	if supplied["face-seed"] {
+		cfg.Face.Seed, cfg.Face.Preset = faceSeed, ""
+	}
+	if supplied["face-state"] {
+		cfg.Face.State = *faceState
+	}
+	if err := cfg.Validate(); err != nil {
+		report(stderr, "smol: "+err.Error())
+		return 2
+	}
+	if supplied["duration"] && (!*animate || *duration <= 0) {
+		report(stderr, "smol: --duration requires --animate and a positive duration")
+		return 2
+	}
+
 	shell, err := render.ParseShell(*shellFlag)
 	if err != nil {
 		report(stderr, "smol: "+err.Error())
@@ -111,6 +155,11 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	if err != nil { // unreachable after validation, but never panic in a prompt
 		return 0
 	}
+	hasFace := slices.Contains(render.ModuleNames(toks), "face")
+	if *animate && (!hasFace || shell != render.ShellNone) {
+		report(stderr, "smol: --animate requires {face} and --shell none")
+		return 2
+	}
 	env := modules.Env{FS: runtime.FS, Getenv: getenv}
 	opts := render.Options{
 		Color:   useColor(cfg.Color, getenv, stdoutIsTTY),
@@ -118,8 +167,51 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		Timeout: *timeout,
 		Styles:  cfg.Style,
 	}
-	line := render.Render(ctx, toks, env, opts)
-	return writeLine(stdout, stderr, line)
+	var animation faceroll.Animation
+	if hasFace {
+		animation, err = face.Build(cfg.Face)
+		if err != nil {
+			report(stderr, "smol: "+err.Error())
+			return 1
+		}
+		opts.Lookup = func(name string) (modules.Module, bool) {
+			if name == "face" {
+				return modules.Module{Fetch: func(context.Context, modules.Env) (string, error) { return animation.Still, nil }}, true
+			}
+			return modules.Get(name)
+		}
+	}
+	values := render.Fetch(ctx, toks, env, opts)
+	// Face generation is local and complete already; it must not disappear when
+	// the shared system-module timeout expires.
+	if hasFace {
+		values["face"] = animation.Still
+	}
+	line := render.Assemble(toks, values, opts)
+	if !*animate || !stdoutIsTTY || getenv("TERM") == "dumb" {
+		return writeLine(stdout, stderr, line)
+	}
+	frames := make([]playback.Frame, len(animation.Frames))
+	plain := opts
+	plain.Color = false
+	for i, frame := range animation.Frames {
+		values["face"] = frame.Text
+		frames[i] = playback.Frame{
+			Text:     render.Assemble(toks, values, opts),
+			Width:    faceroll.CellWidth(render.Assemble(toks, values, plain)),
+			Duration: time.Duration(frame.MS) * time.Millisecond,
+		}
+	}
+	playOpts := runtime.Playback
+	playOpts.Duration = *duration
+	if err := playback.Run(ctx, stdout, frames, line, playOpts); err != nil {
+		if errors.Is(err, context.Canceled) && ctx.Err() != nil {
+			return 130
+		}
+		report(stderr, "smol: "+err.Error())
+		return 1
+	}
+	return 0
 }
 
 // useColor resolves the color mode. NO_COLOR (https://no-color.org) wins over

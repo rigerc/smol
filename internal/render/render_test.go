@@ -220,3 +220,39 @@ func TestRenderDropsValuesEmptyAfterCleaning(t *testing.T) {
 		t.Errorf("got %q, want host without dangling separator", got)
 	}
 }
+
+func TestAssembleFaceValues(t *testing.T) {
+	toks := mustParse(t, "{face}/{face} · {host}")
+	// Braces in generated faces are data, never nested format references.
+	values := map[string]string{"face": `{\_%_\}`, "host": "host"}
+	got := Assemble(toks, values, Options{})
+	if want := `{\_%_\}/{\_%_\} · host`; got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+	got = Assemble(toks, values, Options{Shell: ShellZsh})
+	if !strings.Contains(got, "%%") {
+		t.Fatal(got)
+	}
+	got = Assemble(toks, values, Options{Shell: ShellBash})
+	if !strings.Contains(got, `\\`) {
+		t.Fatal(got)
+	}
+}
+
+func TestFetchOnceForManyFrames(t *testing.T) {
+	reads := 0
+	opts := Options{Lookup: func(name string) (modules.Module, bool) {
+		return modules.Module{Fetch: func(context.Context, modules.Env) (string, error) { reads++; return "snapshot", nil }}, name == "host"
+	}}
+	toks := mustParse(t, "{face} {host} {host}")
+	values := Fetch(context.Background(), toks, fixtureEnv(nil), opts)
+	for _, face := range []string{"a", "b", "c"} {
+		values["face"] = face
+		if got := Assemble(toks, values, opts); got != face+" snapshot snapshot" {
+			t.Fatal(got)
+		}
+	}
+	if reads != 1 {
+		t.Fatalf("fetched %d times", reads)
+	}
+}

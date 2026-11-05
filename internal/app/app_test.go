@@ -3,11 +3,14 @@ package app
 import (
 	"bytes"
 	"context"
+	"github.com/rigerc/smol/internal/face"
+	"github.com/rigerc/smol/internal/playback"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func runCLI(t *testing.T, env map[string]string, tty bool, args ...string) (code int, stdout, stderr string) {
@@ -163,6 +166,164 @@ func TestOutputFailure(t *testing.T) {
 		})
 		if code != 1 || !strings.Contains(diagnostic.String(), "write output") {
 			t.Errorf("%v: exit=%d diagnostic=%q", args, code, diagnostic.String())
+		}
+	}
+}
+
+func TestFaceCLI(t *testing.T) {
+	options := face.Options{State: "idle", Preset: "kitty"}
+	animation, err := face.Build(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, out, diagnostic := runCLI(t, nil, false, "--format", "{face}/{face} {host}", "--face-preset", "kitty")
+	if code != 0 || diagnostic != "" || out != animation.Still+"/"+animation.Still+" thinkpad\n" {
+		t.Fatalf("exit=%d out=%q diagnostic=%q", code, out, diagnostic)
+	}
+	for _, flag := range []string{"--list-face-presets", "--list-face-states"} {
+		code, out, diagnostic = runCLI(t, nil, false, flag)
+		if code != 0 || diagnostic != "" || len(strings.Fields(out)) == 0 {
+			t.Fatalf("%s: %d %q %q", flag, code, out, diagnostic)
+		}
+	}
+	_, names, _ := runCLI(t, nil, false, "--list-modules")
+	if !strings.Contains(names, "face\n") {
+		t.Fatal(names)
+	}
+}
+
+func TestFaceCLIValidation(t *testing.T) {
+	for _, args := range [][]string{
+		{"--face-preset", "nope"}, {"--face-state", "nope"}, {"--face-state="}, {"--face-preset="},
+		{"--face-preset", "kitty", "--face-seed", "seed"},
+		{"--animate"}, {"--format", "{face}", "--animate", "--shell", "bash"},
+		{"--format", "{face}", "--animate", "--shell", "zsh"},
+		{"--format", "{face}", "--animate", "--shell", "fish"},
+		{"--duration", "1s"}, {"--animate", "--duration", "0s"}, {"--animate", "--duration", "-1s"},
+	} {
+		code, _, diagnostic := runCLI(t, nil, false, args...)
+		if code != 2 || diagnostic == "" {
+			t.Errorf("%v: exit=%d diagnostic=%q", args, code, diagnostic)
+		}
+	}
+}
+
+func TestFaceConfigOverrides(t *testing.T) {
+	for _, tc := range []struct {
+		body    string
+		args    []string
+		options face.Options
+	}{
+		{`preset="kitty"`, []string{"--face-seed="}, face.Options{State: "idle", Seed: new("")}},
+		{`seed="configured"`, []string{"--face-preset", "kitty"}, face.Options{State: "idle", Preset: "kitty"}},
+		{`preset="kitty"`, []string{"--face-state", "happy"}, face.Options{State: "happy", Preset: "kitty"}},
+	} {
+		path := writeConfig(t, "format=\"{face}\"\n[face]\n"+tc.body)
+		args := append([]string{"--config", path}, tc.args...)
+		code, out, diagnostic := runCLI(t, nil, false, args...)
+		animation, err := face.Build(tc.options)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code != 0 || diagnostic != "" || out != animation.Still+"\n" {
+			t.Errorf("%v: %d %q %q", args, code, out, diagnostic)
+		}
+	}
+	bad := writeConfig(t, "[face]\npreset=\"nope\"\n")
+	if code, _, diagnostic := runCLI(t, nil, false, "--config", bad, "--check-config"); code != 1 || !strings.Contains(diagnostic, "nope") {
+		t.Fatalf("%d %q", code, diagnostic)
+	}
+	if code, out, diagnostic := runCLI(t, nil, false, "--config", bad); code != 0 || out == "\n" || diagnostic != "" {
+		t.Fatalf("fallback: %d %q %q", code, out, diagnostic)
+	}
+}
+
+func TestAnimationFallbacks(t *testing.T) {
+	for _, tc := range []struct {
+		tty bool
+		env map[string]string
+	}{{false, nil}, {true, map[string]string{"TERM": "dumb"}}, {true, nil}} {
+		code, out, diagnostic := runCLI(t, tc.env, tc.tty, "--format", "{face}", "--animate")
+		if code != 0 || diagnostic != "" || strings.ContainsAny(out, "\x1b\r") || strings.Count(out, "\n") != 1 {
+			t.Fatalf("fallback: %d %q %q", code, out, diagnostic)
+		}
+	}
+}
+
+func TestAnimationCLI(t *testing.T) {
+	for _, mode := range []string{"duration", "cancel", "write failure", "single frame"} {
+		t.Run(mode, func(t *testing.T) {
+			var out, diagnostic bytes.Buffer
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			finished := make(chan time.Time, 1)
+			calls := 0
+			runtime := Runtime{
+				FS: os.DirFS("../../testdata/x86"), Getenv: func(string) string { return "" }, StdoutIsTTY: true, Version: "test",
+				Playback: playback.Options{Columns: func() int { return 120 }, After: func(d time.Duration) <-chan time.Time {
+					calls++
+					if d == time.Second {
+						return finished
+					}
+					if mode == "cancel" {
+						cancel()
+					}
+					if mode == "duration" {
+						finished <- time.Time{}
+					}
+					return nil
+				}},
+			}
+			args := []string{"--format", "{face} {host}", "--face-preset", "kitty", "--animate", "--color", "never"}
+			var writer io.Writer = &out
+			wantCode := 0
+			switch mode {
+			case "duration":
+				args = append(args, "--duration", "1s")
+			case "cancel":
+				wantCode = 130
+			case "write failure":
+				writer = failedWriter{}
+				wantCode = 1
+			case "single frame":
+				args = append(args, "--face-state", "dead")
+			}
+			code := Run(ctx, args, writer, &diagnostic, runtime)
+			if code != wantCode {
+				t.Fatalf("exit=%d want=%d diagnostic=%q", code, wantCode, diagnostic.String())
+			}
+			if mode == "write failure" {
+				if !strings.Contains(diagnostic.String(), "write animation") {
+					t.Fatal(diagnostic.String())
+				}
+				return
+			}
+			if !strings.Contains(out.String(), "thinkpad") || !strings.HasSuffix(out.String(), "\n") {
+				t.Fatal(out.String())
+			}
+			if mode == "single frame" {
+				if calls != 0 || strings.Contains(out.String(), "\x1b") {
+					t.Fatal("single frame played animation")
+				}
+			} else if !strings.HasSuffix(out.String(), "\x1b[?25h\n") {
+				t.Fatal("cursor not restored")
+			}
+		})
+	}
+}
+
+func TestFaceShellStyling(t *testing.T) {
+	path := writeConfig(t, "format=\"{face}\"\n[style]\nface={fg=\"red\",bold=true}\n")
+	for _, shell := range []string{"none", "bash", "zsh", "fish"} {
+		code, out, diagnostic := runCLI(t, nil, false, "--config", path, "--face-preset", "kitty", "--color", "always", "--shell", shell)
+		if code != 0 || diagnostic != "" || !strings.Contains(out, "\x1b[1;31m") {
+			t.Fatalf("%s: %d %q %q", shell, code, out, diagnostic)
+		}
+		if shell == "bash" && !strings.HasPrefix(out, `\[`) {
+			t.Fatal(out)
+		}
+		if shell == "zsh" && !strings.HasPrefix(out, "%{") {
+			t.Fatal(out)
 		}
 	}
 }
