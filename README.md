@@ -171,10 +171,10 @@ Animation requires an interactive terminal and cannot be combined with `--shell 
 | `smol init` | Configure smol interactively |
 | `--format '...'` | Choose modules, fields, and separators |
 | `--config PATH` | Use a specific TOML config |
-| `--color auto&#124;always&#124;never` | Control terminal colors |
-| `--icons auto&#124;always&#124;never` | Control icon visibility |
-| `--icon-set nerd-font&#124;ascii` | Choose the icon glyph set |
-| `--shell none&#124;bash&#124;zsh&#124;fish` | Escape color codes for a shell prompt |
+| `--color auto / always / never` | Control terminal colors |
+| `--icons auto / always / never` | Control icon visibility |
+| `--icon-set nerd-font / ascii` | Choose the icon glyph set |
+| `--shell none / bash / zsh / fish` | Escape color codes for a shell prompt |
 | `--face-preset`, `--face-seed`, `--face-state` | Select an optional character |
 | `--animate`, `--duration 5s` | Animate a face on a terminal |
 | `--timeout 100ms` | Increase the shared module deadline |
