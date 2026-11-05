@@ -2,6 +2,8 @@ package render
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ const DefaultTimeout = 20 * time.Millisecond
 
 // Options control rendering.
 type Options struct {
+	Debug   func(string)
 	Color   bool
 	Shell   Shell
 	Timeout time.Duration
@@ -22,38 +25,62 @@ type Options struct {
 }
 
 type result struct {
-	name string
-	val  string
-	err  error
+	name    string
+	val     modules.Result
+	err     error
+	elapsed time.Duration
 }
 
 // fetchAll runs the named modules concurrently and returns the values of
 // those that finished successfully before ctx expired. Modules that fail,
 // are unavailable, are unknown or time out are simply absent from the map.
-func fetchAll(ctx context.Context, names []string, env modules.Env, lookup func(string) (modules.Module, bool)) map[string]string {
+func fetchAll(ctx context.Context, names []string, env modules.Env, lookup func(string) (modules.Module, bool), debug func(string)) map[string]modules.Result {
 	ch := make(chan result, len(names))
 	started := 0
+	pending := map[string]bool{}
+	start := time.Now()
 	for _, n := range names {
 		m, ok := lookup(n)
 		if !ok {
+			if debug != nil {
+				debug(n + " unknown")
+			}
 			continue
 		}
 		started++
+		pending[n] = true
 		go func() {
+			begin := time.Now()
 			v, err := m.Fetch(ctx, env)
-			ch <- result{n, v, err}
+			ch <- result{n, v, err, time.Since(begin)}
 		}()
 	}
-	out := make(map[string]string, started)
+	out := make(map[string]modules.Result, started)
 	for i := 0; i < started; i++ {
 		select {
 		case r := <-ch:
-			if r.err == nil {
-				if value := cleanValue(r.val); value != "" {
-					out[r.name] = value
+			delete(pending, r.name)
+			if debug != nil {
+				status := "ok"
+				if r.err != nil {
+					status = r.err.Error()
+					if errors.Is(r.err, context.DeadlineExceeded) {
+						status = "timeout"
+					}
 				}
+				debug(fmt.Sprintf("%s %.1fms %s", r.name, float64(r.elapsed)/float64(time.Millisecond), status))
+			}
+			if r.err == nil {
+				out[r.name] = r.val
 			}
 		case <-ctx.Done():
+			if debug != nil {
+				for _, n := range names {
+					if pending[n] {
+						debug(fmt.Sprintf("%s %.1fms timeout", n, float64(time.Since(start))/float64(time.Millisecond)))
+					}
+				}
+			}
 			return out
 		}
 	}
@@ -72,7 +99,7 @@ func Render(ctx context.Context, toks []Token, env modules.Env, opts Options) st
 }
 
 // Fetch reads referenced modules once under a shared deadline.
-func Fetch(ctx context.Context, toks []Token, env modules.Env, opts Options) map[string]string {
+func Fetch(ctx context.Context, toks []Token, env modules.Env, opts Options) map[string]modules.Result {
 	timeout := opts.Timeout
 	if timeout <= 0 {
 		timeout = DefaultTimeout
@@ -83,11 +110,16 @@ func Fetch(ctx context.Context, toks []Token, env modules.Env, opts Options) map
 	if lookup == nil {
 		lookup = modules.Get
 	}
-	return fetchAll(ctx, ModuleNames(toks), env, lookup)
+	start := time.Now()
+	out := fetchAll(ctx, ModuleNames(toks), env, lookup, opts.Debug)
+	if opts.Debug != nil {
+		opts.Debug(fmt.Sprintf("total %.1fms", float64(time.Since(start))/float64(time.Millisecond)))
+	}
+	return out
 }
 
 // Assemble formats already-fetched values; it performs no I/O.
-func Assemble(toks []Token, vals map[string]string, opts Options) string {
+func Assemble(toks []Token, vals map[string]modules.Result, opts Options) string {
 	firstMod, lastMod := -1, -1
 	for i, t := range toks {
 		if t.Module != "" {
@@ -113,7 +145,11 @@ func Assemble(toks []Token, vals map[string]string, opts Options) string {
 			}
 			continue
 		}
-		v, ok := vals[t.Module]
+		result, ok := vals[t.Module]
+		v := result.Text
+		if t.Field != "" {
+			v = result.Fields[t.Field]
+		}
 		v = cleanValue(v)
 		if !ok || v == "" {
 			continue

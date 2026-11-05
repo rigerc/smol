@@ -13,6 +13,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 
 	"github.com/rigerc/smol/internal/face"
+	"github.com/rigerc/smol/internal/format"
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/render"
 )
@@ -22,20 +23,23 @@ const DefaultFormat = "{os} · {kernel} · {uptime} · {mem}"
 
 // Config is the on-disk configuration.
 type Config struct {
-	Face   face.Options            `toml:"face"`
-	Format string                  `toml:"format"`
-	Color  string                  `toml:"color"` // auto | always | never
-	Style  map[string]render.Style `toml:"style"`
+	Display format.Options          `toml:"display"`
+	Modules ModulesConfig           `toml:"modules"`
+	Face    face.Options            `toml:"face"`
+	Format  string                  `toml:"format"`
+	Color   string                  `toml:"color"` // auto | always | never
+	Style   map[string]render.Style `toml:"style"`
 }
 
 // Default returns the configuration used when no file exists. The default
 // palette is applied first, so entries in a user's [style] table override it
 // per module.
 func Default() Config {
-	return Config{
-		Format: DefaultFormat,
-		Face:   face.Options{State: "idle"},
-		Color:  "auto",
+	cfg := Config{
+		Format:  DefaultFormat,
+		Display: format.Default(),
+		Face:    face.Options{State: "idle"},
+		Color:   "auto",
 		Style: map[string]render.Style{
 			"os":     {FG: "cyan", Bold: true},
 			"kernel": {FG: "blue"},
@@ -48,6 +52,12 @@ func Default() Config {
 			"shell":  {FG: "white"},
 		},
 	}
+	for _, name := range modules.Names() {
+		if _, ok := cfg.Style[name]; !ok && name != "face" {
+			cfg.Style[name] = render.Style{FG: "cyan"}
+		}
+	}
+	return cfg
 }
 
 // DefaultPath returns the config file location, honoring XDG_CONFIG_HOME.
@@ -113,6 +123,12 @@ func decodeError(name string, err error) error {
 
 // Validate checks values that decoding alone cannot.
 func (c Config) Validate() error {
+	if err := c.Display.Validate(); err != nil {
+		return err
+	}
+	if err := c.Modules.validate(); err != nil {
+		return err
+	}
 	if err := c.Face.Validate(); err != nil {
 		return fmt.Errorf("face: %w", err)
 	}
@@ -152,6 +168,21 @@ func ValidateFormat(format string) error {
 			return fmt.Errorf("format: unknown module %q (see `smol --list-modules`)", n)
 		}
 	}
+	for _, t := range toks {
+		if t.Field == "" {
+			continue
+		}
+		m, _ := modules.Get(t.Module)
+		found := false
+		for _, f := range m.Fields {
+			if f.Name == t.Field {
+				found = true
+			}
+		}
+		if !found {
+			return fmt.Errorf("format: unknown field %q for module %q (see `smol --list-fields`)", t.Field, t.Module)
+		}
+	}
 	return nil
 }
 
@@ -161,7 +192,7 @@ const DefaultTOML = `# smol configuration
 
 # Text between {module} references is kept; if a module has nothing to show,
 # it is dropped together with the separator in front of it.
-# Use {{ and }} for literal braces.
+# Use {{ and }} for literal braces. Fields use {mem:percent}; face has no fields.
 format = "{os} · {kernel} · {uptime} · {mem}"
 
 # auto | always | never. "auto" disables color when output is not a terminal
@@ -174,6 +205,37 @@ state = "idle"
 # preset = "kitty"
 # Or choose a deterministic seed (do not combine with preset):
 # seed = "smol"
+
+# Animation is enabled by --animate, and cannot be combined with --debug.
+
+# Optional display controls (defaults shown).
+# [display.size]
+# unit = "iec" # iec | si
+# digits = -1 # automatic precision, or 0..6
+# [display.duration]
+# abbreviation = true
+# space-before-unit = false
+# compact = false
+# round = false
+# [display.percent]
+# digits = 0
+# width = 10
+# [display.temp]
+# unit = "c" # c | f | k
+# digits = 0
+
+# Module options only apply when referenced in format.
+# [modules.disk]
+# mount = "/"
+# [modules.time]
+# format = "15:04" # Go layout; also "15:04:05" or "Mon 15:04"
+# [modules.battery]
+# device = "" # first battery, or e.g. BAT1
+# [modules.localip]
+# interface = ""
+# family = "ipv4" # ipv4 | ipv6
+# [modules.packages]
+# manager = "auto" # auto | dpkg | pacman | apk; try --timeout 100ms
 
 # Per-module styling. Entries here override smol's built-in palette for that
 # module only. Colors: black red green yellow blue magenta cyan white

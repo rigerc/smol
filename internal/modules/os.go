@@ -10,29 +10,35 @@ import (
 
 type osModule struct{}
 
-func (osModule) Fetch(_ context.Context, env Env) (string, error) {
+func (osModule) Fetch(_ context.Context, env Env) (Result, error) {
 	var data []byte
 	var err error
-	for _, p := range []string{"etc/os-release", "usr/lib/os-release"} {
+	for _, p := range []string{"etc/os-release", "etc/lsb-release", "usr/lib/os-release"} {
 		data, err = fs.ReadFile(env.FS, p)
 		if err == nil {
 			break
 		}
 	}
 	if err != nil {
-		return "", err
+		return Result{}, err
 	}
 	kv := parseOSRelease(string(data))
+	if kv["DISTRIB_DESCRIPTION"] != "" {
+		return coreResult("os", kv["DISTRIB_DESCRIPTION"], data, env), nil
+	}
+	if kv["DISTRIB_ID"] != "" {
+		return coreResult("os", strings.TrimSpace(kv["DISTRIB_ID"]+" "+kv["DISTRIB_RELEASE"]), data, env), nil
+	}
 	if v := kv["PRETTY_NAME"]; v != "" {
-		return v, nil
+		return coreResult("os", v, data, env), nil
 	}
 	if name := kv["NAME"]; name != "" {
 		if ver := kv["VERSION"]; ver != "" {
-			return name + " " + ver, nil
+			return coreResult("os", name+" "+ver, data, env), nil
 		}
-		return name, nil
+		return coreResult("os", name, data, env), nil
 	}
-	return "", errors.New("os-release has no NAME or PRETTY_NAME")
+	return Result{}, errors.New("os-release has no NAME or PRETTY_NAME")
 }
 
 // parseOSRelease parses the KEY=value format used by os-release(5).

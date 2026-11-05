@@ -49,8 +49,8 @@ func TestFetch(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Fetch: %v", err)
 			}
-			if got != tt.want {
-				t.Errorf("got %q, want %q", got, tt.want)
+			if got.Text != tt.want {
+				t.Errorf("got %q, want %q", got.Text, tt.want)
 			}
 		})
 	}
@@ -110,7 +110,7 @@ func TestParseOSReleaseQuoting(t *testing.T) {
 }
 
 func TestNamesSortedAndComplete(t *testing.T) {
-	want := []string{"cpu", "face", "host", "kernel", "load", "mem", "os", "shell", "uptime", "user"}
+	want := []string{"battery", "cpu", "desktop", "disk", "face", "host", "init", "kernel", "load", "localip", "machine", "mem", "os", "packages", "processes", "shell", "swap", "terminal", "time", "uptime", "user", "virt"}
 	got := Names()
 	if len(got) != len(want) {
 		t.Fatalf("Names() = %v, want %v", got, want)

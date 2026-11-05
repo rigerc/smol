@@ -12,25 +12,17 @@ import (
 
 type memModule struct{}
 
-func (memModule) Fetch(_ context.Context, env Env) (string, error) {
+func (memModule) Fetch(_ context.Context, env Env) (Result, error) {
 	data, err := fs.ReadFile(env.FS, "proc/meminfo")
 	if err != nil {
-		return "", err
+		return Result{}, err
 	}
 	info := parseMeminfo(data)
 	total, ok := info["MemTotal"]
 	if !ok || total == 0 {
-		return "", errors.New("meminfo: MemTotal missing")
+		return Result{}, errors.New("meminfo: MemTotal missing")
 	}
-	avail, ok := info["MemAvailable"]
-	if !ok {
-		// Kernels before 3.14 have no MemAvailable.
-		avail = info["MemFree"] + info["Buffers"] + info["Cached"]
-	}
-	if avail > total {
-		avail = total
-	}
-	return formatKiB(total-avail) + " / " + formatKiB(total), nil
+	return memoryResult(info, env), nil
 }
 
 // parseMeminfo returns /proc/meminfo values in KiB, keyed by field name.

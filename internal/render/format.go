@@ -8,10 +8,11 @@ import (
 )
 
 // Token is one piece of a parsed format: either literal text or a module
-// reference. Exactly one of the fields is set.
+// reference with an optional Field. Literal and Module are mutually exclusive.
 type Token struct {
 	Literal string
 	Module  string
+	Field   string
 }
 
 // Parse splits a format string such as "{os} · {kernel}" into tokens.
@@ -53,7 +54,18 @@ func Parse(format string) ([]Token, error) {
 				return nil, fmt.Errorf("format: invalid module name %q at position %d", name, i)
 			}
 			flush()
-			toks = append(toks, Token{Module: name})
+			module, field, hasField := strings.Cut(name, ":")
+			if hasField {
+				if field == "" {
+					return nil, fmt.Errorf("format: empty field in %q", name)
+				}
+				for _, r := range field {
+					if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
+						return nil, fmt.Errorf("format: invalid field %q", field)
+					}
+				}
+			}
+			toks = append(toks, Token{Module: module, Field: field})
 			i += end + 1
 		case '}':
 			if i+1 < len(format) && format[i+1] == '}' {

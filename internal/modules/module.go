@@ -9,6 +9,10 @@ import (
 	"errors"
 	"io/fs"
 	"slices"
+	"strings"
+	"time"
+
+	"github.com/rigerc/smol/internal/format"
 )
 
 // ErrUnavailable is returned by a module that has nothing to report on this
@@ -16,47 +20,136 @@ import (
 // silently.
 var ErrUnavailable = errors.New("module unavailable")
 
-// Env is everything a module may read from. FS is rooted at "/" in
-// production (paths have no leading slash, e.g. "proc/meminfo").
+// Env supplies all module inputs. Paths in FS are relative to the system root.
 type Env struct {
-	FS     fs.FS
-	Getenv func(string) string
+	FS         fs.FS
+	Getenv     func(string) string
+	Now        func() time.Time
+	Statfs     func(string) (uint64, uint64, error)
+	Uname      func() (string, error)
+	Interfaces func() ([]Interface, error)
+	Display    *format.Options
+	Options    Options
 }
 
-// Module fetches one piece of system information.
+// Interface is an address snapshot without platform dependencies.
+type Interface struct {
+	Name       string
+	IPv4, IPv6 []string
+}
+
+// Options contains per-module detection settings.
+type Options struct{ Mount, TimeFormat, BatteryDevice, Interface, Family, Manager string }
+
+// Field describes a named result field.
+type Field struct{ Name, Description string }
+
+// Result holds a module's default text and optional fields.
+type Result struct {
+	Text   string
+	Fields map[string]string
+}
+
+// Module describes and fetches system information.
 type Module struct {
-	Fetch func(context.Context, Env) (string, error)
+	Name, Description string
+	Fields            []Field
+	Fetch             func(context.Context, Env) (Result, error)
 }
 
-// Get returns a system module. The configured face module is injected by app.
+// registry is constructed once and never mutated. Public accessors copy fields.
+var registry = buildRegistry()
+
+func buildRegistry() []Module {
+	specs := []struct {
+		name, desc, fields string
+		fetch              func(context.Context, Env) (Result, error)
+	}{
+		{"cpu", "CPU model and logical threads", "threads cores freq temp", cpuModule{}.Fetch},
+		{"host", "Hostname", "", hostModule{}.Fetch},
+		{"kernel", "Kernel release", "arch release name", kernelModule{}.Fetch},
+		{"load", "System load averages", "percent", loadModule{}.Fetch},
+		{"mem", "Memory usage", "used free available total percent bar", memModule{}.Fetch},
+		{"os", "Operating system", "id version", osModule{}.Fetch},
+		{"shell", "Interactive shell", "", shellModule{}.Fetch},
+		{"uptime", "System uptime", "days hours minutes seconds", uptimeModule{}.Fetch},
+		{"user", "Current user", "", userModule{}.Fetch},
+	}
+	out := make([]Module, 0, len(specs)+12)
+	for _, s := range specs {
+		m := Module{Name: s.name, Description: s.desc}
+		for _, f := range strings.Fields(s.fields) {
+			m.Fields = append(m.Fields, Field{f, fieldDescription(s.name, f)})
+		}
+		m.Fetch = s.fetch
+		out = append(out, m)
+	}
+	out = append(out, extraSpecs()...)
+	slices.SortFunc(out, func(a, b Module) int { return strings.Compare(a.Name, b.Name) })
+	return out
+}
+
+// All returns independent descriptors sorted by name.
+func All() []Module {
+	out := slices.Clone(registry)
+	for i := range out {
+		out[i].Fields = slices.Clone(out[i].Fields)
+	}
+	return out
+}
+
+// Get returns a system module. Face is injected by app.
 func Get(name string) (Module, bool) {
-	switch name {
-	case "cpu":
-		return Module{Fetch: cpuModule{}.Fetch}, true
-	case "host":
-		return Module{Fetch: hostModule{}.Fetch}, true
-	case "kernel":
-		return Module{Fetch: kernelModule{}.Fetch}, true
-	case "load":
-		return Module{Fetch: loadModule{}.Fetch}, true
-	case "mem":
-		return Module{Fetch: memModule{}.Fetch}, true
-	case "os":
-		return Module{Fetch: osModule{}.Fetch}, true
-	case "shell":
-		return Module{Fetch: shellModule{}.Fetch}, true
-	case "uptime":
-		return Module{Fetch: uptimeModule{}.Fetch}, true
-	case "user":
-		return Module{Fetch: userModule{}.Fetch}, true
+	for _, m := range registry {
+		if m.Name == name {
+			m.Fields = slices.Clone(m.Fields)
+			return m, true
+		}
 	}
 	return Module{}, false
 }
 
-// Known reports whether a format/style name is supported.
-func Known(name string) bool { return slices.Contains(Names(), name) }
-
-// Names returns all module names, including the configured face module, sorted.
+// Names includes system modules and the configured face.
 func Names() []string {
-	return []string{"cpu", "face", "host", "kernel", "load", "mem", "os", "shell", "uptime", "user"}
+	out := []string{"face"}
+	for _, m := range All() {
+		out = append(out, m.Name)
+	}
+	slices.Sort(out)
+	return out
+}
+
+// Known reports whether a module name is supported.
+func Known(name string) bool {
+	if name == "face" {
+		return true
+	}
+	_, ok := Get(name)
+	return ok
+}
+func display(env Env) format.Options {
+	if env.Display != nil {
+		return *env.Display
+	}
+	return format.Default()
+}
+
+func fieldDescription(module, field string) string {
+	switch field {
+	case "percent":
+		return "Usage percentage"
+	case "bar":
+		return "Usage bar"
+	case "freq":
+		return "Maximum CPU frequency"
+	case "temp":
+		return "Maximum CPU sensor temperature"
+	case "arch":
+		return "Machine architecture"
+	case "ipv6":
+		return "First IPv6 address"
+	case "interface":
+		return "Network interface name"
+	}
+	return module + " " + field
 }

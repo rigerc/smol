@@ -1,0 +1,4 @@
+format = "{face} {user}@{host} · {os} · {cpu} · {mem}"
+[face]
+preset = "kitty"
+state = "happy"

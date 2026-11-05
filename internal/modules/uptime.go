@@ -2,40 +2,32 @@ package modules
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
+
+	"github.com/rigerc/smol/internal/format"
 )
 
 type uptimeModule struct{}
 
-func (uptimeModule) Fetch(_ context.Context, env Env) (string, error) {
+func (uptimeModule) Fetch(_ context.Context, env Env) (Result, error) {
 	s, err := readTrim(env.FS, "proc/uptime")
 	if err != nil {
-		return "", err
+		return Result{}, err
 	}
 	first, _, _ := strings.Cut(s, " ")
 	secs, err := strconv.ParseFloat(first, 64)
 	if err != nil {
-		return "", fmt.Errorf("parse /proc/uptime: %w", err)
+		return Result{}, fmt.Errorf("parse /proc/uptime: %w", err)
 	}
-	return formatUptime(int64(secs)), nil
+	if math.IsNaN(secs) || math.IsInf(secs, 0) || secs < 0 || secs >= float64(math.MaxInt64) {
+		return Result{}, errors.New("uptime: invalid seconds")
+	}
+	return coreResult("uptime", formatUptime(int64(secs)), []byte(s), env), nil
 }
 
-// formatUptime renders seconds as "3d 4h 12m", dropping leading zero units.
-func formatUptime(secs int64) string {
-	if secs < 60 {
-		return "<1m"
-	}
-	d := secs / 86400
-	h := (secs % 86400) / 3600
-	m := (secs % 3600) / 60
-	switch {
-	case d > 0:
-		return fmt.Sprintf("%dd %dh %dm", d, h, m)
-	case h > 0:
-		return fmt.Sprintf("%dh %dm", h, m)
-	default:
-		return fmt.Sprintf("%dm", m)
-	}
-}
+// formatUptime preserves the original duration formatting.
+func formatUptime(secs int64) string { return format.Duration(secs, format.Default().Duration) }

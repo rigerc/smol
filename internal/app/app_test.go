@@ -16,7 +16,13 @@ import (
 func runCLI(t *testing.T, env map[string]string, tty bool, args ...string) (code int, stdout, stderr string) {
 	t.Helper()
 	var out, errb bytes.Buffer
-	code = Run(context.Background(), args, &out, &errb, Runtime{FS: os.DirFS("../../testdata/x86"), Getenv: func(k string) string { return env[k] }, StdoutIsTTY: tty, Version: "test"})
+	systemDirs := t.TempDir()
+	code = Run(context.Background(), args, &out, &errb, Runtime{FS: os.DirFS("../../testdata/x86"), Getenv: func(k string) string {
+		if k == "XDG_CONFIG_DIRS" && env[k] == "" {
+			return systemDirs
+		}
+		return env[k]
+	}, StdoutIsTTY: tty, Version: "test"})
 	return code, out.String(), errb.String()
 }
 
@@ -34,7 +40,7 @@ func TestVersionAndList(t *testing.T) {
 		t.Errorf("--version: code=%d out=%q", code, out)
 	}
 	code, out, _ := runCLI(t, nil, false, "--list-modules")
-	if code != 0 || !strings.Contains(out, "mem\n") || !strings.Contains(out, "uptime\n") {
+	if code != 0 || !strings.Contains(out, "mem: Memory usage\n") || !strings.Contains(out, "uptime: System uptime\n") {
 		t.Errorf("--list-modules: code=%d out=%q", code, out)
 	}
 }
@@ -187,7 +193,7 @@ func TestFaceCLI(t *testing.T) {
 		}
 	}
 	_, names, _ := runCLI(t, nil, false, "--list-modules")
-	if !strings.Contains(names, "face\n") {
+	if !strings.Contains(names, "face: Configured character\n") {
 		t.Fatal(names)
 	}
 }

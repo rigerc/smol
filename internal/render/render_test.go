@@ -148,9 +148,9 @@ func TestEscapeValue(t *testing.T) {
 type slowModule struct{ release chan struct{} }
 
 func (slowModule) Name() string { return "slow" }
-func (s slowModule) Fetch(_ context.Context, _ modules.Env) (string, error) {
+func (s slowModule) Fetch(_ context.Context, _ modules.Env) (modules.Result, error) {
 	<-s.release
-	return "late", nil
+	return modules.Result{Text: "late"}, nil
 }
 
 func TestRenderTimeoutDropsSlowModule(t *testing.T) {
@@ -224,7 +224,7 @@ func TestRenderDropsValuesEmptyAfterCleaning(t *testing.T) {
 func TestAssembleFaceValues(t *testing.T) {
 	toks := mustParse(t, "{face}/{face} · {host}")
 	// Braces in generated faces are data, never nested format references.
-	values := map[string]string{"face": `{\_%_\}`, "host": "host"}
+	values := map[string]modules.Result{"face": {Text: `{\_%_\}`}, "host": {Text: "host"}}
 	got := Assemble(toks, values, Options{})
 	if want := `{\_%_\}/{\_%_\} · host`; got != want {
 		t.Fatalf("got %q want %q", got, want)
@@ -242,17 +242,58 @@ func TestAssembleFaceValues(t *testing.T) {
 func TestFetchOnceForManyFrames(t *testing.T) {
 	reads := 0
 	opts := Options{Lookup: func(name string) (modules.Module, bool) {
-		return modules.Module{Fetch: func(context.Context, modules.Env) (string, error) { reads++; return "snapshot", nil }}, name == "host"
+		return modules.Module{Fetch: func(context.Context, modules.Env) (modules.Result, error) {
+			reads++
+			return modules.Result{Text: "snapshot"}, nil
+		}}, name == "host"
 	}}
 	toks := mustParse(t, "{face} {host} {host}")
 	values := Fetch(context.Background(), toks, fixtureEnv(nil), opts)
 	for _, face := range []string{"a", "b", "c"} {
-		values["face"] = face
+		values["face"] = modules.Result{Text: face}
 		if got := Assemble(toks, values, opts); got != face+" snapshot snapshot" {
 			t.Fatal(got)
 		}
 	}
 	if reads != 1 {
 		t.Fatalf("fetched %d times", reads)
+	}
+}
+
+func TestFieldReferences(t *testing.T) {
+	calls := 0
+	opts := Options{Lookup: func(name string) (modules.Module, bool) {
+		return modules.Module{Fetch: func(context.Context, modules.Env) (modules.Result, error) {
+			calls++
+			return modules.Result{Text: "text", Fields: map[string]string{"percent": "50%", "bar": "[#####-----]", "empty": "\n"}}, nil
+		}}, name == "mem"
+	}}
+	toks := mustParse(t, "{mem} · {mem:percent} · {mem:missing} · {mem:bar} · {mem:empty}")
+	if got := Render(context.Background(), toks, fixtureEnv(nil), opts); got != "text · 50% · [#####-----]" {
+		t.Fatal(got)
+	}
+	if calls != 1 {
+		t.Fatal(calls)
+	}
+	for _, bad := range []string{"{mem:}", "{mem:percent:extra}", "{mem:Upper}", "{mem:has_space}"} {
+		if _, err := Parse(bad); err == nil {
+			t.Fatal(bad)
+		}
+	}
+}
+func TestDebugTimeout(t *testing.T) {
+	release := make(chan struct{})
+	defer close(release)
+	var messages []string
+	opts := Options{Timeout: time.Millisecond, Debug: func(s string) { messages = append(messages, s) }, Lookup: func(name string) (modules.Module, bool) {
+		if name == "unknown" {
+			return modules.Module{}, false
+		}
+		return modules.Module{Fetch: func(context.Context, modules.Env) (modules.Result, error) { <-release; return modules.Result{}, nil }}, true
+	}}
+	Render(context.Background(), mustParse(t, "{slow} {unknown}"), fixtureEnv(nil), opts)
+	text := strings.Join(messages, "\n")
+	if !strings.Contains(text, "slow ") || !strings.Contains(text, "timeout") || !strings.Contains(text, "unknown unknown") || !strings.Contains(text, "total ") {
+		t.Fatal(text)
 	}
 }

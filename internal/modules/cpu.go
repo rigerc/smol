@@ -12,19 +12,19 @@ import (
 
 type cpuModule struct{}
 
-func (cpuModule) Fetch(_ context.Context, env Env) (string, error) {
+func (cpuModule) Fetch(_ context.Context, env Env) (Result, error) {
 	data, err := fs.ReadFile(env.FS, "proc/cpuinfo")
 	if err != nil {
-		return "", err
+		return Result{}, err
 	}
 	model, threads := parseCPUInfo(data)
 	if model == "" {
-		return "", errors.New("cpuinfo: no model name")
+		return Result{}, errors.New("cpuinfo: no model name")
 	}
 	if threads > 0 {
-		return fmt.Sprintf("%s (%d)", model, threads), nil
+		return coreResult("cpu", fmt.Sprintf("%s (%d)", model, threads), data, env), nil
 	}
-	return model, nil
+	return coreResult("cpu", model, data, env), nil
 }
 
 // parseCPUInfo returns the CPU model name and the number of logical CPUs.

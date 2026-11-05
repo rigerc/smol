@@ -4,6 +4,7 @@ import "context"
 
 type hostModule struct{}
 
-func (hostModule) Fetch(_ context.Context, env Env) (string, error) {
-	return readTrim(env.FS, "proc/sys/kernel/hostname")
+func (hostModule) Fetch(_ context.Context, env Env) (Result, error) {
+	text, err := readTrim(env.FS, "proc/sys/kernel/hostname")
+	return Result{Text: text}, err
 }

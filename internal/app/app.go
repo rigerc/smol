@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -23,6 +24,10 @@ import (
 
 // Runtime supplies the process inputs used by the command.
 type Runtime struct {
+	Now         func() time.Time
+	Statfs      func(string) (uint64, uint64, error)
+	Uname       func() (string, error)
+	Interfaces  func() ([]modules.Interface, error)
 	FS          fs.FS
 	Getenv      func(string) string
 	StdoutIsTTY bool
@@ -39,22 +44,26 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	fl := flag.NewFlagSet("smol", flag.ContinueOnError)
 	fl.SetOutput(stderr)
 	var (
-		format      = fl.String("format", "", "format template, e.g. \"{os} · {mem}\" (overrides config)")
-		colorFlag   = fl.String("color", "", "auto, always or never (overrides config)")
-		shellFlag   = fl.String("shell", "none", "wrap color escapes for: none, bash, zsh, fish")
-		configPath  = fl.String("config", "", "config file (default ~/.config/smol/config.toml)")
-		timeout     = fl.Duration("timeout", render.DefaultTimeout, "max time to wait for modules")
-		listMods    = fl.Bool("list-modules", false, "list available modules and exit")
-		checkConfig = fl.Bool("check-config", false, "validate the config file and exit")
-		printConfig = fl.Bool("print-default-config", false, "print the default config and exit")
-		facePreset  = fl.String("face-preset", "", "face preset (replaces a configured seed)")
-		faceSeed    = fl.String("face-seed", "", "deterministic face seed (replaces a configured preset)")
-		faceState   = fl.String("face-state", "", "face expression (default idle)")
-		listPresets = fl.Bool("list-face-presets", false, "list face preset identifiers and exit")
-		listStates  = fl.Bool("list-face-states", false, "list face expressions and exit")
-		animate     = fl.Bool("animate", false, "animate {face} on an interactive terminal")
-		duration    = fl.Duration("duration", 0, "animation duration; omit to run until interrupted")
-		showVersion = fl.Bool("version", false, "print version and exit")
+		format          = fl.String("format", "", "format template, e.g. \"{os} · {mem}\" (overrides config)")
+		colorFlag       = fl.String("color", "", "auto, always or never (overrides config)")
+		shellFlag       = fl.String("shell", "none", "wrap color escapes for: none, bash, zsh, fish")
+		configPath      = fl.String("config", "", "config file (default ~/.config/smol/config.toml)")
+		timeout         = fl.Duration("timeout", render.DefaultTimeout, "max time to wait for modules")
+		debug           = fl.Bool("debug", false, "write module timing diagnostics to stderr")
+		listFields      = fl.Bool("list-fields", false, "list available module fields")
+		listPaths       = fl.Bool("list-config-paths", false, "list config search paths")
+		effectiveConfig = fl.Bool("print-config", false, "print effective configuration")
+		listMods        = fl.Bool("list-modules", false, "list available modules and exit")
+		checkConfig     = fl.Bool("check-config", false, "validate the config file and exit")
+		printConfig     = fl.Bool("print-default-config", false, "print the default config and exit")
+		facePreset      = fl.String("face-preset", "", "face preset (replaces a configured seed)")
+		faceSeed        = fl.String("face-seed", "", "deterministic face seed (replaces a configured preset)")
+		faceState       = fl.String("face-state", "", "face expression (default idle)")
+		listPresets     = fl.Bool("list-face-presets", false, "list face preset identifiers and exit")
+		listStates      = fl.Bool("list-face-states", false, "list face expressions and exit")
+		animate         = fl.Bool("animate", false, "animate {face} on an interactive terminal")
+		duration        = fl.Duration("duration", 0, "animation duration; omit to run until interrupted")
+		showVersion     = fl.Bool("version", false, "print version and exit")
 	)
 	if err := fl.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -71,7 +80,19 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		report(stderr, "smol: timeout must be positive")
 		return 2
 	}
+	if *debug && *animate {
+		report(stderr, "smol: --debug and --animate are mutually exclusive")
+		return 2
+	}
 	switch {
+	case *listFields:
+		var lines []string
+		for _, m := range modules.All() {
+			for _, f := range m.Fields {
+				lines = append(lines, m.Name+"."+f.Name+": "+f.Description)
+			}
+		}
+		return writeLine(stdout, stderr, strings.Join(lines, "\n"))
 	case *listPresets:
 		return writeLine(stdout, stderr, strings.Join(face.Presets(), "\n"))
 	case *listStates:
@@ -79,18 +100,50 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	case *showVersion:
 		return writeLine(stdout, stderr, "smol "+version)
 	case *listMods:
-		return writeLine(stdout, stderr, strings.Join(modules.Names(), "\n"))
+		var lines []string
+		for _, name := range modules.Names() {
+			description := "Configured character"
+			if m, ok := modules.Get(name); ok {
+				description = m.Description
+			}
+			lines = append(lines, name+": "+description)
+		}
+		return writeLine(stdout, stderr, strings.Join(lines, "\n"))
 	case *printConfig:
 		return writeLine(stdout, stderr, strings.TrimSuffix(config.DefaultTOML, "\n"))
 	}
 
 	path, explicit := *configPath, *configPath != ""
-	if !explicit {
-		path = config.DefaultPath(getenv)
+	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
+	candidates := config.Search(getenv, exists)
+	if explicit {
+		candidates = []config.Candidate{{Path: path, Found: exists(path)}}
+	} else {
+		path = ""
+		for _, c := range candidates {
+			if c.Found {
+				path = c.Path
+				break
+			}
+		}
+	}
+	if *listPaths {
+		var lines []string
+		for _, c := range candidates {
+			line := c.Path
+			if c.Found {
+				line += " (found)"
+			}
+			lines = append(lines, line)
+		}
+		return writeLine(stdout, stderr, strings.Join(lines, "\n"))
 	}
 	cfg, cfgErr := config.Load(path, explicit)
 
 	if *checkConfig {
+		if *debug {
+			report(stderr, "smol: config "+path)
+		}
 		if cfgErr != nil {
 			report(stderr, "smol: "+cfgErr.Error())
 			return 1
@@ -145,6 +198,14 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		return 2
 	}
 
+	if *effectiveConfig {
+		text, err := config.TOML(cfg)
+		if err != nil {
+			report(stderr, "smol: "+err.Error())
+			return 1
+		}
+		return writeLine(stdout, stderr, text)
+	}
 	shell, err := render.ParseShell(*shellFlag)
 	if err != nil {
 		report(stderr, "smol: "+err.Error())
@@ -160,7 +221,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		report(stderr, "smol: --animate requires {face} and --shell none")
 		return 2
 	}
-	env := modules.Env{FS: runtime.FS, Getenv: getenv}
+	env := modules.Env{FS: runtime.FS, Getenv: getenv, Now: runtime.Now, Statfs: runtime.Statfs, Uname: runtime.Uname, Interfaces: runtime.Interfaces, Display: &cfg.Display, Options: cfg.Modules.Options()}
 	opts := render.Options{
 		Color:   useColor(cfg.Color, getenv, stdoutIsTTY),
 		Shell:   shell,
@@ -176,16 +237,21 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		}
 		opts.Lookup = func(name string) (modules.Module, bool) {
 			if name == "face" {
-				return modules.Module{Fetch: func(context.Context, modules.Env) (string, error) { return animation.Still, nil }}, true
+				return modules.Module{Fetch: func(context.Context, modules.Env) (modules.Result, error) {
+					return modules.Result{Text: animation.Still}, nil
+				}}, true
 			}
 			return modules.Get(name)
 		}
+	}
+	if *debug {
+		opts.Debug = func(message string) { report(stderr, "smol: "+message) }
 	}
 	values := render.Fetch(ctx, toks, env, opts)
 	// Face generation is local and complete already; it must not disappear when
 	// the shared system-module timeout expires.
 	if hasFace {
-		values["face"] = animation.Still
+		values["face"] = modules.Result{Text: animation.Still}
 	}
 	line := render.Assemble(toks, values, opts)
 	if !*animate || !stdoutIsTTY || getenv("TERM") == "dumb" {
@@ -195,7 +261,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	plain := opts
 	plain.Color = false
 	for i, frame := range animation.Frames {
-		values["face"] = frame.Text
+		values["face"] = modules.Result{Text: frame.Text}
 		frames[i] = playback.Frame{
 			Text:     render.Assemble(toks, values, opts),
 			Width:    faceroll.CellWidth(render.Assemble(toks, values, plain)),
