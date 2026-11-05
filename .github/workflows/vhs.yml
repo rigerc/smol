@@ -1,0 +1,58 @@
+name: Record CLI demo with VHS
+
+# Template: scripts/install.py populates the CLI installation step.
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      TZ: UTC
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+      - name: Install CLI under test
+        shell: bash
+        run: |
+          set -euo pipefail
+          go build -trimpath -o "$RUNNER_TEMP/smol" ./cmd/app && echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Install VHS
+        uses: charmbracelet/vhs-action@60ed28058cc5ec1ac4edbf3a6380a1ea17b89c42 # v2.1.1
+        with:
+          version: v0.12.1
+      - name: Capture screenshots and videos
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd demos/vhs
+          mkdir -p outputs/screens
+          vhs demo.tape
+          test -s outputs/demo.gif
+          test -s outputs/demo.mp4
+          ffmpeg -v error -i outputs/demo.mp4 -frames:v 1 -update 1 outputs/screens/01-demo.png
+          test -s outputs/screens/01-demo.png
+          ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 outputs/demo.mp4
+          file --mime-type outputs/screens/01-demo.png | grep -q 'image/png'
+      - name: Upload VHS evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vhs-cli-demo-${{ github.run_id }}
+          path: demos/vhs/outputs/
+          if-no-files-found: warn
+          retention-days: 7
