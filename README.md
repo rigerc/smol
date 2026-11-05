@@ -7,6 +7,12 @@ $ smol
 Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB
 ```
 
+![smol demo](demos/vhs/demo.gif)
+
+The demo above is recorded with [VHS](https://github.com/charmbracelet/vhs) in CI
+from [demos/vhs/demo.tape](demos/vhs/demo.tape); the gif is committed when the
+tape changes (`vhs demos/vhs/demo.tape`).
+
 ## Build and use
 
 Requires Go **1.26.10**, GNU Make, and Linux for live system information.
