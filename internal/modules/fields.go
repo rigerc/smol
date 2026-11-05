@@ -3,6 +3,7 @@ package modules
 import (
 	"io/fs"
 	"math"
+	"math/bits"
 	"runtime"
 	"strconv"
 	"strings"
@@ -110,17 +111,26 @@ func cpuTemperature(env Env) (float64, bool) {
 func memoryResult(info map[string]uint64, env Env) Result {
 	o := display(env)
 	total := info["MemTotal"]
-	avail := info["MemAvailable"]
-	if avail == 0 || avail >= total {
-		avail = info["MemFree"] + info["Buffers"] + info["Cached"] + info["SReclaimable"]
-		if info["Shmem"] < avail {
-			avail -= info["Shmem"]
-		} else {
+	avail, ok := info["MemAvailable"]
+	if !ok || avail > total {
+		low, high := uint64(0), uint64(0)
+		for _, key := range []string{"MemFree", "Buffers", "Cached", "SReclaimable"} {
+			sum, carry := bits.Add64(low, info[key], 0)
+			low = sum
+			high += carry
+		}
+		difference, borrow := bits.Sub64(low, info["Shmem"], 0)
+		switch {
+		case high < borrow:
 			avail = 0
+		case high > borrow:
+			avail = total
+		default:
+			avail = min(difference, total)
 		}
 	}
 	avail = min(avail, total)
-	r := sizeResult((total-avail)*1024, info["MemFree"]*1024, total*1024, env)
+	r := sizeResult((total-avail)*1024, min(info["MemFree"], total)*1024, total*1024, env)
 	r.Fields["available"] = format.Size(avail*1024, o.Size)
 	return r
 }

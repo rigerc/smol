@@ -67,7 +67,7 @@ manager="apk"
 		t.Fatal("explicit false lost")
 	}
 	o := c.Modules.Options()
-	if o.Mount != "/home" || o.Manager != "apk" || o.Family != "ipv6" || o.Interface != "eth0" || o.BatteryDevice != "BAT1" || o.TimeFormat != "Mon 15:04" {
+	if o.Disk.Mount != "/home" || o.Packages.Manager != "apk" || o.LocalIP.Family != "ipv6" || o.LocalIP.Interface != "eth0" || o.Battery.Device != "BAT1" || o.Time.Format != "Mon 15:04" {
 		t.Fatal(o)
 	}
 	printed, err = TOML(Default())
@@ -101,5 +101,41 @@ func TestPresetsAndRegisteredFields(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
+	}
+}
+
+func TestModuleDefaults(t *testing.T) {
+	for _, body := range []string{"", "[modules.disk]\n[modules.time]\n[modules.battery]\n[modules.localip]\n[modules.packages]"} {
+		c, err := Parse("defaults", []byte(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c.Modules.Disk == nil || c.Modules.Time == nil || c.Modules.Battery == nil || c.Modules.LocalIP == nil || c.Modules.Packages == nil {
+			t.Fatal(c.Modules)
+		}
+		if c.Modules.Options() != modules.DefaultOptions() {
+			t.Fatal(c.Modules.Options())
+		}
+		printed, err := TOML(c)
+		if err != nil || strings.Contains(printed, "[modules.disk]") {
+			t.Fatal(printed, err)
+		}
+	}
+	c, err := Parse("partial", []byte("[modules.localip]\ninterface='eth0'"))
+	if err != nil || c.Modules.LocalIP.Family != "ipv4" {
+		t.Fatal(c, err)
+	}
+	a, b := Default(), Default()
+	a.Modules.Disk.Mount = "/other"
+	if b.Modules.Disk.Mount != "/" {
+		t.Fatal("shared default pointers")
+	}
+	for _, body := range []string{"[modules.disk]\nmount=''", "[modules.time]\nformat=''", "[modules.localip]\nfamily=''", "[modules.packages]\nmanager=''"} {
+		if _, err := Parse("empty", []byte(body)); err == nil {
+			t.Fatal(body)
+		}
+	}
+	if _, err := Parse("selectors", []byte("[modules.battery]\ndevice=''\n[modules.localip]\ninterface=''")); err != nil {
+		t.Fatal(err)
 	}
 }

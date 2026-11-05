@@ -1,7 +1,9 @@
-package app
+package main
 
 import (
 	"fmt"
+	"github.com/rigerc/smol/internal/app"
+	"math"
 	"net"
 	"strings"
 	"syscall"
@@ -11,18 +13,14 @@ import (
 )
 
 // System supplies production hooks at the application boundary.
-func System(runtime Runtime) Runtime {
+func system(runtime app.Runtime) app.Runtime {
 	runtime.Now = time.Now
-	runtime.Statfs = func(path string) (uint64, uint64, error) {
+	runtime.Statfs = func(path string) (modules.DiskStats, error) {
 		var stat syscall.Statfs_t
 		if err := syscall.Statfs(path, &stat); err != nil {
-			return 0, 0, err
+			return modules.DiskStats{}, err
 		}
-		if stat.Bsize <= 0 {
-			return 0, 0, fmt.Errorf("statfs: invalid block size %d", stat.Bsize)
-		}
-		blockSize := uint64(stat.Bsize)
-		return stat.Blocks * blockSize, stat.Bavail * blockSize, nil
+		return diskStats(stat)
 	}
 	runtime.Uname = func() (string, error) {
 		var name syscall.Utsname
@@ -69,4 +67,15 @@ func System(runtime Runtime) Runtime {
 		return out, nil
 	}
 	return runtime
+}
+
+func diskStats(stat syscall.Statfs_t) (modules.DiskStats, error) {
+	if stat.Bsize <= 0 {
+		return modules.DiskStats{}, fmt.Errorf("statfs: invalid block size %d", stat.Bsize)
+	}
+	blockSize := uint64(stat.Bsize)
+	if stat.Blocks > math.MaxUint64/blockSize || stat.Bfree > math.MaxUint64/blockSize || stat.Bavail > math.MaxUint64/blockSize {
+		return modules.DiskStats{}, fmt.Errorf("statfs: byte count overflow")
+	}
+	return modules.DiskStats{Total: stat.Blocks * blockSize, Free: stat.Bfree * blockSize, Available: stat.Bavail * blockSize}, nil
 }

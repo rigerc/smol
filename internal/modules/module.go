@@ -25,11 +25,11 @@ type Env struct {
 	FS         fs.FS
 	Getenv     func(string) string
 	Now        func() time.Time
-	Statfs     func(string) (uint64, uint64, error)
+	Statfs     func(string) (DiskStats, error)
 	Uname      func() (string, error)
 	Interfaces func() ([]Interface, error)
 	Display    *format.Options
-	Options    Options
+	Options    *Options
 }
 
 // Interface is an address snapshot without platform dependencies.
@@ -37,9 +37,6 @@ type Interface struct {
 	Name       string
 	IPv4, IPv6 []string
 }
-
-// Options contains per-module detection settings.
-type Options struct{ Mount, TimeFormat, BatteryDevice, Interface, Family, Manager string }
 
 // Field describes a named result field.
 type Field struct{ Name, Description string }

@@ -42,7 +42,7 @@ func run() int {
 	resized := make(chan os.Signal, 1)
 	signal.Notify(resized, syscall.SIGWINCH)
 	defer signal.Stop(resized)
-	code := app.Run(ctx, os.Args[1:], os.Stdout, os.Stderr, app.System(app.Runtime{
+	code := app.Run(ctx, os.Args[1:], os.Stdout, os.Stderr, system(app.Runtime{
 		FS: os.DirFS("/"), Getenv: os.Getenv, StdoutIsTTY: terminalColumns(os.Stdout) > 0, Version: version,
 		Playback: playback.Options{Columns: func() int { return terminalColumns(os.Stdout) }, Resize: resized},
 	}))

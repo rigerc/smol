@@ -16,7 +16,7 @@ import (
 
 func extraSpecs() []Module {
 	specs := []struct{ name, desc, fields string }{
-		{"swap", "Swap usage", "used free total percent bar"}, {"disk", "Filesystem usage", "used free total percent bar"}, {"battery", "Battery charge", "percent status"}, {"terminal", "Terminal emulator", ""}, {"desktop", "Desktop session", "wm session"}, {"virt", "Virtualization environment", ""}, {"time", "Local time", ""}, {"processes", "Process count", ""}, {"init", "Init process", ""}, {"machine", "Machine model", "vendor board bios"}, {"localip", "Local IP address", "ipv6 interface"}, {"packages", "Installed package count", ""},
+		{"swap", "Swap usage", "used free total percent bar"}, {"disk", "Filesystem usage", "used free available total percent bar"}, {"battery", "Battery charge", "percent status"}, {"terminal", "Terminal emulator", ""}, {"desktop", "Desktop session", "wm session"}, {"virt", "Virtualization environment", ""}, {"time", "Local time", ""}, {"processes", "Process count", ""}, {"init", "Init process", ""}, {"machine", "Machine model", "vendor board bios"}, {"localip", "Local IP address", "ipv6 interface"}, {"packages", "Installed package count", ""},
 	}
 	out := make([]Module, 0, len(specs))
 	for _, s := range specs {
@@ -48,16 +48,24 @@ func extraFetch(ctx context.Context, name string, env Env) (Result, error) {
 		if env.Statfs == nil {
 			return Result{}, errors.New("disk: missing Statfs hook")
 		}
-		mount := env.Options.Mount
-		if mount == "" {
-			mount = "/"
-		}
-		total, free, err := env.Statfs(mount)
+		stats, err := env.Statfs(options(env).Disk.Mount)
 		if err != nil {
 			return Result{}, err
 		}
-		free = min(free, total)
-		return sizeResult(total-free, free, total, env), nil
+		if stats.Free > stats.Total || stats.Available > stats.Free {
+			return Result{}, errors.New("disk: inconsistent filesystem stats")
+		}
+		used := stats.Total - stats.Free
+		r := sizeResult(used, stats.Free, stats.Total, env)
+		r.Fields["available"] = format.Size(stats.Available, display(env).Size)
+		denominator := used + stats.Available
+		if denominator == 0 {
+			delete(r.Fields, "percent")
+			delete(r.Fields, "bar")
+		} else {
+			r.Fields["percent"], r.Fields["bar"] = format.Percent(float64(used)/float64(denominator)*100, display(env).Percent)
+		}
+		return r, nil
 	case "battery":
 		return battery(env)
 	case "terminal":
@@ -70,10 +78,8 @@ func extraFetch(ctx context.Context, name string, env Env) (Result, error) {
 		if env.Now == nil {
 			return Result{}, errors.New("time: missing Now hook")
 		}
-		layout := env.Options.TimeFormat
-		if layout == "" {
-			layout = "15:04"
-		}
+		layout := options(env).Time.Format
+
 		return textResult(env.Now().Format(layout))
 	case "processes":
 		entries, err := fs.ReadDir(env.FS, "proc")
@@ -107,8 +113,8 @@ func textResult(text string) (Result, error) {
 }
 func battery(env Env) (Result, error) {
 	paths := []string{}
-	if env.Options.BatteryDevice != "" {
-		paths = append(paths, "sys/class/power_supply/"+env.Options.BatteryDevice)
+	if options(env).Battery.Device != "" {
+		paths = append(paths, "sys/class/power_supply/"+options(env).Battery.Device)
 	} else {
 		paths, _ = fs.Glob(env.FS, "sys/class/power_supply/*")
 	}
@@ -233,7 +239,7 @@ func localIP(env Env) (Result, error) {
 		return Result{}, err
 	}
 	for _, e := range entries {
-		if e.Name == "lo" || env.Options.Interface != "" && env.Options.Interface != e.Name {
+		if e.Name == "lo" || options(env).LocalIP.Interface != "" && options(env).LocalIP.Interface != e.Name {
 			continue
 		}
 		ip := ""
@@ -244,7 +250,7 @@ func localIP(env Env) (Result, error) {
 		if len(e.IPv6) > 0 {
 			v6 = e.IPv6[0]
 		}
-		if env.Options.Family == "ipv6" {
+		if options(env).LocalIP.Family == "ipv6" {
 			ip = v6
 		}
 		if ip != "" {
@@ -254,8 +260,8 @@ func localIP(env Env) (Result, error) {
 	return Result{}, ErrUnavailable
 }
 func packages(ctx context.Context, env Env) (Result, error) {
-	managers := []string{env.Options.Manager}
-	if managers[0] == "" || managers[0] == "auto" {
+	managers := []string{options(env).Packages.Manager}
+	if managers[0] == "auto" {
 		managers = []string{"dpkg", "pacman", "apk"}
 	}
 	for _, manager := range managers {

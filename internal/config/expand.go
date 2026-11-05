@@ -19,72 +19,66 @@ type ModulesConfig struct {
 }
 
 // DiskConfig selects the filesystem mount.
-type DiskConfig struct {
-	Mount string `toml:"mount"`
-}
+type DiskConfig = modules.DiskOptions
 
 // TimeConfig selects a Go time layout.
-type TimeConfig struct {
-	Format string `toml:"format"`
-}
+type TimeConfig = modules.TimeOptions
 
 // BatteryConfig selects a power supply entry.
-type BatteryConfig struct {
-	Device string `toml:"device"`
-}
+type BatteryConfig = modules.BatteryOptions
 
 // LocalIPConfig selects an interface and address family.
-type LocalIPConfig struct {
-	Interface string `toml:"interface"`
-	Family    string `toml:"family"`
-}
+type LocalIPConfig = modules.LocalIPOptions
 
 // PackagesConfig selects a file-based package database.
-type PackagesConfig struct {
-	Manager string `toml:"manager"`
+type PackagesConfig = modules.PackagesOptions
+
+func defaultModules() ModulesConfig {
+	o := modules.DefaultOptions()
+	return ModulesConfig{Disk: &o.Disk, Time: &o.Time, Battery: &o.Battery, LocalIP: &o.LocalIP, Packages: &o.Packages}
 }
 
-// Options converts configuration to module inputs.
+// Options copies configuration to independent module inputs.
 func (m ModulesConfig) Options() modules.Options {
-	o := modules.Options{Mount: "/", TimeFormat: "15:04", Family: "ipv4", Manager: "auto"}
-	if m.Disk != nil && m.Disk.Mount != "" {
-		o.Mount = m.Disk.Mount
+	o := modules.DefaultOptions()
+	if m.Disk != nil {
+		o.Disk = *m.Disk
 	}
-	if m.Time != nil && m.Time.Format != "" {
-		o.TimeFormat = m.Time.Format
+	if m.Time != nil {
+		o.Time = *m.Time
 	}
 	if m.Battery != nil {
-		o.BatteryDevice = m.Battery.Device
+		o.Battery = *m.Battery
 	}
 	if m.LocalIP != nil {
-		o.Interface = m.LocalIP.Interface
-		if m.LocalIP.Family != "" {
-			o.Family = m.LocalIP.Family
-		}
+		o.LocalIP = *m.LocalIP
 	}
-	if m.Packages != nil && m.Packages.Manager != "" {
-		o.Manager = m.Packages.Manager
+	if m.Packages != nil {
+		o.Packages = *m.Packages
 	}
 	return o
 }
 func (m ModulesConfig) validate() error {
 	o := m.Options()
-	if !filepath.IsAbs(o.Mount) {
+	if !filepath.IsAbs(o.Disk.Mount) {
 		return fmt.Errorf("modules.disk.mount: must be absolute")
 	}
-	if !modules.ValidDevice(o.BatteryDevice) {
+	if o.Time.Format == "" {
+		return fmt.Errorf("modules.time.format: must not be empty")
+	}
+	if !modules.ValidDevice(o.Battery.Device) {
 		return fmt.Errorf("modules.battery.device: must name one power supply entry")
 	}
-	if o.Family != "ipv4" && o.Family != "ipv6" {
+	if o.LocalIP.Family != "ipv4" && o.LocalIP.Family != "ipv6" {
 		return fmt.Errorf("modules.localip.family: expected ipv4 or ipv6")
 	}
-	switch o.Manager {
+	switch o.Packages.Manager {
 	case "auto", "dpkg", "pacman", "apk":
 		return nil
 	case "rpm":
 		return fmt.Errorf("modules.packages.manager: rpm requires a database library and is unsupported")
 	default:
-		return fmt.Errorf("modules.packages.manager: unknown manager %q", o.Manager)
+		return fmt.Errorf("modules.packages.manager: unknown manager %q", o.Packages.Manager)
 	}
 }
 
@@ -117,21 +111,21 @@ func Search(getenv func(string) string, exists func(string) bool) []Candidate {
 
 // TOML returns an effective configuration in deterministic key order.
 func TOML(c Config) (string, error) {
-	defaults := ModulesConfig{}.Options()
+	defaults := modules.DefaultOptions()
 	o := c.Modules.Options()
-	if o.Mount == defaults.Mount {
+	if o.Disk == defaults.Disk {
 		c.Modules.Disk = nil
 	}
-	if o.TimeFormat == defaults.TimeFormat {
+	if o.Time == defaults.Time {
 		c.Modules.Time = nil
 	}
-	if o.BatteryDevice == "" {
+	if o.Battery == defaults.Battery {
 		c.Modules.Battery = nil
 	}
-	if o.Interface == "" && o.Family == defaults.Family {
+	if o.LocalIP == defaults.LocalIP {
 		c.Modules.LocalIP = nil
 	}
-	if o.Manager == defaults.Manager {
+	if o.Packages == defaults.Packages {
 		c.Modules.Packages = nil
 	}
 	data, err := toml.Marshal(c)

@@ -25,7 +25,7 @@ import (
 // Runtime supplies the process inputs used by the command.
 type Runtime struct {
 	Now         func() time.Time
-	Statfs      func(string) (uint64, uint64, error)
+	Statfs      func(string) (modules.DiskStats, error)
 	Uname       func() (string, error)
 	Interfaces  func() ([]modules.Interface, error)
 	FS          fs.FS
@@ -221,7 +221,8 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		report(stderr, "smol: --animate requires {face} and --shell none")
 		return 2
 	}
-	env := modules.Env{FS: runtime.FS, Getenv: getenv, Now: runtime.Now, Statfs: runtime.Statfs, Uname: runtime.Uname, Interfaces: runtime.Interfaces, Display: &cfg.Display, Options: cfg.Modules.Options()}
+	moduleOptions := cfg.Modules.Options()
+	env := modules.Env{FS: runtime.FS, Getenv: getenv, Now: runtime.Now, Statfs: runtime.Statfs, Uname: runtime.Uname, Interfaces: runtime.Interfaces, Display: &cfg.Display, Options: &moduleOptions}
 	opts := render.Options{
 		Color:   useColor(cfg.Color, getenv, stdoutIsTTY),
 		Shell:   shell,

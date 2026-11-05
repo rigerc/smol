@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -19,7 +20,7 @@ func (memModule) Fetch(_ context.Context, env Env) (Result, error) {
 	}
 	info := parseMeminfo(data)
 	total, ok := info["MemTotal"]
-	if !ok || total == 0 {
+	if !ok || total == 0 || total > math.MaxUint64/1024 {
 		return Result{}, errors.New("meminfo: MemTotal missing")
 	}
 	return memoryResult(info, env), nil

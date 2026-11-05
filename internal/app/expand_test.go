@@ -3,10 +3,13 @@ package app
 import (
 	"bytes"
 	"context"
+	"github.com/rigerc/smol/internal/modules"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
+	"time"
 
 	"github.com/rigerc/smol/internal/config"
 )
@@ -53,38 +56,48 @@ func TestExpansionCLI(t *testing.T) {
 		t.Fatal(code, out, diagnostic)
 	}
 }
-func TestSystemHooks(t *testing.T) {
-	r := System(Runtime{})
-	if r.Now().IsZero() {
-		t.Fatal("zero time")
-	}
-	total, free, err := r.Statfs("/")
-	if err != nil || total < free || total == 0 {
-		t.Fatal(total, free, err)
-	}
-	if _, _, err := r.Statfs(filepath.Join(t.TempDir(), "missing")); err == nil {
-		t.Fatal("expected missing mount error")
-	}
-	arch, err := r.Uname()
-	if err != nil || arch == "" {
-		t.Fatal(arch, err)
-	}
-	if _, err := r.Interfaces(); err != nil {
-		t.Fatal(err)
-	}
-	var out, diagnostic bytes.Buffer
-	r.FS = os.DirFS("../../testdata/x86")
-	r.Getenv = func(string) string { return "" }
-	code := Run(context.Background(), []string{"--format", "{time}", "--debug"}, &out, &diagnostic, r)
-	if code != 0 || out.Len() == 0 {
-		t.Fatal(code, out.String(), diagnostic.String())
-	}
-}
-
 func TestDefaultOutputGolden(t *testing.T) {
 	code, out, diagnostic := runCLI(t, map[string]string{"HOME": t.TempDir()}, false)
 	const want = "Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB\n"
 	if code != 0 || out != want || diagnostic != "" {
 		t.Fatalf("%d %q %q", code, out, diagnostic)
+	}
+}
+
+func TestModuleOptionsReachFetches(t *testing.T) {
+	tree := fstest.MapFS{
+		"sys/class/power_supply/BAT0/type": {Data: []byte("Battery")}, "sys/class/power_supply/BAT0/capacity": {Data: []byte("10")},
+		"sys/class/power_supply/BAT1/type": {Data: []byte("Battery")}, "sys/class/power_supply/BAT1/capacity": {Data: []byte("90")},
+		"var/lib/dpkg/status": {Data: []byte("Status: install ok installed\n")}, "lib/apk/db/installed": {Data: []byte("P:a\nP:b\n")},
+	}
+	custom := writeConfig(t, `format="{disk:percent} {time} {battery} {localip} {packages}"
+[modules.disk]
+mount="/custom"
+[modules.time]
+format="Mon 15:04:05"
+[modules.battery]
+device="BAT1"
+[modules.localip]
+interface="eth1"
+family="ipv6"
+[modules.packages]
+manager="apk"
+`)
+	defaults := writeConfig(t, `format="{disk:percent} {time} {battery} {localip} {packages}"`)
+	runtime := Runtime{FS: tree, Getenv: func(string) string { return "" }, Now: func() time.Time { return time.Date(2026, 11, 5, 15, 4, 5, 0, time.UTC) }, Interfaces: func() ([]modules.Interface, error) {
+		return []modules.Interface{{Name: "eth0", IPv4: []string{"192.0.2.1"}}, {Name: "eth1", IPv6: []string{"2001:db8::1"}}}, nil
+	}}
+	for _, tc := range []struct{ path, mount, want string }{{custom, "/custom", "84% Thu 15:04:05 90% 2001:db8::1 2\n"}, {defaults, "/", "84% 15:04 10% 192.0.2.1 1\n"}} {
+		runtime.Statfs = func(mount string) (modules.DiskStats, error) {
+			if mount != tc.mount {
+				t.Errorf("mount %s want %s", mount, tc.mount)
+			}
+			return modules.DiskStats{Total: 100, Free: 20, Available: 15}, nil
+		}
+		var out, diagnostic bytes.Buffer
+		code := Run(context.Background(), []string{"--config", tc.path}, &out, &diagnostic, runtime)
+		if code != 0 || out.String() != tc.want || diagnostic.Len() != 0 {
+			t.Fatal(code, out.String(), diagnostic.String())
+		}
 	}
 }

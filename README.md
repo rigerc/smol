@@ -35,7 +35,8 @@ requests. The default format is unchanged. Additional modules are opt-in:
 | `load` | Three load averages | `percent` (one-minute load / logical CPUs) |
 | `host`, `user`, `shell` | Hostname, user, shell | — |
 | `face` | Configured asciimoji | — |
-| `swap`, `disk` | Used / total | `used`, `free`, `total`, `percent`, `bar` |
+| `swap` | Used / total | `used`, `free`, `total`, `percent`, `bar` |
+| `disk` | Used / total | `used`, `free`, `available`, `total`, `percent`, `bar` |
 | `battery` | Charge percentage | `percent`, `status` |
 | `terminal` | Terminal emulator | — |
 | `desktop` | Desktop name | `wm`, `session` |
@@ -138,7 +139,7 @@ unit = "c" # c | f | k
 digits = 0 # 0..6
 
 [modules.disk]
-mount = "/" # free space available to unprivileged users
+mount = "/" # used = total - all free blocks
 [modules.time]
 format = "15:04" # Go layout; also "15:04:05" or "Mon 15:04"
 [modules.battery]
@@ -149,6 +150,10 @@ family = "ipv4" # ipv4 | ipv6
 [modules.packages]
 manager = "auto" # auto | dpkg | pacman | apk
 ```
+
+Disk `free` includes reserved blocks; `available` is unprivileged availability.
+Disk percentage uses `used / (used + available)`; a zero denominator omits
+percentage and bar fields while preserving size fields.
 
 `--debug` writes module timings and failures plus total fetch time to stderr;
 stdout stays unchanged. Without `--debug`, normal runs keep stderr empty.
@@ -222,7 +227,7 @@ The Makefile selects Go 1.26.10. `make check` runs formatting checks, vet,
 the pinned custom golangci-lint **v2.10.1** with anti-slop-go **v1.3.0**,
 race-enabled tests, an **80%** internal statement coverage gate, and a build.
 With Go 1.26.10 on Linux amd64, `go build -trimpath` measured 4,038,499 bytes
-before the expansion and 4,447,904 bytes after it (+409,405 bytes, about 10.1%).
+before the expansion and 4,453,166 bytes after it (+414,667 bytes, about 10.3%).
 This includes the opt-in local-IP support and its standard-library `net` import;
 no dependencies were added.
 

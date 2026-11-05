@@ -38,6 +38,7 @@ func Default() Config {
 	cfg := Config{
 		Format:  DefaultFormat,
 		Display: format.Default(),
+		Modules: defaultModules(),
 		Face:    face.Options{State: "idle"},
 		Color:   "auto",
 		Style: map[string]render.Style{
