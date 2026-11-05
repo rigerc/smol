@@ -1,0 +1,2388 @@
+{
+  "schema_version": "1.0.0",
+  "ui": {
+    "components": [
+      {
+        "id": "startup.content",
+        "screen": "startup",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "context"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "startup.pending",
+        "screen": "startup",
+        "node_id": "pending",
+        "kind": "spinner",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:transient stderr status; static text in basic mode"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "destination.content",
+        "screen": "destination",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "context"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "destination.question",
+        "screen": "destination",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "destination.accept",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "preset.content",
+        "screen": "preset",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "preset.question",
+        "screen": "preset",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "preset.submit",
+          "back.preset",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "face-mode.content",
+        "screen": "face-mode",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "face-mode.question",
+        "screen": "face-mode",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "face.mode",
+          "back.face",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "face-identity.content",
+        "screen": "face-identity",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "face_options"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "face-identity.question",
+        "screen": "face-identity",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "face.identity",
+          "back.identity",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "face-pending.content",
+        "screen": "face-pending",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "face_sample"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "face-pending.pending",
+        "screen": "face-pending",
+        "node_id": "pending",
+        "kind": "spinner",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:transient stderr status; static text in basic mode"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "face-sample.content",
+        "screen": "face-sample",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "face_sample"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "face-sample.question",
+        "screen": "face-sample",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "face.accept",
+          "face.reroll",
+          "back.sample",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "expression.content",
+        "screen": "expression",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "face_options"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "expression.question",
+        "screen": "expression",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "face.expression",
+          "back.expression",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "modules.content",
+        "screen": "modules",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "modules.question",
+        "screen": "modules",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "modules.submit",
+          "modules.toggle",
+          "back.modules",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "order.content",
+        "screen": "order",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "order.question",
+        "screen": "order",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "order.submit",
+          "back.order",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "color.content",
+        "screen": "color",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "color.question",
+        "screen": "color",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "color.submit",
+          "back.color",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "styles.content",
+        "screen": "styles",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "styles.question",
+        "screen": "styles",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "style.done",
+          "style.update",
+          "back.styles",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "shell.content",
+        "screen": "shell",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "shell.question",
+        "screen": "shell",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "shell.submit",
+          "back.shell",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "preparing.content",
+        "screen": "preparing",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "preparing.pending",
+        "screen": "preparing",
+        "node_id": "pending",
+        "kind": "spinner",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:transient stderr status; static text in basic mode"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "review.content",
+        "screen": "review",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "review_data"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "review.question",
+        "screen": "review",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "review.save",
+          "review.face",
+          "review.modules",
+          "review.colors",
+          "review.shell",
+          "back.review",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "confirm.content",
+        "screen": "confirm",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "context"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "confirm.question",
+        "screen": "confirm",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "confirm.submit",
+          "back.confirm",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "saving.content",
+        "screen": "saving",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "saving.pending",
+        "screen": "saving",
+        "node_id": "pending",
+        "kind": "spinner",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:transient stderr status; static text in basic mode"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "finishing.content",
+        "screen": "finishing",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "finishing.pending",
+        "screen": "finishing",
+        "node_id": "pending",
+        "kind": "spinner",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:transient stderr status; static text in basic mode"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "load-error.content",
+        "screen": "load-error",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "error_text"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "load-error.question",
+        "screen": "load-error",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "retry.inspect",
+          "wizard.abort",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "face-error.content",
+        "screen": "face-error",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "error_text"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "face-error.question",
+        "screen": "face-error",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "retry.face",
+          "back.sample",
+          "wizard.abort",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "preview-error.content",
+        "screen": "preview-error",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "error_text"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "preview-error.question",
+        "screen": "preview-error",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "retry.preview",
+          "review.modules",
+          "review.face",
+          "wizard.abort",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "save-error.content",
+        "screen": "save-error",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "error_text"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "save-error.question",
+        "screen": "save-error",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "retry.save",
+          "wizard.abort",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "conflict.content",
+        "screen": "conflict",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "error_text"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "conflict.question",
+        "screen": "conflict",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "conflict.refresh",
+          "wizard.abort",
+          "wizard.cancel"
+        ]
+      },
+      {
+        "id": "refreshing.content",
+        "screen": "refreshing",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "context"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "refreshing.pending",
+        "screen": "refreshing",
+        "node_id": "pending",
+        "kind": "spinner",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:transient stderr status; static text in basic mode"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "result.content",
+        "screen": "result",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "result_text"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stdout"
+          }
+        ],
+        "emits": []
+      }
+    ]
+  },
+  "state": {
+    "fields": [
+      {
+        "name": "context",
+        "type": "Context?",
+        "initial": null,
+        "scope": "feature",
+        "description": "Inspected target and capability/environment snapshot; refreshed only by explicit commands."
+      },
+      {
+        "name": "destination",
+        "type": "string",
+        "initial": "",
+        "scope": "feature",
+        "description": "Resolved absolute path; fixed for the session; rerun --config to change."
+      },
+      {
+        "name": "preset",
+        "type": "string",
+        "initial": "default",
+        "scope": "feature",
+        "description": "Chosen configuration basis."
+      },
+      {
+        "name": "draft",
+        "type": "Config?",
+        "initial": null,
+        "scope": "feature",
+        "description": "Editable complete config, including preserved face and style settings."
+      },
+      {
+        "name": "selected_modules",
+        "type": "string[]",
+        "initial": [],
+        "scope": "feature",
+        "description": "Unique ordered enabled IDs; face appended on enabling if not already present."
+      },
+      {
+        "name": "face_enabled",
+        "type": "bool",
+        "initial": false,
+        "scope": "feature",
+        "description": "Whether format references face; disabling preserves inactive face options."
+      },
+      {
+        "name": "face_mode",
+        "type": "string",
+        "initial": "seed",
+        "scope": "feature",
+        "description": "disabled, preset, seed, random-once, random-each-run."
+      },
+      {
+        "name": "identity",
+        "type": "string",
+        "initial": "smol",
+        "scope": "feature",
+        "description": "Selected preset or typed seed."
+      },
+      {
+        "name": "sample_seed",
+        "type": "string?",
+        "initial": null,
+        "scope": "feature",
+        "description": "Ephemeral preview seed; persisted only for random-once."
+      },
+      {
+        "name": "face_sample",
+        "type": "string",
+        "initial": "",
+        "scope": "feature",
+        "description": "Static sample matching current identity and expression."
+      },
+      {
+        "name": "format_dirty",
+        "type": "bool",
+        "initial": false,
+        "scope": "feature",
+        "description": "Selection/order edits require normalized token-join format; otherwise preserve custom literals."
+      },
+      {
+        "name": "shell_choice",
+        "type": "string",
+        "initial": "none",
+        "scope": "feature",
+        "description": "bash, zsh, fish, none; detected SHELL is only a suggestion."
+      },
+      {
+        "name": "review_data",
+        "type": "Review?",
+        "initial": null,
+        "scope": "feature",
+        "description": "Exact bytes and preview; invalidated by edits."
+      },
+      {
+        "name": "authorized",
+        "type": "bool",
+        "initial": false,
+        "scope": "feature",
+        "description": "One-use consent bound to reviewed bytes and target fingerprint."
+      },
+      {
+        "name": "committed",
+        "type": "bool",
+        "initial": false,
+        "scope": "feature",
+        "description": "True only after atomic publication; cannot transition to cancellation terminal afterward."
+      },
+      {
+        "name": "error_text",
+        "type": "string",
+        "initial": "",
+        "scope": "feature",
+        "description": "Current prompt or command diagnostic; never written to stdout."
+      },
+      {
+        "name": "result_text",
+        "type": "string",
+        "initial": "",
+        "scope": "feature",
+        "description": "Saved path on success; no stdout content on precommit failure."
+      },
+      {
+        "name": "cursor",
+        "type": "int",
+        "initial": 0,
+        "scope": "feature",
+        "description": "Current option highlight; UI navigation does not accept values."
+      }
+    ],
+    "invariants": [
+      {
+        "id": "no-preconfirmation-write",
+        "expression": "NOT authorized AND NOT committed => no config/temporary/directory writes",
+        "description": "Reads and previews cannot create filesystem state."
+      },
+      {
+        "id": "exclusive-face-source",
+        "expression": "draft.face.random == true => draft.face.seed absent AND draft.face.preset absent; otherwise at most one of seed,preset",
+        "description": "Three on-disk sources: preset, seed, random."
+      },
+      {
+        "id": "stable-random-once",
+        "expression": "face_mode == random-once => saved face.seed == sample_seed AND saved face.random absent",
+        "description": "The accepted character is repeatable."
+      },
+      {
+        "id": "runtime-random",
+        "expression": "face_mode == random-each-run => saved face.random == true AND sample_seed is never serialized",
+        "description": "Generate one ephemeral identity per future invocation."
+      },
+      {
+        "id": "one-character-per-run",
+        "expression": "runtime random identity is resolved once and reused for all expression/frame renders in that invocation",
+        "description": "No random change between frames or repeated face tokens."
+      },
+      {
+        "id": "module-uniqueness",
+        "expression": "selected_modules has unique supported IDs; length >= 1 before leaving modules.ready",
+        "description": "Face-only output is allowed."
+      },
+      {
+        "id": "consent-binding",
+        "expression": "commit input bytes == review_data.toml AND input snapshot == context fingerprint",
+        "description": "Any edit or refresh clears authorization."
+      },
+      {
+        "id": "stream-separation",
+        "expression": "stdout contains only saved absolute path + newline after commit; all interaction and diagnostics use stderr",
+        "description": "No JSON mode or piped input."
+      },
+      {
+        "id": "cancel-before-commit",
+        "expression": "terminal in {cancelled,terminated} => committed == false",
+        "description": "Signals after the publication boundary cannot promise no writes."
+      },
+      {
+        "id": "preview-seed-stability",
+        "expression": "review preparation does not change sample_seed",
+        "description": "Every-run sample is stable until explicit reroll or identity change."
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "wizard.start",
+      "payload": {},
+      "description": "Process dispatches smol init after parsing its own invocation.",
+      "origin": "system"
+    },
+    {
+      "id": "wizard.cancel",
+      "payload": {},
+      "description": "Cancel/EOF before commit; restore terminal and exit 130.",
+      "origin": "ui"
+    },
+    {
+      "id": "wizard.terminate",
+      "payload": {},
+      "description": "SIGTERM before commit; clean up and exit 143.",
+      "origin": "system"
+    },
+    {
+      "id": "input.invalid",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Decoder rejects malformed input; show error and retain active prompt.",
+      "origin": "system"
+    },
+    {
+      "id": "cursor.move",
+      "payload": {
+        "delta": "int"
+      },
+      "description": "Move the current prompt selection without changing accepted answers.",
+      "origin": "ui"
+    },
+    {
+      "id": "inspect.ready",
+      "payload": {
+        "context": "Context"
+      },
+      "description": "Context and destination snapshot read; malformed TOML is reported in context, not hidden.",
+      "origin": "command"
+    },
+    {
+      "id": "inspect.failed",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Destination could not be inspected.",
+      "origin": "command"
+    },
+    {
+      "id": "usage.failed",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Invalid arguments, missing path, or stdin/stderr not TTY.",
+      "origin": "command"
+    },
+    {
+      "id": "help.ready",
+      "payload": {},
+      "description": "Help printed without terminal checks or writes.",
+      "origin": "command"
+    },
+    {
+      "id": "destination.accept",
+      "payload": {},
+      "description": "Accept resolved destination and its inspection warning.",
+      "origin": "ui"
+    },
+    {
+      "id": "preset.submit",
+      "payload": {
+        "preset": "string"
+      },
+      "description": "Choose existing, minimal, default, or detailed.",
+      "origin": "ui"
+    },
+    {
+      "id": "face.mode",
+      "payload": {
+        "mode": "string"
+      },
+      "description": "Choose disabled, preset, seed, random-once, or random-each-run.",
+      "origin": "ui"
+    },
+    {
+      "id": "face.identity",
+      "payload": {
+        "value": "string"
+      },
+      "description": "Submit a known preset ID or printable nonempty seed.",
+      "origin": "ui"
+    },
+    {
+      "id": "face.built",
+      "payload": {
+        "sample": "string",
+        "seed": "string?"
+      },
+      "description": "A static character sample is available.",
+      "origin": "command"
+    },
+    {
+      "id": "face.failed",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Character build or random entropy failed; never silently downgrade.",
+      "origin": "command"
+    },
+    {
+      "id": "face.accept",
+      "payload": {},
+      "description": "Accept this sample and continue to expression.",
+      "origin": "ui"
+    },
+    {
+      "id": "face.reroll",
+      "payload": {},
+      "description": "Generate a fresh sample in either random mode.",
+      "origin": "ui"
+    },
+    {
+      "id": "face.expression",
+      "payload": {
+        "expression": "string"
+      },
+      "description": "Choose a supported expression.",
+      "origin": "ui"
+    },
+    {
+      "id": "modules.toggle",
+      "payload": {
+        "module": "string"
+      },
+      "description": "Toggle a system module. Face enablement is edited in Face setup.",
+      "origin": "ui"
+    },
+    {
+      "id": "modules.submit",
+      "payload": {},
+      "description": "Continue with at least one enabled module.",
+      "origin": "ui"
+    },
+    {
+      "id": "order.submit",
+      "payload": {
+        "modules": "string[]"
+      },
+      "description": "Submit an exact permutation of enabled modules.",
+      "origin": "ui"
+    },
+    {
+      "id": "color.submit",
+      "payload": {
+        "color": "string"
+      },
+      "description": "Choose auto, always, or never.",
+      "origin": "ui"
+    },
+    {
+      "id": "style.update",
+      "payload": {
+        "module": "string",
+        "fg": "string"
+      },
+      "description": "Set one enabled module foreground; retain existing bold.",
+      "origin": "ui"
+    },
+    {
+      "id": "style.done",
+      "payload": {},
+      "description": "Keep current styles and continue.",
+      "origin": "ui"
+    },
+    {
+      "id": "shell.submit",
+      "payload": {
+        "shell": "string"
+      },
+      "description": "Confirm detected Bash/Zsh/Fish, or choose no shell instructions.",
+      "origin": "ui"
+    },
+    {
+      "id": "preview.ready",
+      "payload": {
+        "toml": "string",
+        "sample": "string",
+        "instructions": "string"
+      },
+      "description": "Validated TOML, fingerprint, preview and instructions are ready.",
+      "origin": "command"
+    },
+    {
+      "id": "preview.failed",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Validation, serialization, or preview failed.",
+      "origin": "command"
+    },
+    {
+      "id": "review.save",
+      "payload": {},
+      "description": "Continue from review to explicit write confirmation.",
+      "origin": "ui"
+    },
+    {
+      "id": "review.face",
+      "payload": {},
+      "description": "Return to face with draft answers retained.",
+      "origin": "ui"
+    },
+    {
+      "id": "review.modules",
+      "payload": {},
+      "description": "Return to modules with draft answers retained.",
+      "origin": "ui"
+    },
+    {
+      "id": "review.colors",
+      "payload": {},
+      "description": "Return to colors with draft answers retained.",
+      "origin": "ui"
+    },
+    {
+      "id": "review.shell",
+      "payload": {},
+      "description": "Return to shell with draft answers retained.",
+      "origin": "ui"
+    },
+    {
+      "id": "confirm.submit",
+      "payload": {
+        "yes": "bool"
+      },
+      "description": "Yes authorizes only the reviewed bytes and destination snapshot; No returns to review.",
+      "origin": "ui"
+    },
+    {
+      "id": "save.committed",
+      "payload": {
+        "path": "string"
+      },
+      "description": "Atomic replacement completed; cancellation can no longer promise no write.",
+      "origin": "command"
+    },
+    {
+      "id": "save.failed",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Write failed before commit; original target remains intact.",
+      "origin": "command"
+    },
+    {
+      "id": "save.conflict",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Target type, identity, bytes or permissions changed since review.",
+      "origin": "command"
+    },
+    {
+      "id": "refresh.ready",
+      "payload": {
+        "context": "Context"
+      },
+      "description": "Updated destination fingerprint captured; draft retained.",
+      "origin": "command"
+    },
+    {
+      "id": "refresh.failed",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Conflict refresh could not inspect the target.",
+      "origin": "command"
+    },
+    {
+      "id": "finish.done",
+      "payload": {},
+      "description": "Saved path and instructions emitted successfully.",
+      "origin": "command"
+    },
+    {
+      "id": "finish.failed",
+      "payload": {
+        "message": "string"
+      },
+      "description": "Output failed after a successful save; diagnostic must disclose saved file.",
+      "origin": "command"
+    },
+    {
+      "id": "retry.inspect",
+      "payload": {},
+      "description": "Retry read-only initial inspection.",
+      "origin": "ui"
+    },
+    {
+      "id": "retry.preview",
+      "payload": {},
+      "description": "Retry validation and preview with draft preserved.",
+      "origin": "ui"
+    },
+    {
+      "id": "retry.face",
+      "payload": {},
+      "description": "Retry character generation for selected mode.",
+      "origin": "ui"
+    },
+    {
+      "id": "retry.save",
+      "payload": {},
+      "description": "Return to review; require fresh explicit write confirmation.",
+      "origin": "ui"
+    },
+    {
+      "id": "conflict.refresh",
+      "payload": {},
+      "description": "Reinspect changed target without automatically overwriting it.",
+      "origin": "ui"
+    },
+    {
+      "id": "wizard.abort",
+      "payload": {},
+      "description": "Stop after an operational failure with exit 1.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.preset",
+      "payload": {},
+      "description": "Go back from preset without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.face",
+      "payload": {},
+      "description": "Go back from face without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.identity",
+      "payload": {},
+      "description": "Go back from identity without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.sample",
+      "payload": {},
+      "description": "Go back from sample without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.expression",
+      "payload": {},
+      "description": "Go back from expression without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.modules",
+      "payload": {},
+      "description": "Go back from modules without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.order",
+      "payload": {},
+      "description": "Go back from order without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.color",
+      "payload": {},
+      "description": "Go back from color without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.styles",
+      "payload": {},
+      "description": "Go back from styles without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.shell",
+      "payload": {},
+      "description": "Go back from shell without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.review",
+      "payload": {},
+      "description": "Go back from review without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "back.confirm",
+      "payload": {},
+      "description": "Go back from confirm without persistence.",
+      "origin": "ui"
+    },
+    {
+      "id": "cleanup.done",
+      "origin": "command",
+      "payload": {},
+      "description": "Pending work stopped, stale outcomes discarded, uncommitted temporary files removed and terminal input restored."
+    }
+  ],
+  "commands": [
+    {
+      "id": "config.inspect",
+      "trigger": "wizard.start",
+      "input": {
+        "argv": "Invocation",
+        "environment": "Environment",
+        "capabilities": "Terminal"
+      },
+      "outcomes": [
+        "inspect.ready",
+        "inspect.failed",
+        "usage.failed",
+        "help.ready"
+      ],
+      "side_effect": "Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.",
+      "idempotent": true
+    },
+    {
+      "id": "face.build",
+      "trigger": "face.identity",
+      "input": {
+        "mode": "string",
+        "identity": "string",
+        "expression": "string"
+      },
+      "outcomes": [
+        "face.built",
+        "face.failed"
+      ],
+      "side_effect": "Build a static character using the current face preset/seed API and selected expression (idle initially). Pure computation; no persistence, animation or subprocesses.",
+      "idempotent": true
+    },
+    {
+      "id": "face.roll",
+      "trigger": "face.mode",
+      "input": {
+        "mode": "enum(random-once|random-each-run)",
+        "expression": "string"
+      },
+      "outcomes": [
+        "face.built",
+        "face.failed"
+      ],
+      "side_effect": "Read 16 bytes from injected OS entropy, encode as 32 lowercase hex characters, build using that seed and emit sample plus seed. A reroll reads fresh bytes. No seed is printed in every-run mode or persisted until save. Entropy failure is explicit. No fallback to a fixed face.",
+      "idempotent": false
+    },
+    {
+      "id": "review.prepare",
+      "trigger": "shell.submit",
+      "input": {
+        "draft": "Config",
+        "sample_seed": "string?",
+        "shell": "string",
+        "context": "Context"
+      },
+      "outcomes": [
+        "preview.ready",
+        "preview.failed"
+      ],
+      "side_effect": "Read-only validation and serialization of exact TOML; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.",
+      "idempotent": true
+    },
+    {
+      "id": "config.commit",
+      "trigger": "confirm.submit",
+      "input": {
+        "authorized": "bool",
+        "review_data": "Review",
+        "snapshot": "Context"
+      },
+      "outcomes": [
+        "save.committed",
+        "save.failed",
+        "save.conflict"
+      ],
+      "side_effect": "Only after explicit Yes: recheck target snapshot (existence, device/inode, SHA-256 bytes, mode), reject unsafe targets and drift. Create missing parents with 0700, same-directory exclusive temp file 0600, write exact reviewed bytes, preserve existing regular-file permissions, sync and close; recheck snapshot immediately before atomic rename. For absent destination use atomic no-replace publication; never clobber a newly created file. Cancel before commit deletes temp and newly created empty parents. Existing-file replacement uses atomic rename; external writes in the last check-to-rename interval cannot be excluded without cooperating writers. Block cancellation across the short publication critical section; successful publication always emits save.committed, even if a signal arrives then. No automatic retries. No backups or shell-file edits.",
+      "idempotent": false
+    },
+    {
+      "id": "config.refresh",
+      "trigger": "conflict.refresh",
+      "input": {
+        "path": "string",
+        "draft": "Config"
+      },
+      "outcomes": [
+        "refresh.ready",
+        "refresh.failed"
+      ],
+      "side_effect": "Read-only target inspection and fingerprint refresh, same safe-target rules as initial inspection. Retain draft; malformed changed file is a warning and replacement still needs explicit review and confirmation.",
+      "idempotent": true
+    },
+    {
+      "id": "completion.print",
+      "trigger": "save.committed",
+      "input": {
+        "path": "string",
+        "instructions": "string"
+      },
+      "outcomes": [
+        "finish.done",
+        "finish.failed"
+      ],
+      "side_effect": "Write absolute saved path plus one newline to stdout. Write Saved confirmation and shell setup instructions to stderr, using the exact destination safely quoted. Output failure returns 1 and states that config WAS saved; never retry commit or remove a saved config.",
+      "idempotent": false
+    },
+    {
+      "id": "session.cleanup",
+      "trigger": "wizard.cancel",
+      "input": {
+        "pending_worker": "string?",
+        "temporary_paths": "string[]"
+      },
+      "outcomes": [
+        "cleanup.done"
+      ],
+      "side_effect": "Cancel workers, discard stale outcomes, remove uncommitted temp files and only newly created empty parents, restore input mode/cursor and finish the current stderr line. Never delete or alter a committed config. Completion is reported once cleanup is synchronous/awaited.",
+      "idempotent": true
+    },
+    {
+      "id": "session.terminate",
+      "trigger": "wizard.terminate",
+      "input": {
+        "pending_worker": "string?",
+        "temporary_paths": "string[]"
+      },
+      "outcomes": [
+        "cleanup.done"
+      ],
+      "side_effect": "Cancel workers after SIGTERM, discard stale outcomes, remove uncommitted temp files and only newly created empty parents, restore input mode/cursor and finish the current stderr line. Never delete or alter a committed config. Completion is reported once cleanup is synchronous/awaited.",
+      "idempotent": true
+    },
+    {
+      "id": "config.reinspect",
+      "trigger": "retry.inspect",
+      "input": {
+        "argv": "Invocation",
+        "environment": "Environment",
+        "capabilities": "Terminal"
+      },
+      "outcomes": [
+        "inspect.ready",
+        "inspect.failed",
+        "usage.failed",
+        "help.ready"
+      ],
+      "side_effect": "Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.",
+      "idempotent": true
+    },
+    {
+      "id": "face.reroll",
+      "trigger": "face.reroll",
+      "input": {
+        "mode": "enum(random-once|random-each-run)",
+        "expression": "string"
+      },
+      "outcomes": [
+        "face.built",
+        "face.failed"
+      ],
+      "side_effect": "Generate a fresh random character sample; identical to face.roll but dispatched by the explicit Reroll action.",
+      "idempotent": false
+    },
+    {
+      "id": "face.retry_roll",
+      "trigger": "retry.face",
+      "input": {
+        "mode": "enum(random-once|random-each-run)",
+        "expression": "string"
+      },
+      "outcomes": [
+        "face.built",
+        "face.failed"
+      ],
+      "side_effect": "Read 16 bytes from injected OS entropy, encode as 32 lowercase hex characters, build using that seed and emit sample plus seed. A reroll reads fresh bytes. No seed is printed in every-run mode or persisted until save. Entropy failure is explicit. No fallback to a fixed face.",
+      "idempotent": false
+    },
+    {
+      "id": "face.retry_build",
+      "trigger": "retry.face",
+      "input": {
+        "mode": "string",
+        "identity": "string",
+        "expression": "string"
+      },
+      "outcomes": [
+        "face.built",
+        "face.failed"
+      ],
+      "side_effect": "Build a static character using the current face preset/seed API and selected expression (idle initially). Pure computation; no persistence, animation or subprocesses.",
+      "idempotent": true
+    },
+    {
+      "id": "review.retry",
+      "trigger": "retry.preview",
+      "input": {
+        "draft": "Config",
+        "sample_seed": "string?",
+        "shell": "string",
+        "context": "Context"
+      },
+      "outcomes": [
+        "preview.ready",
+        "preview.failed"
+      ],
+      "side_effect": "Read-only validation and serialization of exact TOML; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.",
+      "idempotent": true
+    },
+    {
+      "id": "review.refresh",
+      "trigger": "refresh.ready",
+      "input": {
+        "draft": "Config",
+        "sample_seed": "string?",
+        "shell": "string",
+        "context": "Context"
+      },
+      "outcomes": [
+        "preview.ready",
+        "preview.failed"
+      ],
+      "side_effect": "Regenerate validated TOML, fingerprint, preview and instructions after a conflict refresh; never rerolls the sample seed.",
+      "idempotent": true
+    }
+  ],
+  "data": {
+    "models": [
+      {
+        "name": "Config",
+        "fields": [
+          {
+            "name": "format",
+            "type": "string",
+            "required": true,
+            "description": "Validated template; selected tokens normally joined with ·."
+          },
+          {
+            "name": "color",
+            "type": "enum(auto|always|never)",
+            "required": true,
+            "description": "Output color mode."
+          },
+          {
+            "name": "style",
+            "type": "map<string,Style>",
+            "required": true,
+            "description": "Per-module foreground and bold."
+          },
+          {
+            "name": "face",
+            "type": "Face",
+            "required": true,
+            "description": "Extended face options; random flag is proposed new runtime behavior."
+          }
+        ]
+      },
+      {
+        "name": "Face",
+        "fields": [
+          {
+            "name": "preset",
+            "type": "string",
+            "required": false,
+            "description": "Known named character; omitted when seed/random is selected."
+          },
+          {
+            "name": "seed",
+            "type": "string",
+            "required": false,
+            "description": "Deterministic identity; random-once stores generated seed here."
+          },
+          {
+            "name": "random",
+            "type": "bool",
+            "required": false,
+            "description": "NEW: true generates one identity per invocation; absent/false retains existing behavior."
+          },
+          {
+            "name": "state",
+            "type": "string",
+            "required": true,
+            "description": "Known expression; default idle."
+          }
+        ]
+      },
+      {
+        "name": "Style",
+        "fields": [
+          {
+            "name": "fg",
+            "type": "string",
+            "required": true,
+            "description": "Terminal default empty string or known named color."
+          },
+          {
+            "name": "bold",
+            "type": "bool",
+            "required": true,
+            "description": "Preserved from preset/existing config; no bold editor in this scope."
+          }
+        ]
+      },
+      {
+        "name": "Context",
+        "fields": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "Absolute destination."
+          },
+          {
+            "name": "exists",
+            "type": "bool",
+            "required": true,
+            "description": "Target existence at inspection."
+          },
+          {
+            "name": "parseStatus",
+            "type": "enum(absent|valid|invalid)",
+            "required": true,
+            "description": "Invalid TOML warned about explicitly."
+          },
+          {
+            "name": "fingerprint",
+            "type": "string",
+            "required": true,
+            "description": "Existence/device/inode/content SHA-256/mode tuple."
+          },
+          {
+            "name": "config",
+            "type": "Config",
+            "required": false,
+            "description": "Existing validated config if parseable."
+          },
+          {
+            "name": "warning",
+            "type": "string",
+            "required": false,
+            "description": "Malformed TOML or target-change warning."
+          }
+        ]
+      },
+      {
+        "name": "Review",
+        "fields": [
+          {
+            "name": "toml",
+            "type": "string",
+            "required": true,
+            "description": "Exact bytes displayed and committed, including trailing newline."
+          },
+          {
+            "name": "sample",
+            "type": "string",
+            "required": true,
+            "description": "Static system/face preview."
+          },
+          {
+            "name": "instructions",
+            "type": "string",
+            "required": true,
+            "description": "Safely quoted shell commands; not executed."
+          }
+        ]
+      },
+      {
+        "name": "FaceOptions",
+        "fields": [
+          {
+            "name": "presets",
+            "type": "string[]",
+            "required": true,
+            "description": "From face.Presets(), sorted for presentation."
+          },
+          {
+            "name": "states",
+            "type": "string[]",
+            "required": true,
+            "description": "From face.States(), idle first; remaining sorted."
+          }
+        ]
+      },
+      {
+        "name": "Session",
+        "fields": [
+          {
+            "name": "context",
+            "type": "Context",
+            "required": false,
+            "description": "Resolved destination summary."
+          },
+          {
+            "name": "draft",
+            "type": "Config",
+            "required": false,
+            "description": "In-memory answers."
+          },
+          {
+            "name": "review",
+            "type": "Review",
+            "required": false,
+            "description": "Prepared review data."
+          },
+          {
+            "name": "error",
+            "type": "string",
+            "required": false,
+            "description": "Active diagnostic."
+          }
+        ]
+      },
+      {
+        "name": "Invocation",
+        "fields": [
+          {
+            "name": "config",
+            "type": "string",
+            "required": false,
+            "description": "Only --config PATH or --config=PATH plus --help are accepted for init."
+          },
+          {
+            "name": "help",
+            "type": "bool",
+            "required": true,
+            "description": "Help exits before TTY checks."
+          }
+        ]
+      },
+      {
+        "name": "Environment",
+        "fields": [
+          {
+            "name": "XDG_CONFIG_HOME",
+            "type": "string",
+            "required": false,
+            "description": "Preferred config home."
+          },
+          {
+            "name": "HOME",
+            "type": "string",
+            "required": false,
+            "description": "Fallback home."
+          },
+          {
+            "name": "SHELL",
+            "type": "string",
+            "required": false,
+            "description": "Shell suggestion only."
+          },
+          {
+            "name": "NO_COLOR",
+            "type": "string",
+            "required": false,
+            "description": "Nonempty disables wizard chrome color."
+          },
+          {
+            "name": "TERM",
+            "type": "string",
+            "required": false,
+            "description": "dumb selects plain line-oriented numbered prompts."
+          }
+        ]
+      },
+      {
+        "name": "Terminal",
+        "fields": [
+          {
+            "name": "stdinTTY",
+            "type": "bool",
+            "required": true,
+            "description": "Required except help."
+          },
+          {
+            "name": "stderrTTY",
+            "type": "bool",
+            "required": true,
+            "description": "Required except help."
+          },
+          {
+            "name": "stdoutTTY",
+            "type": "bool",
+            "required": true,
+            "description": "May be redirected; does not govern prompting."
+          },
+          {
+            "name": "cols",
+            "type": "int",
+            "required": true,
+            "description": "Wrapping width; unknown uses 80."
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "session",
+        "model": "Session",
+        "cardinality": "one",
+        "provider": "Injected in-memory wizard session",
+        "description": "All screen data assembled from declared fields; no implicit I/O."
+      },
+      {
+        "id": "face_options",
+        "model": "FaceOptions",
+        "cardinality": "one",
+        "provider": "internal/face.Presets and internal/face.States",
+        "description": "Read identifiers without mutating upstream registry; random modes are additional UI choices."
+      }
+    ]
+  },
+  "validation": {
+    "rules": [
+      {
+        "id": "tty-required",
+        "target": "Terminal.stdinTTY",
+        "when": "wizard.start",
+        "predicate": "stdinTTY AND stderrTTY",
+        "message": "smol init: interactive setup requires terminal stdin and stderr; use --print-default-config for manual setup."
+      },
+      {
+        "id": "destination-required",
+        "target": "destination",
+        "when": "wizard.start",
+        "predicate": "resolved path is nonempty and has no control characters",
+        "message": "smol init: cannot resolve config path; pass --config PATH."
+      },
+      {
+        "id": "safe-target",
+        "target": "Context.path",
+        "when": "wizard.start",
+        "predicate": "target absent or regular file; no symlink in target/parent components",
+        "message": "smol init: destination must be a regular file, not a symlink or special file."
+      },
+      {
+        "id": "preset-choice",
+        "target": "preset",
+        "when": "preset.submit",
+        "predicate": "preset.valid",
+        "message": "Choose an available preset."
+      },
+      {
+        "id": "face-mode-choice",
+        "target": "face_mode",
+        "when": "face.mode",
+        "predicate": "mode in {disabled,preset,seed,random-once,random-each-run}",
+        "message": "Choose a listed face mode."
+      },
+      {
+        "id": "face-identity",
+        "target": "identity",
+        "when": "face.identity",
+        "predicate": "identity.valid",
+        "message": "Choose a listed preset or enter a seed of 1–256 characters without controls."
+      },
+      {
+        "id": "face-source-exclusive",
+        "target": "Face.random",
+        "when": "shell.submit",
+        "predicate": "random true excludes any seed field and any nonempty preset; seed and nonempty preset also mutually exclusive",
+        "message": "face: random, preset and seed are mutually exclusive."
+      },
+      {
+        "id": "face-preset",
+        "target": "Face.preset",
+        "when": "shell.submit",
+        "predicate": "absent or empty or member of face_options.presets",
+        "message": "face: unknown preset; choose a listed preset."
+      },
+      {
+        "id": "face-expression",
+        "target": "Face.state",
+        "when": "face.expression",
+        "predicate": "state in face_options.states",
+        "message": "Choose a listed expression."
+      },
+      {
+        "id": "selected-module",
+        "target": "selected_modules",
+        "when": "modules.toggle",
+        "predicate": "module.valid",
+        "message": "Choose a system module; edit face in Face setup."
+      },
+      {
+        "id": "nonempty-modules",
+        "target": "selected_modules",
+        "when": "modules.submit",
+        "predicate": "length >= 1",
+        "message": "Select at least one module."
+      },
+      {
+        "id": "permutation",
+        "target": "selected_modules",
+        "when": "order.submit",
+        "predicate": "order.valid",
+        "message": "List every enabled module number once."
+      },
+      {
+        "id": "color-choice",
+        "target": "Config.color",
+        "when": "color.submit",
+        "predicate": "color in {auto,always,never}",
+        "message": "Choose auto, always, or never."
+      },
+      {
+        "id": "foreground-choice",
+        "target": "Style.fg",
+        "when": "style.update",
+        "predicate": "style.valid",
+        "message": "Choose an enabled module and a listed foreground color."
+      },
+      {
+        "id": "shell-choice",
+        "target": "shell_choice",
+        "when": "shell.submit",
+        "predicate": "shell in {bash,zsh,fish,none}",
+        "message": "Choose Bash, Zsh, Fish, or No instructions."
+      },
+      {
+        "id": "format-compatible",
+        "target": "Config.format",
+        "when": "shell.submit",
+        "predicate": "existing config.ValidateFormat with known modules and no control characters",
+        "message": "smol init: invalid format; return to module selection."
+      },
+      {
+        "id": "snapshot-match",
+        "target": "Context.fingerprint",
+        "when": "confirm.submit",
+        "predicate": "current fingerprint equals reviewed fingerprint and absent target still absent",
+        "message": "Destination changed since review. Refresh and review before saving."
+      },
+      {
+        "id": "consent-required",
+        "target": "authorized",
+        "when": "confirm.submit",
+        "predicate": "event.yes == true AND reviewed bytes and fingerprint still match",
+        "message": "Save was not confirmed; no file was written."
+      },
+      {
+        "id": "safe-target-commit",
+        "target": "Context.path",
+        "when": "confirm.submit",
+        "predicate": "target absent or regular file; no symlink in target/parent components",
+        "message": "smol init: destination must be a regular file, not a symlink or special file."
+      },
+      {
+        "id": "face-source-exclusive-commit",
+        "target": "Face.random",
+        "when": "confirm.submit",
+        "predicate": "random true excludes any seed field and any nonempty preset; seed and nonempty preset also mutually exclusive",
+        "message": "face: random, preset and seed are mutually exclusive."
+      },
+      {
+        "id": "face-preset-commit",
+        "target": "Face.preset",
+        "when": "confirm.submit",
+        "predicate": "absent or empty or member of face_options.presets",
+        "message": "face: unknown preset; choose a listed preset."
+      },
+      {
+        "id": "format-compatible-commit",
+        "target": "Config.format",
+        "when": "confirm.submit",
+        "predicate": "existing config.ValidateFormat with known modules and no control characters",
+        "message": "smol init: invalid format; return to module selection."
+      }
+    ]
+  }
+}

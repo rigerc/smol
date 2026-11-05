@@ -1,0 +1,2 @@
+$ smol init
+SIGTERM received; cleaning up before exit 143.

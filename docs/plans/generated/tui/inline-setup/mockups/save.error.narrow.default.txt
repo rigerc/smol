@@ -1,0 +1,4 @@
+$ smol init
+Could not save. Existing configuration w
+as not replaced.
+? Review and retry / Exit ▌

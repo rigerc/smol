@@ -1,0 +1,3 @@
+$ smol init
+Preset and seed are mutually exclusive.
+? Choose preset / enter seed (default: smol) ▌

@@ -1,0 +1,3 @@
+$ smol init
+SIGTERM received; cleaning up before exi
+t 143.

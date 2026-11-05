@@ -1,0 +1,3 @@
+$ smol init
+Choose terminal default, standard colors, or bright variants. Bold is preserved.
+? Keep colors / Edit a module / Done ▌

@@ -1,0 +1,1598 @@
+{
+  "schema_version": "1.0.0",
+  "screens": [
+    {
+      "id": "startup",
+      "title": "Inspect destination",
+      "purpose": "Parse invocation, verify terminal capabilities and read existing config.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Parse invocation, verify terminal capabilities and read existing config.",
+              "data_ref": "session"
+            },
+            {
+              "id": "pending",
+              "kind": "spinner",
+              "label": "Inspect destination"
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "entry",
+        "inspecting"
+      ]
+    },
+    {
+      "id": "destination",
+      "title": "Configuration destination",
+      "purpose": "Report resolved path, existence and parse status.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Config: /home/ada/.config/smol/config.toml\nExisting valid configuration found.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Continue with this destination?",
+              "focusable": true,
+              "on": {
+                "submit": "destination.accept",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "destination.accept",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "destination.ready"
+      ]
+    },
+    {
+      "id": "preset",
+      "title": "Choose configuration preset",
+      "purpose": "Choose a configuration basis; existing is offered only when parseable.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Default: os → kernel → uptime → mem",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Start from: Existing / Minimal / Default / Detailed",
+              "focusable": true,
+              "on": {
+                "submit": "preset.submit",
+                "back": "back.preset",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "preset.submit",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.preset",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "preset.ready"
+      ]
+    },
+    {
+      "id": "face-mode",
+      "title": "Face setup",
+      "purpose": "Enable or disable face and choose its persistence semantics.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Random, keep saves the accepted seed. Random every run saves random = true.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Face: Disabled / Preset / Seed / Random, keep / Random every run",
+              "focusable": true,
+              "on": {
+                "submit": "face.mode",
+                "back": "back.face",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "face.mode",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.face",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "face.mode"
+      ]
+    },
+    {
+      "id": "face-identity",
+      "title": "Choose character",
+      "purpose": "Select a preset or enter a deterministic seed.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Preset and seed are mutually exclusive.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Choose preset / enter seed (default: smol)",
+              "focusable": true,
+              "on": {
+                "submit": "face.identity",
+                "back": "back.identity",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "face.identity",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.identity",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "face.identity"
+      ]
+    },
+    {
+      "id": "face-pending",
+      "title": "Build face sample",
+      "purpose": "Generate one static face sample; no animation loop.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Generate one static face sample; no animation loop.",
+              "data_ref": "session"
+            },
+            {
+              "id": "pending",
+              "kind": "spinner",
+              "label": "Build face sample"
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "face.building",
+        "face.rolling"
+      ]
+    },
+    {
+      "id": "face-sample",
+      "title": "Face preview",
+      "purpose": "Accept this sample or roll again in either random mode.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Sample face: [static character rendered here]\nEvery-run mode: this is only a sample.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Accept / Roll again",
+              "focusable": true,
+              "on": {
+                "submit": "face.accept",
+                "reroll": "face.reroll",
+                "back": "back.sample",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "face.accept",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.sample",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "face.sample"
+      ]
+    },
+    {
+      "id": "expression",
+      "title": "Face expression",
+      "purpose": "Select a supported expression; default idle.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Options come from face.States().",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Expression (default: idle)",
+              "focusable": true,
+              "on": {
+                "submit": "face.expression",
+                "back": "back.expression",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "face.expression",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.expression",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "face.expression"
+      ]
+    },
+    {
+      "id": "modules",
+      "title": "Displayed modules",
+      "purpose": "Toggle system modules; face is controlled by Face setup.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "[x] os  [x] kernel  [x] uptime  [x] mem\n[ ] cpu  [ ] host  [ ] load  [ ] shell  [ ] user\nFace: enabled (edit in Face setup)",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Choose modules; Space toggles, Enter continues",
+              "focusable": true,
+              "on": {
+                "submit": "modules.submit",
+                "toggle": "modules.toggle",
+                "back": "back.modules",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "modules.submit",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.modules",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "modules.ready"
+      ]
+    },
+    {
+      "id": "order",
+      "title": "Module order",
+      "purpose": "Reorder enabled module IDs using an explicit numbered permutation.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "1. face\n2. os\n3. kernel\n4. uptime\n5. mem\nChanging order replaces custom format literals with · separators.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Enter order, e.g. 1,3,2,4,5",
+              "focusable": true,
+              "on": {
+                "submit": "order.submit",
+                "back": "back.order",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "order.submit",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.order",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "order.ready"
+      ]
+    },
+    {
+      "id": "color",
+      "title": "Color mode",
+      "purpose": "Configure output color policy, distinct from wizard chrome.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Auto respects NO_COLOR and TERM=dumb.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Color: Auto / Always / Never",
+              "focusable": true,
+              "on": {
+                "submit": "color.submit",
+                "back": "back.color",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "color.submit",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.color",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "color.ready"
+      ]
+    },
+    {
+      "id": "styles",
+      "title": "Module colors",
+      "purpose": "Keep defaults or adjust enabled-module foreground colors.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Choose terminal default, standard colors, or bright variants. Bold is preserved.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Keep colors / Edit a module / Done",
+              "focusable": true,
+              "on": {
+                "submit": "style.done",
+                "edit": "style.update",
+                "back": "back.styles",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "style.done",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.styles",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "styles.ready"
+      ]
+    },
+    {
+      "id": "shell",
+      "title": "Shell instructions",
+      "purpose": "Confirm detected shell or choose another supported shell; never edit startup files.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Detected shell: bash",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Shell: Bash / Zsh / Fish / No instructions",
+              "focusable": true,
+              "on": {
+                "submit": "shell.submit",
+                "back": "back.shell",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "shell.submit",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.shell",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "shell.ready"
+      ]
+    },
+    {
+      "id": "preparing",
+      "title": "Prepare review",
+      "purpose": "Validate candidate, serialize exact TOML and render a static preview without writes.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Validate candidate, serialize exact TOML and render a static preview without writes.",
+              "data_ref": "session"
+            },
+            {
+              "id": "pending",
+              "kind": "spinner",
+              "label": "Prepare review"
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "preview.pending"
+      ]
+    },
+    {
+      "id": "review",
+      "title": "Review configuration",
+      "purpose": "Show exact serialized TOML, path, preview, and mode semantics.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Destination: /home/ada/.config/smol/config.toml\nPreview: [sample face] · Ubuntu · 3d 4h · 4.6 GiB / 15.6 GiB\nformat = \"{face} · {os} · {uptime} · {mem}\"\ncolor = \"auto\"\n[face]\nrandom = true\nstate = \"idle\"\nRandom every run: preview is a sample; no seed will be saved.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Save / Edit face / Edit modules / Edit colors / Edit shell / Cancel",
+              "focusable": true,
+              "on": {
+                "submit": "review.save",
+                "face": "review.face",
+                "modules": "review.modules",
+                "colors": "review.colors",
+                "shell": "review.shell",
+                "back": "back.review",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "review.save",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.review",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "review.ready"
+      ]
+    },
+    {
+      "id": "confirm",
+      "title": "Confirm save",
+      "purpose": "Authorize exact reviewed bytes; replacement is explicitly named.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "No returns to review. Ctrl+C cancels without writing.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Replace /home/ada/.config/smol/config.toml? [y/N]",
+              "focusable": true,
+              "on": {
+                "submit": "confirm.submit",
+                "back": "back.confirm",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "confirm.submit",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.confirm",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "confirm.ready"
+      ]
+    },
+    {
+      "id": "saving",
+      "title": "Save configuration",
+      "purpose": "Only now create parent directories and a temporary file, then commit atomically.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Only now create parent directories and a temporary file, then commit atomically.",
+              "data_ref": "session"
+            },
+            {
+              "id": "pending",
+              "kind": "spinner",
+              "label": "Save configuration"
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "save.pending"
+      ]
+    },
+    {
+      "id": "finishing",
+      "title": "Print completion",
+      "purpose": "Print saved path to stdout; completion and shell instructions to stderr.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Print saved path to stdout; completion and shell instructions to stderr.",
+              "data_ref": "session"
+            },
+            {
+              "id": "pending",
+              "kind": "spinner",
+              "label": "Print completion"
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "finish.pending"
+      ]
+    },
+    {
+      "id": "load-error",
+      "title": "Cannot inspect configuration",
+      "purpose": "Show read error and allow retry or exit.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Cannot read destination. Check permissions and retry.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Retry / Exit",
+              "focusable": true,
+              "on": {
+                "submit": "retry.inspect",
+                "abort": "wizard.abort",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "retry.inspect",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "load.error"
+      ]
+    },
+    {
+      "id": "face-error",
+      "title": "Cannot build face",
+      "purpose": "Show entropy or character error and permit retry or selection change.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Could not generate character. No config was written.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Retry / Back / Exit",
+              "focusable": true,
+              "on": {
+                "submit": "retry.face",
+                "back": "back.sample",
+                "abort": "wizard.abort",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "retry.face",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.sample",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "face.error"
+      ]
+    },
+    {
+      "id": "preview-error",
+      "title": "Cannot prepare configuration",
+      "purpose": "Keep answers and allow retry or editing.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Could not validate or preview the candidate.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Retry / Edit modules / Edit face / Exit",
+              "focusable": true,
+              "on": {
+                "submit": "retry.preview",
+                "modules": "review.modules",
+                "face": "review.face",
+                "abort": "wizard.abort",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "retry.preview",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "preview.error"
+      ]
+    },
+    {
+      "id": "save-error",
+      "title": "Cannot save configuration",
+      "purpose": "Original file is intact; retry returns to review, never directly overwrites.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Could not save. Existing configuration was not replaced.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Review and retry / Exit",
+              "focusable": true,
+              "on": {
+                "submit": "retry.save",
+                "abort": "wizard.abort",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "retry.save",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "save.error"
+      ]
+    },
+    {
+      "id": "conflict",
+      "title": "Configuration changed",
+      "purpose": "Require reinspection, review and a new confirmation for any changed destination.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "The destination changed since review. No replacement was made.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "Refresh and review / Exit",
+              "focusable": true,
+              "on": {
+                "submit": "conflict.refresh",
+                "abort": "wizard.abort",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "conflict.refresh",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "save.conflict"
+      ]
+    },
+    {
+      "id": "refreshing",
+      "title": "Refresh destination",
+      "purpose": "Reinspect target snapshot while preserving the candidate.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Reinspect target snapshot while preserving the candidate.",
+              "data_ref": "session"
+            },
+            {
+              "id": "pending",
+              "kind": "spinner",
+              "label": "Refresh destination"
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "refresh.pending"
+      ]
+    },
+    {
+      "id": "cleanup",
+      "title": "Cleaning up",
+      "purpose": "Stop pending work, discard stale outcomes, remove uncommitted temporary files and restore terminal input.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "Stopping pending work and restoring terminal input."
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "cancelling",
+        "terminating"
+      ]
+    },
+    {
+      "id": "result",
+      "title": "Command result",
+      "purpose": "Display completion, diagnostic or cancellation; exit status is metadata.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "batch",
+        "stdin": "none"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stdout",
+              "label": "Saved configuration. See stderr for shell setup instructions.",
+              "data_ref": "session"
+            }
+          ]
+        }
+      ],
+      "focus_order": [],
+      "keybindings": [],
+      "states": [
+        "done",
+        "help",
+        "failed",
+        "output.failed",
+        "usage.error",
+        "cancelled",
+        "terminated"
+      ]
+    }
+  ]
+}

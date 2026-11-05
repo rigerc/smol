@@ -1,0 +1,4 @@
+$ smol init
+Sample face: [static character rendered here]
+Every-run mode: this is only a sample.
+? Accept / Roll again ▌

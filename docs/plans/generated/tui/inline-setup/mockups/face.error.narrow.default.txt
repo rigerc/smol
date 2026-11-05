@@ -1,0 +1,4 @@
+$ smol init
+Could not generate character. No config
+was written.
+? Retry / Back / Exit ▌

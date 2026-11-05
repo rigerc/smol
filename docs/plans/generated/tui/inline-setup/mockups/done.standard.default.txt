@@ -1,0 +1,2 @@
+$ smol init
+/home/ada/.config/smol/config.toml

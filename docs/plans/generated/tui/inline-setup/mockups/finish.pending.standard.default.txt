@@ -1,0 +1,3 @@
+$ smol init
+Print saved path to stdout; completion and shell instructions to stderr.
+⠋ Print completion

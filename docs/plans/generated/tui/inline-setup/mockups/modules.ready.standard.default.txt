@@ -1,0 +1,5 @@
+$ smol init
+[x] os  [x] kernel  [x] uptime  [x] mem
+[ ] cpu  [ ] host  [ ] load  [ ] shell  [ ] user
+Face: enabled (edit in Face setup)
+? Choose modules; Space toggles, Enter continues ▌

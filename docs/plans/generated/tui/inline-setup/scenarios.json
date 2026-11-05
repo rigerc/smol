@@ -1,0 +1,268 @@
+{
+  "schema_version": "1.1.0",
+  "states": {
+    "entry": {
+      "components": {
+        "content": {
+          "text": "Parse invocation, verify terminal capabilities and read existing config."
+        }
+      }
+    },
+    "inspecting": {
+      "components": {
+        "content": {
+          "text": "Parse invocation, verify terminal capabilities and read existing config."
+        }
+      }
+    },
+    "destination.ready": {
+      "components": {
+        "content": {
+          "text": "Config: /home/ada/.config/smol/config.toml\nExisting valid configuration found."
+        }
+      },
+      "focus": "question"
+    },
+    "preset.ready": {
+      "components": {
+        "content": {
+          "text": "Default: os → kernel → uptime → mem"
+        }
+      },
+      "focus": "question"
+    },
+    "face.mode": {
+      "components": {
+        "content": {
+          "text": "Random, keep saves the accepted seed. Random every run saves random = true."
+        }
+      },
+      "focus": "question"
+    },
+    "face.identity": {
+      "components": {
+        "content": {
+          "text": "Preset and seed are mutually exclusive."
+        }
+      },
+      "focus": "question"
+    },
+    "face.building": {
+      "components": {
+        "content": {
+          "text": "Generate one static face sample; no animation loop."
+        }
+      }
+    },
+    "face.rolling": {
+      "components": {
+        "content": {
+          "text": "Generate one static face sample; no animation loop."
+        }
+      }
+    },
+    "face.sample": {
+      "components": {
+        "content": {
+          "text": "Sample face: [static character rendered here]\nEvery-run mode: this is only a sample."
+        }
+      },
+      "focus": "question"
+    },
+    "face.expression": {
+      "components": {
+        "content": {
+          "text": "Options come from face.States()."
+        }
+      },
+      "focus": "question"
+    },
+    "modules.ready": {
+      "components": {
+        "content": {
+          "text": "[x] os  [x] kernel  [x] uptime  [x] mem\n[ ] cpu  [ ] host  [ ] load  [ ] shell  [ ] user\nFace: enabled (edit in Face setup)"
+        }
+      },
+      "focus": "question"
+    },
+    "order.ready": {
+      "components": {
+        "content": {
+          "text": "1. face\n2. os\n3. kernel\n4. uptime\n5. mem\nChanging order replaces custom format literals with · separators."
+        }
+      },
+      "focus": "question"
+    },
+    "color.ready": {
+      "components": {
+        "content": {
+          "text": "Auto respects NO_COLOR and TERM=dumb."
+        }
+      },
+      "focus": "question"
+    },
+    "styles.ready": {
+      "components": {
+        "content": {
+          "text": "Choose terminal default, standard colors, or bright variants. Bold is preserved."
+        }
+      },
+      "focus": "question"
+    },
+    "shell.ready": {
+      "components": {
+        "content": {
+          "text": "Detected shell: bash"
+        }
+      },
+      "focus": "question"
+    },
+    "preview.pending": {
+      "components": {
+        "content": {
+          "text": "Validate candidate, serialize exact TOML and render a static preview without writes."
+        }
+      }
+    },
+    "review.ready": {
+      "components": {
+        "content": {
+          "text": "Destination: /home/ada/.config/smol/config.toml\nPreview: [sample face] · Ubuntu · 3d 4h · 4.6 GiB / 15.6 GiB\nformat = \"{face} · {os} · {uptime} · {mem}\"\ncolor = \"auto\"\n[face]\nrandom = true\nstate = \"idle\"\nRandom every run: preview is a sample; no seed will be saved."
+        }
+      },
+      "focus": "question"
+    },
+    "confirm.ready": {
+      "components": {
+        "content": {
+          "text": "No returns to review. Ctrl+C cancels without writing."
+        }
+      },
+      "focus": "question"
+    },
+    "save.pending": {
+      "components": {
+        "content": {
+          "text": "Only now create parent directories and a temporary file, then commit atomically."
+        }
+      }
+    },
+    "finish.pending": {
+      "components": {
+        "content": {
+          "text": "Print saved path to stdout; completion and shell instructions to stderr."
+        }
+      }
+    },
+    "load.error": {
+      "components": {
+        "content": {
+          "text": "Cannot read destination. Check permissions and retry."
+        }
+      },
+      "focus": "question"
+    },
+    "face.error": {
+      "components": {
+        "content": {
+          "text": "Could not generate character. No config was written."
+        }
+      },
+      "focus": "question"
+    },
+    "preview.error": {
+      "components": {
+        "content": {
+          "text": "Could not validate or preview the candidate."
+        }
+      },
+      "focus": "question"
+    },
+    "save.error": {
+      "components": {
+        "content": {
+          "text": "Could not save. Existing configuration was not replaced."
+        }
+      },
+      "focus": "question"
+    },
+    "save.conflict": {
+      "components": {
+        "content": {
+          "text": "The destination changed since review. No replacement was made."
+        }
+      },
+      "focus": "question"
+    },
+    "refresh.pending": {
+      "components": {
+        "content": {
+          "text": "Reinspect target snapshot while preserving the candidate."
+        }
+      }
+    },
+    "done": {
+      "components": {
+        "content": {
+          "text": "/home/ada/.config/smol/config.toml"
+        }
+      }
+    },
+    "help": {
+      "components": {
+        "content": {
+          "text": "Usage: smol init [--config PATH] [--help]"
+        }
+      }
+    },
+    "failed": {
+      "components": {
+        "content": {
+          "text": "Setup failed. Configuration was not saved."
+        }
+      }
+    },
+    "output.failed": {
+      "components": {
+        "content": {
+          "text": "Configuration WAS saved to /home/ada/.config/smol/config.toml, but completion output failed."
+        }
+      }
+    },
+    "usage.error": {
+      "components": {
+        "content": {
+          "text": "smol init: interactive setup requires terminal stdin and stderr."
+        }
+      }
+    },
+    "cancelled": {
+      "components": {
+        "content": {
+          "text": "Cancelled. Configuration was not saved."
+        }
+      }
+    },
+    "terminated": {
+      "components": {
+        "content": {
+          "text": "Terminated before saving."
+        }
+      }
+    },
+    "cancelling": {
+      "components": {
+        "content": {
+          "text": "Cancelling; cleaning up before exit 130."
+        }
+      }
+    },
+    "terminating": {
+      "components": {
+        "content": {
+          "text": "SIGTERM received; cleaning up before exit 143."
+        }
+      }
+    }
+  }
+}

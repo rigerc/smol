@@ -1,0 +1,3 @@
+$ smol init
+Auto respects NO_COLOR and TERM=dumb.
+? Color: Auto / Always / Never ▌

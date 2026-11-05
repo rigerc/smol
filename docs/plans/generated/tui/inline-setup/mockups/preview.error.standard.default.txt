@@ -1,0 +1,3 @@
+$ smol init
+Could not validate or preview the candidate.
+? Retry / Edit modules / Edit face / Exit ▌

@@ -1,0 +1,3 @@
+$ smol init
+Parse invocation, verify terminal capabilities and read existing config.
+⠋ Inspect destination

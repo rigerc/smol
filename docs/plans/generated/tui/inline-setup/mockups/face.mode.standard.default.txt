@@ -1,0 +1,3 @@
+$ smol init
+Random, keep saves the accepted seed. Random every run saves random = true.
+? Face: Disabled / Preset / Seed / Random, keep / Random every run ▌

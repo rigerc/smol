@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.1.0",
+  "preview": {
+    "viewports": {
+      "narrow": {
+        "cols": 40,
+        "rows": 12
+      },
+      "standard": {
+        "cols": 80,
+        "rows": 24
+      }
+    },
+    "outputs": [
+      "txt",
+      "svg",
+      "html"
+    ]
+  }
+}

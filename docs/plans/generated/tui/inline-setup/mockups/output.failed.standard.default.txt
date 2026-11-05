@@ -1,0 +1,3 @@
+$ smol init
+Configuration WAS saved to /home/ada/.config/smol/config.toml, but completion ou
+tput failed.

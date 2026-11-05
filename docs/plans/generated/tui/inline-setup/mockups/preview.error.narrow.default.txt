@@ -1,0 +1,5 @@
+$ smol init
+Could not validate or preview the candid
+ate.
+? Retry / Edit modules / Edit face / Exi
+t ▌
