@@ -13,6 +13,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/ishan5ain/tuiweave"
 	"github.com/ishan5ain/tuiweave/inspect"
 	"github.com/ishan5ain/tuiweave/snaptest"
@@ -789,5 +790,63 @@ func TestResizeRetainsInput(t *testing.T) {
 	got := requirePrompt(t, next)
 	if cmd == nil || !errors.Is(got.result.err, errBasic) || got.editor.Value() != "kept seed" {
 		t.Fatal("resize lost input")
+	}
+}
+
+func TestWelcome(t *testing.T) {
+	for _, tc := range []struct {
+		name                             string
+		width, rows                      int
+		basic, noColor, colored, compact bool
+	}{
+		{name: "gradient", width: 80, rows: 24, colored: true},
+		{name: "no-color", width: 80, rows: 24, noColor: true},
+		{name: "basic", width: 80, rows: 24, basic: true},
+		{name: "narrow", width: 19, rows: 24, compact: true},
+		{name: "short", width: 80, rows: 10, compact: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var out bytes.Buffer
+			term := terminal{out: &out, runtime: Runtime{Width: tc.width, Rows: tc.rows, Basic: tc.basic, Getenv: func(k string) string {
+				if k == "NO_COLOR" && tc.noColor {
+					return "1"
+				}
+				return ""
+			}}}
+			if err := term.welcome(); err != nil {
+				t.Fatal(err)
+			}
+			text := out.String()
+			if strings.Contains(text, "\x1b[") != tc.colored {
+				t.Fatalf("unexpected banner color: %q", text)
+			}
+			if strings.HasPrefix(text, "\nsmol\n") != tc.compact {
+				t.Fatalf("unexpected banner size: %q", text)
+			}
+			for line := range strings.SplitSeq(text, "\n") {
+				if ansi.StringWidth(line) > tc.width {
+					t.Fatalf("banner exceeds width %d: %q", tc.width, line)
+				}
+			}
+			snaptest.Snap(t, text)
+		})
+	}
+}
+
+func TestSpacedPromptGeometry(t *testing.T) {
+	for _, choices := range [][]string{nil, {"No", "Yes"}} {
+		m := newPrompt(question{title: "A long question that wraps onto several lines", choices: choices, value: "No"}, 19)
+		node := m.Inspect().Children[0]
+		lines := strings.Split(ansi.Strip(m.View().Content), "\n")
+		if node.Bounds.Y < 2 || node.Bounds.Y+node.Bounds.Height > len(lines) {
+			t.Fatalf("invalid component bounds: %+v", node.Bounds)
+		}
+		if strings.TrimSpace(lines[node.Bounds.Y-1]) != "" || !strings.Contains(lines[node.Bounds.Y], "No") {
+			t.Fatalf("component bounds do not match spaced view: %+v %q", node.Bounds, lines)
+		}
+		m.height = len(lines)
+		if !m.needsBasic() {
+			t.Fatal("short terminal must use numbered input")
+		}
 	}
 }

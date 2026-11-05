@@ -1,6 +1,8 @@
 ## initial
 command: no
+
 Modules
+
 ▸ [ ] cpu
   [x] mem
 
@@ -9,7 +11,9 @@ back; Ctrl+C cancels
 
 ## move
 command: no
+
 Modules
+
   [ ] cpu
 ▸ [x] mem
 
@@ -18,7 +22,9 @@ back; Ctrl+C cancels
 
 ## toggle
 command: no
+
 Modules
+
   [ ] cpu
 ▸ [ ] mem
 

@@ -79,6 +79,10 @@ toggles system modules. Limited terminals use numbered choices, comma-separated
 module numbers, and `:back` / `:cancel`; use `none` to remove all system modules
 when keeping a face. These words are ordinary text in a seed prompt.
 
+A compact ASCII banner introduces setup, with blank lines separating questions,
+answers and keyboard hints. The banner uses a sunset gradient; `NO_COLOR` and
+numbered-input mode keep it plain. Narrow or short terminals use a text heading.
+
 Setup requires terminal stdin and stderr. Prompts, previews and instructions
 use stderr; after saving, stdout contains only the absolute config path and a
 newline. `smol init --help` works without a terminal. Normal `smol` never launches

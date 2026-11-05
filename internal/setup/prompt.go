@@ -17,6 +17,7 @@ import (
 	"github.com/ishan5ain/tuiweave/inspect"
 	"github.com/ishan5ain/tuiweave/layout"
 	"github.com/ishan5ain/tuiweave/menu"
+	"github.com/ishan5ain/tuiweave/stack"
 	"github.com/ishan5ain/tuiweave/textarea"
 	"github.com/muesli/cancelreader"
 )
@@ -232,14 +233,20 @@ func (m promptModel) View() tea.View {
 		content = m.editor.View()
 		hints = "Enter accepts; Esc back; Ctrl+C cancels"
 	}
-	return tea.NewView(ansi.Wrap(safe(m.q.title), m.width, "") + "\n" + content + "\n" + ansi.Wrap(safe(m.feedback), m.width, "") + "\n" + ansi.Wrap(hints, m.width, ""))
+	body := stack.Vertical(tuiweave.CatppuccinMocha(), m.width, stack.Options{Gap: 1},
+		func(width int) string { return ansi.Wrap(safe(m.q.title), width, "") },
+		func(int) string { return content },
+		func(width int) string { return ansi.Wrap(safe(m.feedback), width, "") },
+		func(width int) string { return ansi.Wrap(hints, width, "") },
+	)
+	return tea.NewView("\n" + body + "\n")
 }
 func (m promptModel) Inspect() inspect.Node {
 	bounds := inspect.Bounds{Width: m.width, Height: len(strings.Split(m.View().Content, "\n"))}
 	if len(m.q.choices) > 0 {
-		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("choices", inspect.Bounds{Y: len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n")), Width: m.width, Height: len(m.q.choices)}, m.menu))
+		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("choices", inspect.Bounds{Y: 2 + len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n")), Width: m.width, Height: len(m.q.choices)}, m.menu))
 	}
-	return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("editor", inspect.Bounds{Y: len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n")), Width: m.width, Height: m.editor.ContentHeight()}, m.editor))
+	return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("editor", inspect.Bounds{Y: 2 + len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n")), Width: m.width, Height: m.editor.ContentHeight()}, m.editor))
 }
 
 type terminal struct {
@@ -332,7 +339,7 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 	if q.multiple {
 		q.title += "\nUse comma-separated numbers, or none for no system modules."
 	}
-	if err := t.say(strings.NewReplacer("–", "-", "—", "-", "…", "...").Replace(q.title)); err != nil {
+	if err := t.say("\n" + strings.NewReplacer("–", "-", "—", "-", "…", "...").Replace(q.title) + "\n"); err != nil {
 		return "", err
 	}
 	for i, choice := range q.choices {
@@ -357,7 +364,7 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 				}
 			}
 		}
-		if err := t.say("[" + def + "] Enter accepts; :back / :cancel at choices"); err != nil {
+		if err := t.say("\n[" + def + "] Enter accepts; :back / :cancel at choices"); err != nil {
 			return "", err
 		}
 		line, err := t.lines.ReadString('\n')

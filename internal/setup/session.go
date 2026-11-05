@@ -89,6 +89,9 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	}
 	t := &terminal{runtime: runtime, out: stderr}
 	defer func() { _ = t.close() }()
+	if err = t.welcome(); err != nil {
+		return finishError(ctx, t, err)
+	}
 	s := session{term: t, env: env, path: path, state: "inspecting", shell: detectShell(runtime.Getenv("SHELL"))}
 	if err = s.load(ctx); err != nil {
 		return finishError(ctx, t, err)
