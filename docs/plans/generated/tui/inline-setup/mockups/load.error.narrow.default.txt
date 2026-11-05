@@ -1,0 +1,4 @@
+$ smol init
+Cannot read destination. Check permissio
+ns and retry.
+? Retry / Exit ▌

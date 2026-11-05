@@ -1,0 +1,3 @@
+$ smol init
+Default: os → kernel → uptime → mem
+? Start from: Existing / Minimal / Default / Detailed ▌

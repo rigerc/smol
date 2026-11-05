@@ -1,0 +1,10 @@
+$ smol init
+Destination: /home/ada/.config/smol/config.toml
+Preview: [sample face] · Ubuntu · 3d 4h · 4.6 GiB / 15.6 GiB
+format = "{face} · {os} · {uptime} · {mem}"
+color = "auto"
+[face]
+random = true
+state = "idle"
+Random every run: preview is a sample; no seed will be saved.
+? Save / Edit face / Edit modules / Edit colors / Edit shell / Cancel ▌

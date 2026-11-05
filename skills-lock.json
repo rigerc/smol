@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "t3-delegate": {
+      "source": "rigerc/rigerc-skills",
+      "sourceType": "github",
+      "skillPath": "skills/t3-delegate/SKILL.md",
+      "computedHash": "86ef5f2fc5600c4b96b9f6470adee8d320012b217d709b00addda274bcb8dd97"
+    },
+    "tui-screen-flow-spec": {
+      "source": "rigerc/rigerc-skills",
+      "sourceType": "github",
+      "skillPath": "skills/tui-screen-flow-spec/SKILL.md",
+      "computedHash": "65f25c1270a65a6352bb0e8493b41474d6d88bc45756d1e26b41f917dc3f8df9"
+    },
+    "vhs-cli": {
+      "source": "rigerc/rigerc-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vhs-cli/SKILL.md",
+      "computedHash": "6e5a1d9d482cd236e99f5ff8c03acb09a1bf27c654eacf1caf174e94661db498"
+    }
+  }
+}

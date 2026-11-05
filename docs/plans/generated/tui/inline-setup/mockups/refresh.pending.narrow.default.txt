@@ -1,0 +1,4 @@
+$ smol init
+Reinspect target snapshot while preservi
+ng the candidate.
+⠋ Refresh destination

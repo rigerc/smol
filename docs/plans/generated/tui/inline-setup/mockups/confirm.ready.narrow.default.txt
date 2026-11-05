@@ -1,0 +1,5 @@
+$ smol init
+No returns to review. Ctrl+C cancels wit
+hout writing.
+? Replace /home/ada/.config/smol/config.
+toml? [y/N] ▌

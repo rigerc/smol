@@ -1,0 +1,3003 @@
+{
+  "schema_version": "1.0.0",
+  "initial": "entry",
+  "states": [
+    {
+      "id": "entry",
+      "screen": "startup",
+      "terminal": false,
+      "description": "Process dispatch awaits wizard.start."
+    },
+    {
+      "id": "inspecting",
+      "screen": "startup",
+      "terminal": false,
+      "description": "Inspection pending."
+    },
+    {
+      "id": "destination.ready",
+      "screen": "destination",
+      "terminal": false,
+      "description": "Destination read and displayed."
+    },
+    {
+      "id": "preset.ready",
+      "screen": "preset",
+      "terminal": false,
+      "description": "Choose basis."
+    },
+    {
+      "id": "face.mode",
+      "screen": "face-mode",
+      "terminal": false,
+      "description": "Choose disabled or one of four character modes."
+    },
+    {
+      "id": "face.identity",
+      "screen": "face-identity",
+      "terminal": false,
+      "description": "Choose preset or seed."
+    },
+    {
+      "id": "face.building",
+      "screen": "face-pending",
+      "terminal": false,
+      "description": "Deterministic character build pending."
+    },
+    {
+      "id": "face.rolling",
+      "screen": "face-pending",
+      "terminal": false,
+      "description": "Random sample build pending."
+    },
+    {
+      "id": "face.sample",
+      "screen": "face-sample",
+      "terminal": false,
+      "description": "One face sample displayed."
+    },
+    {
+      "id": "face.expression",
+      "screen": "expression",
+      "terminal": false,
+      "description": "Choose expression."
+    },
+    {
+      "id": "modules.ready",
+      "screen": "modules",
+      "terminal": false,
+      "description": "Select modules."
+    },
+    {
+      "id": "order.ready",
+      "screen": "order",
+      "terminal": false,
+      "description": "Set order."
+    },
+    {
+      "id": "color.ready",
+      "screen": "color",
+      "terminal": false,
+      "description": "Choose color policy."
+    },
+    {
+      "id": "styles.ready",
+      "screen": "styles",
+      "terminal": false,
+      "description": "Keep or edit foreground styles."
+    },
+    {
+      "id": "shell.ready",
+      "screen": "shell",
+      "terminal": false,
+      "description": "Choose instructions."
+    },
+    {
+      "id": "preview.pending",
+      "screen": "preparing",
+      "terminal": false,
+      "description": "Candidate validation and preview pending."
+    },
+    {
+      "id": "review.ready",
+      "screen": "review",
+      "terminal": false,
+      "description": "Exact candidate bytes and snapshot displayed."
+    },
+    {
+      "id": "confirm.ready",
+      "screen": "confirm",
+      "terminal": false,
+      "description": "Explicit save authorization pending."
+    },
+    {
+      "id": "save.pending",
+      "screen": "saving",
+      "terminal": false,
+      "description": "Write authorization consumed once."
+    },
+    {
+      "id": "finish.pending",
+      "screen": "finishing",
+      "terminal": false,
+      "description": "Committed file; print result."
+    },
+    {
+      "id": "load.error",
+      "screen": "load-error",
+      "terminal": false,
+      "description": "Read failure."
+    },
+    {
+      "id": "face.error",
+      "screen": "face-error",
+      "terminal": false,
+      "description": "Character generation failure."
+    },
+    {
+      "id": "preview.error",
+      "screen": "preview-error",
+      "terminal": false,
+      "description": "Review preparation failure."
+    },
+    {
+      "id": "save.error",
+      "screen": "save-error",
+      "terminal": false,
+      "description": "Write failure before commit."
+    },
+    {
+      "id": "save.conflict",
+      "screen": "conflict",
+      "terminal": false,
+      "description": "Destination drift or unsafe target."
+    },
+    {
+      "id": "refresh.pending",
+      "screen": "refreshing",
+      "terminal": false,
+      "description": "Read updated target snapshot."
+    },
+    {
+      "id": "done",
+      "screen": "result",
+      "terminal": true,
+      "description": "Saved config and printed completion.",
+      "exit_code": 0
+    },
+    {
+      "id": "help",
+      "screen": "result",
+      "terminal": true,
+      "description": "Help printed; no interactive session.",
+      "exit_code": 0
+    },
+    {
+      "id": "failed",
+      "screen": "result",
+      "terminal": true,
+      "description": "Operational failure before save.",
+      "exit_code": 1
+    },
+    {
+      "id": "output.failed",
+      "screen": "result",
+      "terminal": true,
+      "description": "Config saved but output failed; diagnostic explicitly says so.",
+      "exit_code": 1
+    },
+    {
+      "id": "usage.error",
+      "screen": "result",
+      "terminal": true,
+      "description": "Invalid CLI/TTY/path inputs; no writes.",
+      "exit_code": 2
+    },
+    {
+      "id": "cancelling",
+      "screen": "cleanup",
+      "terminal": false,
+      "description": "Cancel requested; synchronous cleanup is in progress."
+    },
+    {
+      "id": "cancelled",
+      "screen": "result",
+      "terminal": true,
+      "description": "Cancelled before commit; no saved config.",
+      "exit_code": 130
+    },
+    {
+      "id": "terminating",
+      "screen": "cleanup",
+      "terminal": false,
+      "description": "SIGTERM received; synchronous cleanup is in progress."
+    },
+    {
+      "id": "terminated",
+      "screen": "result",
+      "terminal": true,
+      "description": "SIGTERM before commit; cleaned up.",
+      "exit_code": 143
+    }
+  ],
+  "guards": [
+    {
+      "id": "preset.valid",
+      "expression": "event.preset in {minimal, default, detailed} OR (event.preset == existing AND context.parseStatus == valid)",
+      "description": "event.preset in {minimal, default, detailed} OR (event.preset == existing AND context.parseStatus == valid)"
+    },
+    {
+      "id": "preset.invalid",
+      "expression": "NOT preset.valid",
+      "description": "NOT preset.valid"
+    },
+    {
+      "id": "mode.off",
+      "expression": "event.mode == disabled",
+      "description": "event.mode == disabled"
+    },
+    {
+      "id": "mode.identity",
+      "expression": "event.mode in {preset, seed}",
+      "description": "event.mode in {preset, seed}"
+    },
+    {
+      "id": "mode.random",
+      "expression": "event.mode in {random-once, random-each-run}",
+      "description": "event.mode in {random-once, random-each-run}"
+    },
+    {
+      "id": "mode.invalid",
+      "expression": "event.mode not in {disabled, preset, seed, random-once, random-each-run}",
+      "description": "event.mode not in {disabled, preset, seed, random-once, random-each-run}"
+    },
+    {
+      "id": "identity.valid",
+      "expression": "(face_mode == preset AND event.value in face_options.presets) OR (face_mode == seed AND 1 <= UnicodeScalarCount(event.value) <= 256 AND no control characters)",
+      "description": "(face_mode == preset AND event.value in face_options.presets) OR (face_mode == seed AND 1 <= UnicodeScalarCount(event.value) <= 256 AND no control characters)"
+    },
+    {
+      "id": "identity.invalid",
+      "expression": "NOT identity.valid",
+      "description": "NOT identity.valid"
+    },
+    {
+      "id": "random.active",
+      "expression": "face_mode in {random-once, random-each-run}",
+      "description": "face_mode in {random-once, random-each-run}"
+    },
+    {
+      "id": "random.inactive",
+      "expression": "NOT random.active",
+      "description": "NOT random.active"
+    },
+    {
+      "id": "expression.valid",
+      "expression": "event.expression in face_options.states",
+      "description": "event.expression in face_options.states"
+    },
+    {
+      "id": "expression.invalid",
+      "expression": "NOT expression.valid",
+      "description": "NOT expression.valid"
+    },
+    {
+      "id": "module.valid",
+      "expression": "event.module in nine_system_modules",
+      "description": "event.module in nine_system_modules"
+    },
+    {
+      "id": "module.invalid",
+      "expression": "NOT module.valid",
+      "description": "NOT module.valid"
+    },
+    {
+      "id": "modules.nonempty",
+      "expression": "length(selected_modules) >= 1",
+      "description": "length(selected_modules) >= 1"
+    },
+    {
+      "id": "modules.empty",
+      "expression": "length(selected_modules) == 0",
+      "description": "length(selected_modules) == 0"
+    },
+    {
+      "id": "order.valid",
+      "expression": "event.modules contains every selected_modules ID exactly once and no others",
+      "description": "event.modules contains every selected_modules ID exactly once and no others"
+    },
+    {
+      "id": "order.invalid",
+      "expression": "NOT order.valid",
+      "description": "NOT order.valid"
+    },
+    {
+      "id": "color.valid",
+      "expression": "event.color in {auto, always, never}",
+      "description": "event.color in {auto, always, never}"
+    },
+    {
+      "id": "color.invalid",
+      "expression": "NOT color.valid",
+      "description": "NOT color.valid"
+    },
+    {
+      "id": "style.valid",
+      "expression": "event.module in selected_modules AND event.fg in {empty string, black, red, green, yellow, blue, magenta, cyan, white, bright-black, bright-red, bright-green, bright-yellow, bright-blue, bright-magenta, bright-cyan, bright-white}",
+      "description": "event.module in selected_modules AND event.fg in {empty string, black, red, green, yellow, blue, magenta, cyan, white, bright-black, bright-red, bright-green, bright-yellow, bright-blue, bright-magenta, bright-cyan, bright-white}"
+    },
+    {
+      "id": "style.invalid",
+      "expression": "NOT style.valid",
+      "description": "NOT style.valid"
+    },
+    {
+      "id": "shell.valid",
+      "expression": "event.shell in {bash, zsh, fish, none}",
+      "description": "event.shell in {bash, zsh, fish, none}"
+    },
+    {
+      "id": "shell.invalid",
+      "expression": "NOT shell.valid",
+      "description": "NOT shell.valid"
+    },
+    {
+      "id": "confirm.yes",
+      "expression": "event.yes == true",
+      "description": "event.yes == true"
+    },
+    {
+      "id": "confirm.no",
+      "expression": "event.yes == false",
+      "description": "event.yes == false"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t001",
+      "from": "entry",
+      "event": "wizard.start",
+      "to": "inspecting",
+      "guard": null,
+      "commands": [
+        "config.inspect"
+      ],
+      "updates": [],
+      "description": "Start read-only preflight."
+    },
+    {
+      "id": "t002",
+      "from": "inspecting",
+      "event": "inspect.ready",
+      "to": "destination.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "context",
+          "expression": "event.context"
+        },
+        {
+          "field": "destination",
+          "expression": "event.context.path"
+        },
+        {
+          "field": "error_text",
+          "expression": "\"\""
+        }
+      ],
+      "description": "Capture context and fingerprint."
+    },
+    {
+      "id": "t003",
+      "from": "inspecting",
+      "event": "inspect.failed",
+      "to": "load.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message if supplied else \"\""
+        }
+      ],
+      "description": "Complete preflight outcome."
+    },
+    {
+      "id": "t004",
+      "from": "inspecting",
+      "event": "usage.failed",
+      "to": "usage.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message if supplied else \"\""
+        }
+      ],
+      "description": "Complete preflight outcome."
+    },
+    {
+      "id": "t005",
+      "from": "inspecting",
+      "event": "help.ready",
+      "to": "help",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message if supplied else \"\""
+        }
+      ],
+      "description": "Complete preflight outcome."
+    },
+    {
+      "id": "t006",
+      "from": "destination.ready",
+      "event": "destination.accept",
+      "to": "preset.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Offer existing only if parseable; default to existing when valid, otherwise Default."
+    },
+    {
+      "id": "t007",
+      "from": "preset.ready",
+      "event": "preset.submit",
+      "to": "face.mode",
+      "guard": "preset.valid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "draft",
+          "expression": "basis(event.preset); existing preserves format/style/face; presets replace only format"
+        },
+        {
+          "field": "preset",
+          "expression": "event.preset"
+        },
+        {
+          "field": "selected_modules",
+          "expression": "unique module references in draft.format"
+        },
+        {
+          "field": "face_enabled",
+          "expression": "draft.format contains {face}"
+        },
+        {
+          "field": "face_mode",
+          "expression": "infer from draft.face, else seed"
+        },
+        {
+          "field": "format_dirty",
+          "expression": "false"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Create draft from selected basis; clear write authorization."
+    },
+    {
+      "id": "t008",
+      "from": "preset.ready",
+      "event": "preset.submit",
+      "to": "preset.ready",
+      "guard": "preset.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose an available preset.\""
+        }
+      ],
+      "description": "Show unavailable/unknown preset error."
+    },
+    {
+      "id": "t009",
+      "from": "face.mode",
+      "event": "face.mode",
+      "to": "modules.ready",
+      "guard": "mode.off",
+      "commands": [],
+      "updates": [
+        {
+          "field": "face_enabled",
+          "expression": "false"
+        },
+        {
+          "field": "selected_modules",
+          "expression": "selected_modules without face"
+        },
+        {
+          "field": "draft",
+          "expression": "remove face references from draft.format using parsed tokens; retain face options"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Disable face; remove face tokens only if previously present."
+    },
+    {
+      "id": "t010",
+      "from": "face.mode",
+      "event": "face.mode",
+      "to": "face.identity",
+      "guard": "mode.identity",
+      "commands": [],
+      "updates": [
+        {
+          "field": "face_enabled",
+          "expression": "true"
+        },
+        {
+          "field": "face_mode",
+          "expression": "event.mode"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Configure deterministic identity."
+    },
+    {
+      "id": "t011",
+      "from": "face.mode",
+      "event": "face.mode",
+      "to": "face.rolling",
+      "guard": "mode.random",
+      "commands": [
+        "face.roll"
+      ],
+      "updates": [
+        {
+          "field": "face_enabled",
+          "expression": "true"
+        },
+        {
+          "field": "face_mode",
+          "expression": "event.mode"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Create a new random sample."
+    },
+    {
+      "id": "t012",
+      "from": "face.mode",
+      "event": "face.mode",
+      "to": "face.mode",
+      "guard": "mode.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose a listed face mode.\""
+        }
+      ],
+      "description": "Reject unknown mode."
+    },
+    {
+      "id": "t013",
+      "from": "face.identity",
+      "event": "face.identity",
+      "to": "face.building",
+      "guard": "identity.valid",
+      "commands": [
+        "face.build"
+      ],
+      "updates": [
+        {
+          "field": "identity",
+          "expression": "event.value"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Build chosen preset or seed."
+    },
+    {
+      "id": "t014",
+      "from": "face.identity",
+      "event": "face.identity",
+      "to": "face.identity",
+      "guard": "identity.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose a listed preset or enter a seed of 1–256 characters without controls.\""
+        }
+      ],
+      "description": "Explain invalid preset or seed."
+    },
+    {
+      "id": "t015",
+      "from": "face.building",
+      "event": "face.built",
+      "to": "face.sample",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "face_sample",
+          "expression": "event.sample"
+        },
+        {
+          "field": "sample_seed",
+          "expression": "event.seed if supplied else null"
+        },
+        {
+          "field": "error_text",
+          "expression": "\"\""
+        }
+      ],
+      "description": "Retain sample seed for this setup session."
+    },
+    {
+      "id": "t016",
+      "from": "face.building",
+      "event": "face.failed",
+      "to": "face.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Preserve selected mode and show generation failure."
+    },
+    {
+      "id": "t017",
+      "from": "face.rolling",
+      "event": "face.built",
+      "to": "face.sample",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "face_sample",
+          "expression": "event.sample"
+        },
+        {
+          "field": "sample_seed",
+          "expression": "event.seed if supplied else null"
+        },
+        {
+          "field": "error_text",
+          "expression": "\"\""
+        }
+      ],
+      "description": "Retain sample seed for this setup session."
+    },
+    {
+      "id": "t018",
+      "from": "face.rolling",
+      "event": "face.failed",
+      "to": "face.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Preserve selected mode and show generation failure."
+    },
+    {
+      "id": "t019",
+      "from": "face.sample",
+      "event": "face.reroll",
+      "to": "face.rolling",
+      "guard": "random.active",
+      "commands": [
+        "face.reroll"
+      ],
+      "updates": [],
+      "description": "Roll a fresh sample."
+    },
+    {
+      "id": "t020",
+      "from": "face.sample",
+      "event": "face.reroll",
+      "to": "face.sample",
+      "guard": "random.inactive",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose a random mode to roll again.\""
+        }
+      ],
+      "description": "Reroll unavailable for preset/seed; return to character selection to change them."
+    },
+    {
+      "id": "t021",
+      "from": "face.sample",
+      "event": "face.accept",
+      "to": "face.expression",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "draft",
+          "expression": "reconcile face identity: preset OR seed(identity/sample_seed) OR random=true, never combinations"
+        },
+        {
+          "field": "selected_modules",
+          "expression": "append face iff absent; preserve existing position otherwise"
+        },
+        {
+          "field": "face_enabled",
+          "expression": "true"
+        }
+      ],
+      "description": "Accept sample; random-once persists seed, random-each-run does not."
+    },
+    {
+      "id": "t022",
+      "from": "face.expression",
+      "event": "face.expression",
+      "to": "modules.ready",
+      "guard": "expression.valid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "draft",
+          "expression": "draft with face.state = event.expression"
+        }
+      ],
+      "description": "Accept expression."
+    },
+    {
+      "id": "t023",
+      "from": "face.expression",
+      "event": "face.expression",
+      "to": "face.expression",
+      "guard": "expression.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose a listed expression.\""
+        }
+      ],
+      "description": "Reject unknown expression."
+    },
+    {
+      "id": "t024",
+      "from": "modules.ready",
+      "event": "modules.toggle",
+      "to": "modules.ready",
+      "guard": "module.valid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "selected_modules",
+          "expression": "toggle event.module in selected_modules"
+        },
+        {
+          "field": "format_dirty",
+          "expression": "true"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Toggle module; preserve relative order, append newly enabled IDs."
+    },
+    {
+      "id": "t025",
+      "from": "modules.ready",
+      "event": "modules.toggle",
+      "to": "modules.ready",
+      "guard": "module.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose a system module; edit face in Face setup.\""
+        }
+      ],
+      "description": "Reject unknown module; face enablement belongs to Face setup."
+    },
+    {
+      "id": "t026",
+      "from": "modules.ready",
+      "event": "modules.submit",
+      "to": "order.ready",
+      "guard": "modules.nonempty",
+      "commands": [],
+      "updates": [],
+      "description": "Continue to order."
+    },
+    {
+      "id": "t027",
+      "from": "modules.ready",
+      "event": "modules.submit",
+      "to": "modules.ready",
+      "guard": "modules.empty",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Select at least one module.\""
+        }
+      ],
+      "description": "Require at least one enabled module."
+    },
+    {
+      "id": "t028",
+      "from": "order.ready",
+      "event": "order.submit",
+      "to": "color.ready",
+      "guard": "order.valid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "format_dirty",
+          "expression": "format_dirty OR event.modules != selected_modules"
+        },
+        {
+          "field": "selected_modules",
+          "expression": "event.modules"
+        },
+        {
+          "field": "draft",
+          "expression": "if format_dirty or order changed, join tokens with \" · \"; otherwise preserve format bytes"
+        }
+      ],
+      "description": "Accept permutation; preserve custom format if selection/order unchanged."
+    },
+    {
+      "id": "t029",
+      "from": "order.ready",
+      "event": "order.submit",
+      "to": "order.ready",
+      "guard": "order.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"List every enabled module number once.\""
+        }
+      ],
+      "description": "Keep order input and show error."
+    },
+    {
+      "id": "t030",
+      "from": "color.ready",
+      "event": "color.submit",
+      "to": "styles.ready",
+      "guard": "color.valid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "draft",
+          "expression": "draft with color = event.color"
+        }
+      ],
+      "description": "Accept color mode."
+    },
+    {
+      "id": "t031",
+      "from": "color.ready",
+      "event": "color.submit",
+      "to": "color.ready",
+      "guard": "color.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose auto, always, or never.\""
+        }
+      ],
+      "description": "Reject unknown mode."
+    },
+    {
+      "id": "t032",
+      "from": "styles.ready",
+      "event": "style.update",
+      "to": "styles.ready",
+      "guard": "style.valid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "draft",
+          "expression": "draft with style[event.module].fg = event.fg"
+        }
+      ],
+      "description": "Change foreground only; retain bold and other valid styles."
+    },
+    {
+      "id": "t033",
+      "from": "styles.ready",
+      "event": "style.update",
+      "to": "styles.ready",
+      "guard": "style.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose an enabled module and a listed foreground color.\""
+        }
+      ],
+      "description": "Reject unlisted foreground or unavailable module."
+    },
+    {
+      "id": "t034",
+      "from": "styles.ready",
+      "event": "style.done",
+      "to": "shell.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Keep style values."
+    },
+    {
+      "id": "t035",
+      "from": "shell.ready",
+      "event": "shell.submit",
+      "to": "preview.pending",
+      "guard": "shell.valid",
+      "commands": [
+        "review.prepare"
+      ],
+      "updates": [
+        {
+          "field": "shell_choice",
+          "expression": "event.shell"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Prepare exact bytes and read-only preview."
+    },
+    {
+      "id": "t036",
+      "from": "shell.ready",
+      "event": "shell.submit",
+      "to": "shell.ready",
+      "guard": "shell.invalid",
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose Bash, Zsh, Fish, or No instructions.\""
+        }
+      ],
+      "description": "Reject unsupported shell."
+    },
+    {
+      "id": "t037",
+      "from": "preview.pending",
+      "event": "preview.ready",
+      "to": "review.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "review_data",
+          "expression": "{toml:event.toml,sample:event.sample,instructions:event.instructions}"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        },
+        {
+          "field": "error_text",
+          "expression": "\"\""
+        }
+      ],
+      "description": "Display candidate and preview."
+    },
+    {
+      "id": "t038",
+      "from": "preview.pending",
+      "event": "preview.failed",
+      "to": "preview.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep draft and show error."
+    },
+    {
+      "id": "t039",
+      "from": "review.ready",
+      "event": "review.save",
+      "to": "confirm.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Ask explicit Create or Replace question; default No."
+    },
+    {
+      "id": "t040",
+      "from": "confirm.ready",
+      "event": "confirm.submit",
+      "to": "save.pending",
+      "guard": "confirm.yes",
+      "commands": [
+        "config.commit"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "true"
+        }
+      ],
+      "description": "Authorize exactly reviewed bytes and fingerprint, once."
+    },
+    {
+      "id": "t041",
+      "from": "confirm.ready",
+      "event": "confirm.submit",
+      "to": "review.ready",
+      "guard": "confirm.no",
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "No returns to review without writes."
+    },
+    {
+      "id": "t042",
+      "from": "save.pending",
+      "event": "save.committed",
+      "to": "finish.pending",
+      "guard": null,
+      "commands": [
+        "completion.print"
+      ],
+      "updates": [
+        {
+          "field": "committed",
+          "expression": "true"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        },
+        {
+          "field": "result_text",
+          "expression": "event.path"
+        }
+      ],
+      "description": "Commit complete; print completion exactly once."
+    },
+    {
+      "id": "t043",
+      "from": "save.pending",
+      "event": "save.failed",
+      "to": "save.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        },
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Original intact; authorization invalidated."
+    },
+    {
+      "id": "t044",
+      "from": "save.pending",
+      "event": "save.conflict",
+      "to": "save.conflict",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        },
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "No write; show drift and require refresh."
+    },
+    {
+      "id": "t045",
+      "from": "finish.pending",
+      "event": "finish.done",
+      "to": "done",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Success."
+    },
+    {
+      "id": "t046",
+      "from": "finish.pending",
+      "event": "finish.failed",
+      "to": "output.failed",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Report output error and saved destination; do not roll back committed config."
+    },
+    {
+      "id": "t047",
+      "from": "load.error",
+      "event": "retry.inspect",
+      "to": "inspecting",
+      "guard": null,
+      "commands": [
+        "config.reinspect"
+      ],
+      "updates": [],
+      "description": "Retry preflight."
+    },
+    {
+      "id": "t048",
+      "from": "face.error",
+      "event": "retry.face",
+      "to": "face.rolling",
+      "guard": "random.active",
+      "commands": [
+        "face.retry_roll"
+      ],
+      "updates": [],
+      "description": "Retry randomness."
+    },
+    {
+      "id": "t049",
+      "from": "face.error",
+      "event": "retry.face",
+      "to": "face.building",
+      "guard": "random.inactive",
+      "commands": [
+        "face.retry_build"
+      ],
+      "updates": [],
+      "description": "Retry deterministic build."
+    },
+    {
+      "id": "t050",
+      "from": "preview.error",
+      "event": "retry.preview",
+      "to": "preview.pending",
+      "guard": null,
+      "commands": [
+        "review.retry"
+      ],
+      "updates": [],
+      "description": "Retry review preparation."
+    },
+    {
+      "id": "t051",
+      "from": "save.error",
+      "event": "retry.save",
+      "to": "review.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Return to reviewed draft; repeat confirmation before trying to write."
+    },
+    {
+      "id": "t052",
+      "from": "save.conflict",
+      "event": "conflict.refresh",
+      "to": "refresh.pending",
+      "guard": null,
+      "commands": [
+        "config.refresh"
+      ],
+      "updates": [],
+      "description": "Read target again while retaining candidate."
+    },
+    {
+      "id": "t053",
+      "from": "refresh.pending",
+      "event": "refresh.ready",
+      "to": "preview.pending",
+      "guard": null,
+      "commands": [
+        "review.refresh"
+      ],
+      "updates": [
+        {
+          "field": "context",
+          "expression": "event.context"
+        },
+        {
+          "field": "destination",
+          "expression": "event.context.path"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Update snapshot, invalidate confirmation and regenerate review."
+    },
+    {
+      "id": "t054",
+      "from": "refresh.pending",
+      "event": "refresh.failed",
+      "to": "save.conflict",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Report refresh error without losing draft."
+    },
+    {
+      "id": "t055",
+      "from": "load.error",
+      "event": "wizard.abort",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Exit after operational failure."
+    },
+    {
+      "id": "t056",
+      "from": "face.error",
+      "event": "wizard.abort",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Exit after operational failure."
+    },
+    {
+      "id": "t057",
+      "from": "preview.error",
+      "event": "wizard.abort",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Exit after operational failure."
+    },
+    {
+      "id": "t058",
+      "from": "save.error",
+      "event": "wizard.abort",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Exit after operational failure."
+    },
+    {
+      "id": "t059",
+      "from": "save.conflict",
+      "event": "wizard.abort",
+      "to": "failed",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Exit after operational failure."
+    },
+    {
+      "id": "t060",
+      "from": "review.ready",
+      "event": "review.face",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Edit face; retain answers, invalidate review authorization."
+    },
+    {
+      "id": "t061",
+      "from": "review.ready",
+      "event": "review.modules",
+      "to": "modules.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Edit modules; retain answers, invalidate review authorization."
+    },
+    {
+      "id": "t062",
+      "from": "review.ready",
+      "event": "review.colors",
+      "to": "color.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Edit colors; retain answers, invalidate review authorization."
+    },
+    {
+      "id": "t063",
+      "from": "review.ready",
+      "event": "review.shell",
+      "to": "shell.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Edit shell; retain answers, invalidate review authorization."
+    },
+    {
+      "id": "t064",
+      "from": "preview.error",
+      "event": "review.modules",
+      "to": "modules.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Edit candidate after preparation failure."
+    },
+    {
+      "id": "t065",
+      "from": "preview.error",
+      "event": "review.face",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Edit candidate after preparation failure."
+    },
+    {
+      "id": "t066",
+      "from": "preset.ready",
+      "event": "back.preset",
+      "to": "destination.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t067",
+      "from": "face.mode",
+      "event": "back.face",
+      "to": "preset.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t068",
+      "from": "face.identity",
+      "event": "back.identity",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t069",
+      "from": "face.sample",
+      "event": "back.sample",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t070",
+      "from": "face.error",
+      "event": "back.sample",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t071",
+      "from": "face.expression",
+      "event": "back.expression",
+      "to": "face.sample",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t072",
+      "from": "modules.ready",
+      "event": "back.modules",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t073",
+      "from": "order.ready",
+      "event": "back.order",
+      "to": "modules.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t074",
+      "from": "color.ready",
+      "event": "back.color",
+      "to": "order.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t075",
+      "from": "styles.ready",
+      "event": "back.styles",
+      "to": "color.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t076",
+      "from": "shell.ready",
+      "event": "back.shell",
+      "to": "styles.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t077",
+      "from": "review.ready",
+      "event": "back.review",
+      "to": "shell.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t078",
+      "from": "confirm.ready",
+      "event": "back.confirm",
+      "to": "review.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+    },
+    {
+      "id": "t079",
+      "from": "entry",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t080",
+      "from": "entry",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t081",
+      "from": "inspecting",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t082",
+      "from": "inspecting",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t083",
+      "from": "destination.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t084",
+      "from": "destination.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t085",
+      "from": "preset.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t086",
+      "from": "preset.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t087",
+      "from": "face.mode",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t088",
+      "from": "face.mode",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t089",
+      "from": "face.identity",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t090",
+      "from": "face.identity",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t091",
+      "from": "face.building",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t092",
+      "from": "face.building",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t093",
+      "from": "face.rolling",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t094",
+      "from": "face.rolling",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t095",
+      "from": "face.sample",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t096",
+      "from": "face.sample",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t097",
+      "from": "face.expression",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t098",
+      "from": "face.expression",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t099",
+      "from": "modules.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t100",
+      "from": "modules.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t101",
+      "from": "order.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t102",
+      "from": "order.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t103",
+      "from": "color.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t104",
+      "from": "color.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t105",
+      "from": "styles.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t106",
+      "from": "styles.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t107",
+      "from": "shell.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t108",
+      "from": "shell.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t109",
+      "from": "preview.pending",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t110",
+      "from": "preview.pending",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t111",
+      "from": "review.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t112",
+      "from": "review.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t113",
+      "from": "confirm.ready",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t114",
+      "from": "confirm.ready",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t115",
+      "from": "save.pending",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t116",
+      "from": "save.pending",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t117",
+      "from": "load.error",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t118",
+      "from": "load.error",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t119",
+      "from": "face.error",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t120",
+      "from": "face.error",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t121",
+      "from": "preview.error",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t122",
+      "from": "preview.error",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t123",
+      "from": "save.error",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t124",
+      "from": "save.error",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t125",
+      "from": "save.conflict",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t126",
+      "from": "save.conflict",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t127",
+      "from": "refresh.pending",
+      "event": "wizard.cancel",
+      "to": "cancelling",
+      "guard": null,
+      "commands": [
+        "session.cleanup"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal."
+    },
+    {
+      "id": "t128",
+      "from": "refresh.pending",
+      "event": "wizard.terminate",
+      "to": "terminating",
+      "guard": null,
+      "commands": [
+        "session.terminate"
+      ],
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143."
+    },
+    {
+      "id": "t129",
+      "from": "destination.ready",
+      "event": "input.invalid",
+      "to": "destination.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t130",
+      "from": "destination.ready",
+      "event": "cursor.move",
+      "to": "destination.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t131",
+      "from": "preset.ready",
+      "event": "input.invalid",
+      "to": "preset.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t132",
+      "from": "preset.ready",
+      "event": "cursor.move",
+      "to": "preset.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t133",
+      "from": "face.mode",
+      "event": "input.invalid",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t134",
+      "from": "face.mode",
+      "event": "cursor.move",
+      "to": "face.mode",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t135",
+      "from": "face.identity",
+      "event": "input.invalid",
+      "to": "face.identity",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t136",
+      "from": "face.identity",
+      "event": "cursor.move",
+      "to": "face.identity",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t137",
+      "from": "face.sample",
+      "event": "input.invalid",
+      "to": "face.sample",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t138",
+      "from": "face.sample",
+      "event": "cursor.move",
+      "to": "face.sample",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t139",
+      "from": "face.expression",
+      "event": "input.invalid",
+      "to": "face.expression",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t140",
+      "from": "face.expression",
+      "event": "cursor.move",
+      "to": "face.expression",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t141",
+      "from": "modules.ready",
+      "event": "input.invalid",
+      "to": "modules.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t142",
+      "from": "modules.ready",
+      "event": "cursor.move",
+      "to": "modules.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t143",
+      "from": "order.ready",
+      "event": "input.invalid",
+      "to": "order.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t144",
+      "from": "order.ready",
+      "event": "cursor.move",
+      "to": "order.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t145",
+      "from": "color.ready",
+      "event": "input.invalid",
+      "to": "color.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t146",
+      "from": "color.ready",
+      "event": "cursor.move",
+      "to": "color.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t147",
+      "from": "styles.ready",
+      "event": "input.invalid",
+      "to": "styles.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t148",
+      "from": "styles.ready",
+      "event": "cursor.move",
+      "to": "styles.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t149",
+      "from": "shell.ready",
+      "event": "input.invalid",
+      "to": "shell.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t150",
+      "from": "shell.ready",
+      "event": "cursor.move",
+      "to": "shell.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t151",
+      "from": "review.ready",
+      "event": "input.invalid",
+      "to": "review.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t152",
+      "from": "review.ready",
+      "event": "cursor.move",
+      "to": "review.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t153",
+      "from": "confirm.ready",
+      "event": "input.invalid",
+      "to": "confirm.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t154",
+      "from": "confirm.ready",
+      "event": "cursor.move",
+      "to": "confirm.ready",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t155",
+      "from": "load.error",
+      "event": "input.invalid",
+      "to": "load.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t156",
+      "from": "load.error",
+      "event": "cursor.move",
+      "to": "load.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t157",
+      "from": "face.error",
+      "event": "input.invalid",
+      "to": "face.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t158",
+      "from": "face.error",
+      "event": "cursor.move",
+      "to": "face.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t159",
+      "from": "preview.error",
+      "event": "input.invalid",
+      "to": "preview.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t160",
+      "from": "preview.error",
+      "event": "cursor.move",
+      "to": "preview.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t161",
+      "from": "save.error",
+      "event": "input.invalid",
+      "to": "save.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t162",
+      "from": "save.error",
+      "event": "cursor.move",
+      "to": "save.error",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t163",
+      "from": "save.conflict",
+      "event": "input.invalid",
+      "to": "save.conflict",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ],
+      "description": "Keep active prompt and entered value; display decoder feedback."
+    },
+    {
+      "id": "t164",
+      "from": "save.conflict",
+      "event": "cursor.move",
+      "to": "save.conflict",
+      "guard": null,
+      "commands": [],
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ],
+      "description": "Move current selection only."
+    },
+    {
+      "id": "t165",
+      "from": "cancelling",
+      "event": "cleanup.done",
+      "to": "cancelled",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Cleanup completed after cancellation."
+    },
+    {
+      "id": "t166",
+      "from": "terminating",
+      "event": "cleanup.done",
+      "to": "terminated",
+      "guard": null,
+      "commands": [],
+      "updates": [],
+      "description": "Cleanup completed after SIGTERM."
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+$ smol init
+Usage: smol init [--config PATH] [--help
+]

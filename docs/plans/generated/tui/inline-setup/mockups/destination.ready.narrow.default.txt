@@ -1,0 +1,5 @@
+$ smol init
+Config: /home/ada/.config/smol/config.to
+ml
+Existing valid configuration found.
+? Continue with this destination? ▌

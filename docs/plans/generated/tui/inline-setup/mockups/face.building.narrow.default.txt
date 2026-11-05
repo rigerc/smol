@@ -1,0 +1,4 @@
+$ smol init
+Generate one static face sample; no anim
+ation loop.
+⠋ Build face sample

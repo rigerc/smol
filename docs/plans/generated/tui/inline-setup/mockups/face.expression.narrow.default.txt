@@ -1,0 +1,3 @@
+$ smol init
+Options come from face.States().
+? Expression (default: idle) ▌

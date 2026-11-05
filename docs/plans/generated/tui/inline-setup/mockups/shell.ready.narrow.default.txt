@@ -1,0 +1,4 @@
+$ smol init
+Detected shell: bash
+? Shell: Bash / Zsh / Fish / No instruct
+ions ▌

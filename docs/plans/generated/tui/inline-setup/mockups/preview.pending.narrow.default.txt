@@ -1,0 +1,5 @@
+$ smol init
+Validate candidate, serialize exact TOML
+ and render a static preview without wri
+tes.
+⠋ Prepare review

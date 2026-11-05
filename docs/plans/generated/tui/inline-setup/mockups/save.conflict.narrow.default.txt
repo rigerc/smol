@@ -1,0 +1,4 @@
+$ smol init
+The destination changed since review. No
+ replacement was made.
+? Refresh and review / Exit ▌

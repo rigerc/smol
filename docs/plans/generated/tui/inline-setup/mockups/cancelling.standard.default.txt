@@ -1,0 +1,2 @@
+$ smol init
+Cancelling; cleaning up before exit 130.

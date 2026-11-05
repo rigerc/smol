@@ -1,0 +1,4 @@
+$ smol init
+Only now create parent directories and a
+ temporary file, then commit atomically.
+⠋ Save configuration

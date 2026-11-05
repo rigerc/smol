@@ -1,0 +1,3 @@
+$ smol init
+smol init: interactive setup requires te
+rminal stdin and stderr.
