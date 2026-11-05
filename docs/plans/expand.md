@@ -35,7 +35,7 @@ Independent, no API changes, can ship first.
 
 | Fix | Change | Test |
 | --- | --- | --- |
-| Memory fallback | Add `SReclaimable - Shmem` to the pre-3.14 fallback. Treat `MemAvailable == 0` or `>= MemTotal` as unusable and use the fallback. | Fixture with no `MemAvailable`, fixture with `MemAvailable: 0`, fixture with `Shmem` |
+| Memory fallback | Use `MemFree + Buffers + Cached + SReclaimable - Shmem` when `MemAvailable` is missing, malformed, or greater than `MemTotal`. Preserve valid values from zero through `MemTotal`, inclusive. Clamp fallback arithmetic to `[0, MemTotal]` without unsigned underflow or overflow. | Missing/malformed `MemAvailable`; zero reports all memory used; equality reports zero used; above-total fallback; `Shmem` larger than the fallback sum |
 | Shell detection | Prefer the parent process when it is a known shell: read `proc/self/stat` for the ppid, then `proc/<ppid>/comm`; skip `sudo`, `su`, `sh`, `env`, `time`, `strace`, `gdb`. Fall back to `$SHELL`. | Fixtures for `proc/self/stat`, `proc/100/comm`; env fallback cases |
 | OS fallback | Try `/etc/os-release`, then `/etc/lsb-release` (`DISTRIB_DESCRIPTION`, else `DISTRIB_ID` + `DISTRIB_RELEASE`), then `/usr/lib/os-release`. | Fixture with only `lsb-release` |
 | Memory precision | Keep current KiB/MiB/GiB rules while extracting a shared size formatter for Phase 2. | Existing mem tests unchanged |
@@ -150,11 +150,30 @@ type Env struct {
     FS         fs.FS
     Getenv     func(string) string
     Now        func() time.Time
-    Statfs     func(path string) (total, free uint64, err error)
+    Statfs     func(path string) (DiskStats, error)
     Uname      func() (machine string, err error)
     Interfaces func() ([]Interface, error)
     Display    *format.Options // nil means format.Default()
+    Options    *Options        // nil means DefaultOptions(); immutable during fetching
 }
+
+// All sizes are bytes. Keep free blocks distinct from unprivileged availability.
+type DiskStats struct {
+    Total     uint64
+    Free      uint64
+    Available uint64
+}
+
+// Module-owned option types; modules never imports the config package.
+type Options struct {
+    Disk     DiskOptions
+    Time     TimeOptions
+    Battery  BatteryOptions
+    LocalIP  LocalIPOptions
+    Packages PackagesOptions
+}
+
+func DefaultOptions() Options
 
 type Interface struct {
     Name string
@@ -166,10 +185,18 @@ type Interface struct {
 `cmd/app` populates every hook; tests supply fakes. `app.Runtime` gains matching
 optional fields (`Now`, `Statfs`, `Uname`, `Interfaces`) so app-level tests can
 inject them; `cmd/app` supplies the real syscall-backed implementations. A nil
-`Display` means `format.Default()`, so existing module tests keep working without
-a new literal. A module that needs a nil hook returns an internal error, which
-surfaces only under `--debug`. `time`, `statfs`, and `uname` live in `internal/app`
-closures so `modules` stays free of platform wiring.
+`Display` means `format.Default()`, and nil `Options` means `DefaultOptions()`,
+so existing module tests keep working without a new literal. A module that needs
+a nil hook returns an internal error, which surfaces only under `--debug`.
+Production hooks live in `cmd/app`, keeping platform wiring out of `modules`.
+The statfs hook converts `Blocks`, `Bfree`, and `Bavail` to byte counts using
+the filesystem block size and rejects invalid or overflowing values.
+
+After config resolution and CLI overrides, `internal/app` copies the validated
+module configurations into one `modules.Options` value and passes its address
+through `Env.Options`. Each fetch reads its own typed options from that value.
+This also applies when `render.Options.Lookup` wraps the registry for `face`;
+no command mutates registry entries or package-level option state.
 
 ### New package
 
@@ -238,6 +265,21 @@ This keeps `DisallowUnknownFields` effective: `[modules.diks]` and unknown keys
 inside each table both fail with a line number. Adding a module with options
 means adding one struct and one validation branch; modules without options need
 no config entry and reject a `[modules.<name>]` table automatically.
+
+The per-module config types alias module-owned option structs (for example,
+`type DiskConfig = modules.DiskOptions`), with explicit TOML tags on their fields.
+`modules.DefaultOptions()` defines mount `/`, time layout `15:04`, battery
+device `""`, localip interface `""` and family `ipv4`, and package manager `auto`.
+`config.Default()` allocates a fresh, non-nil pointer for every module table,
+initialized from those defaults, before TOML decoding. Omitted tables, empty
+tables, and omitted keys in partial tables therefore all retain their defaults.
+Explicit values (including an empty battery device or interface) remain intact;
+invalid explicit values are rejected rather than silently replaced.
+
+For `--print-config`, compare each effective module value against
+`modules.DefaultOptions()` and omit equal tables regardless of pointer identity
+or whether the input file contained an empty table. App wiring copies these
+values into `Env.Options`; it never passes `config.Config` to `modules`.
 
 `formatKiB` and `formatUptime` move into `internal/format` and accept options.
 The default path keeps the existing formatting, including the `<1m` cutoff and
@@ -309,7 +351,7 @@ defaults extend `config.Default()` with one palette entry per new module.
 | Module | Default text | Fields | Config | Sources |
 | --- | --- | --- | --- | --- |
 | `swap` | `used / total` | `used`, `free`, `total`, `percent`, `bar` | none | `/proc/meminfo` (`SwapTotal`, `SwapFree`) |
-| `disk` | `used / total` | `used`, `free`, `total`, `percent`, `bar` | `[modules.disk] mount = "/"` | `Env.Statfs` |
+| `disk` | `used / total` | `used`, `free`, `available`, `total`, `percent`, `bar` | `[modules.disk] mount = "/"` | `Env.Statfs` |
 | `battery` | `82%` | `percent`, `status` | `[modules.battery] device = ""` (first battery) | `/sys/class/power_supply/*` |
 | `terminal` | `kitty` | none | none | `TERM_PROGRAM`, `KITTY_PID`, `WEZTERM_EXECUTABLE`, `WT_SESSION`, `SSH_TTY`/`SSH_CONNECTION`, `TERM` |
 | `desktop` | `GNOME` | `wm`, `session` | none | `XDG_CURRENT_DESKTOP`, `DESKTOP_SESSION`, `WAYLAND_DISPLAY`, `HYPRLAND_INSTANCE_SIGNATURE`, `SWAYSOCK` |
@@ -327,7 +369,12 @@ Notes:
 - `battery` uses the first battery by default and reports `charging`,
   `discharging`, `full`, or `unknown` from its `status`; `device` selects
   another entry under `/sys/class/power_supply`.
-- `disk` uses `used = total - free` (available to unprivileged users).
+- `disk` uses `used = Total - Free`, where `Free` includes reserved free blocks;
+  `available` is separately taken from `Available` (unprivileged availability).
+  `percent` and `bar` use `used / (used + available)`, matching the capacity
+  visible to an unprivileged user. A zero denominator omits those fields while
+  retaining valid size fields. Reject inconsistent stats (`Free > Total` or
+  `Available > Free`) instead of allowing unsigned subtraction to wrap.
 - `time` uses Go layouts rather than strftime; document `15:04:05` and `Mon 15:04`.
 
 ### Batch B — syscalls, sysfs scans, and file databases
@@ -383,6 +430,11 @@ rule; `manager = "rpm"` is a validation error with a message explaining why.
 - **Modules:** table tests with fixture trees for every new module (`swap`,
   `battery`, `machine`, `init`, `processes`, `virt`, `packages`, `os` fallback,
   `shell` parent chain). Fake hooks for `disk`, `localip`, `time`, `uname`.
+- **Memory boundaries:** preserve zero and total `MemAvailable`; fallback for
+  missing, malformed, and above-total values; clamp fallback arithmetic safely.
+- **Disk accounting:** fake stats with reserved blocks (`Total=100`, `Free=20`,
+  `Available=15`) report used 80, free 20, available 15, and percent 84 with
+  default precision. Cover zero capacity and inconsistent stats as well.
 - **Fields:** every registered field has a test; a missing field drops that
   reference and its separator, matching `ErrUnavailable`.
 - **Format parser:** `{mem}`, `{mem:percent}`, `{mem:percent:extra}` (error),
@@ -391,6 +443,11 @@ rule; `manager = "rpm"` is a validation error with a message explaining why.
   IEC/SI, digits, abbreviation, compact, rounding, percent bar/number.
 - **Config:** XDG search order, `--list-config-paths` markers, `--print-config`
   round-trip (print then parse), unknown module table, unknown key.
+- **Module options:** omitted and empty tables retain every module default;
+  partial localip config retains `family = "ipv4"`; explicit empty selectors
+  remain valid; default tables are omitted when printing. App tests verify that
+  custom mount, time layout, battery device, interface/family, and package manager
+  reach their fetches, and separate runs do not share mutable option state.
 - **App:** `--debug` stderr lines, empty stderr without it, timeout reporting,
   `--list-modules` descriptions, `--list-fields`, exit codes unchanged.
 - **Face compatibility:** static and animated `{face}` output is unchanged by
@@ -451,9 +508,47 @@ Each step ends with `make fix && make check`. Steps 2–4 should land before any
 module that relies on fields or display options, so new modules never invent
 their own formatting helpers.
 
+## 11. Comparison with fullfetch and dawnfetch
+
+Source review baseline: fullfetch `3f47cf0` (version 3.2.0) and dawnfetch
+`bb540c8` (version 0.1.6). The expansion column describes planned behavior,
+not features already implemented in smol. No common performance benchmark was
+run; a module deadline is not an end-to-end startup measurement.
+
+| Capability | smol now | smol after this plan | fullfetch | dawnfetch |
+| --- | --- | --- | --- | --- |
+| Output | One configurable line; optional animated face | Same output model, with selectable fields | Multi-line summary beside distro/custom ASCII art | Multi-line themed summary; ASCII or image logo; interactive theme preview |
+| Platforms | Linux | Linux | Linux, Windows, macOS | Linux, Windows, macOS |
+| Swap, disk, battery, local IP, packages | Not implemented | Opt-in modules | Implemented | Implemented; package collector excluded on Windows |
+| Desktop and terminal | Shell only | Environment-based desktop and terminal detection | No dedicated desktop/terminal entries in the action registry | Desktop, WM, terminal, resolution, and visual settings collectors |
+| Hardware detail | CPU model and logical thread count | Core count, frequency, CPU temperature, machine/board/BIOS fields | CPU frequency, GPU, motherboard, RAM model | CPU/GPU details and temperature summaries in full mode |
+| Configuration | Strict TOML; CLI format/color overrides; config check | Typed module/display options, field discovery, effective TOML export | JSON field/order/color/art schemes; generation and migration commands | JSON user/theme settings; theme selection and diagnostics commands |
+| Collection policy | Fetch referenced modules concurrently; shared 20 ms default deadline | Preserve shared deadline and silent omission | Selected display functions run sequentially; package counters run concurrently; no shared collection deadline | Collectors run concurrently and wait for all; command-specific deadlines and fast/full modes |
+| External probes | No subprocesses or network probes | Same constraint; interface enumeration for local IP | GPU/RAM/RPM probes invoke commands; local IP resolves the hostname | External probes use a command runner with individual timeouts |
+
+Evidence: fullfetch's [dispatch and configuration loader](https://github.com/Buct0r/fullfetch/blob/3f47cf0fd62777bc808839951a61e23dddd12fc0/loadconfig.go),
+[collectors and renderer](https://github.com/Buct0r/fullfetch/blob/3f47cf0fd62777bc808839951a61e23dddd12fc0/functions.go),
+and [dependencies](https://github.com/Buct0r/fullfetch/blob/3f47cf0fd62777bc808839951a61e23dddd12fc0/go.mod);
+dawnfetch's [CLI](https://github.com/almightynan/dawnfetch/blob/bb540c8aee6169a98d9a7c2e45be56dedfefc8b6/internal/dawnfetch/cli/run.go),
+[help](https://github.com/almightynan/dawnfetch/blob/bb540c8aee6169a98d9a7c2e45be56dedfefc8b6/internal/dawnfetch/cli/help.go),
+[collector registry](https://github.com/almightynan/dawnfetch/blob/bb540c8aee6169a98d9a7c2e45be56dedfefc8b6/internal/dawnfetch/system/collect_registry.go),
+and [command runner](https://github.com/almightynan/dawnfetch/blob/bb540c8aee6169a98d9a7c2e45be56dedfefc8b6/internal/dawnfetch/system/exec.go).
+
+The useful overlap is the cheap system data already covered by this expansion.
+Preserve smol's prompt-oriented output, shared deadline, strict config, and
+failure-as-absence behavior. Fullfetch's multiple mounts/batteries and combined
+package-manager counts, and dawnfetch's interactive themes/images, are broader
+product choices rather than prerequisites for this plan. Boot time and locale
+are possible cheap follow-ups from fullfetch, but remain outside this expansion.
+
 ## Source references
 
 - Memory: `src/detection/memory/memory_linux.c` (fallback, ZFS ARC).
+- Linux [available-memory calculation](https://github.com/torvalds/linux/blob/master/mm/show_mem.c)
+  explicitly permits zero; do not replace it with the legacy fallback.
+- Linux [`statfs(2)`](https://man7.org/linux/man-pages/man2/statfs.2.html)
+  distinguishes all free blocks (`f_bfree`) from unprivileged availability
+  (`f_bavail`).
 - Uptime: `src/common/impl/duration.c` (rounding, units), `src/modules/uptime`.
 - Shell: `src/detection/terminalshell/terminalshell_linux.c` (parent chain).
 - OS: `src/detection/os/os_linux.c` (os-release, lsb-release order).
