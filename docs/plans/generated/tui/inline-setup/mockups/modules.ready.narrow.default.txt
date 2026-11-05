@@ -1,7 +1,12 @@
 $ smol init
 [x] os  [x] kernel  [x] uptime  [x] mem
-[ ] cpu  [ ] host  [ ] load  [ ] shell
-[ ] user
+ [ ] cpu  [ ] host
+[ ] load  [ ] shell  [ ] user  [ ] swap
+ [ ] disk  [ ] battery
+[ ] terminal  [ ] desktop  [ ] virt  [ ]
+ time  [ ] processes
+[ ] init  [ ] machine  [ ] localip  [ ]
+packages
 Face: enabled (edit in Face setup)
 ? Choose modules; Space toggles, Enter c
 ontinues ▌

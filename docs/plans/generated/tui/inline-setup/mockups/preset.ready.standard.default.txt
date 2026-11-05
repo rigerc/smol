@@ -1,3 +1,8 @@
 $ smol init
-Default: os → kernel → uptime → mem
-? Start from: Existing / Minimal / Default / Detailed ▌
+Default: os · kernel · uptime · mem
+minimal: os · kernel, color = never
+banner: face kitty (happy) + user@host · os · cpu · mem
+prompt: user@host · mem:percent
+server: host · uptime · load · mem · disk (mount /)
+Existing is offered only when the file parses.
+? Start from: Default / minimal / banner / prompt / server / Existing ▌

@@ -206,6 +206,8 @@ state = "idle"
 # preset = "kitty"
 # Or choose a deterministic seed (do not combine with preset):
 # seed = "smol"
+# Or generate a fresh identity each run (excludes seed/preset):
+# random = true
 
 # Animation is enabled by --animate, and cannot be combined with --debug.
 

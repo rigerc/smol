@@ -1,0 +1,8 @@
+Module order: enter every number once
+1. os
+2. kernel
+3. uptime
+4. mem
+> 1 2 3 4
+
+Enter accepts; Esc back; Ctrl+C cancels

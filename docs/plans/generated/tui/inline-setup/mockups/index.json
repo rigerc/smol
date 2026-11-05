@@ -27,10 +27,10 @@
   ],
   "theme": "dark",
   "components_cataloged": 0,
-  "screen_count": 26,
-  "state_count": 35,
-  "variant_count": 70,
-  "transition_count": 166,
+  "screen_count": 27,
+  "state_count": 36,
+  "variant_count": 72,
+  "transition_count": 177,
   "presentations": [
     "inline"
   ],
@@ -276,6 +276,28 @@
       "warnings": [],
       "text": "mockups/modules.ready.standard.default.txt",
       "svg": "mockups/modules.ready.standard.default.svg"
+    },
+    {
+      "state": "fields.ready",
+      "screen": "fields",
+      "presentation": "inline",
+      "exit_code": null,
+      "viewport": "narrow",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/fields.ready.narrow.default.txt",
+      "svg": "mockups/fields.ready.narrow.default.svg"
+    },
+    {
+      "state": "fields.ready",
+      "screen": "fields",
+      "presentation": "inline",
+      "exit_code": null,
+      "viewport": "standard",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/fields.ready.standard.default.txt",
+      "svg": "mockups/fields.ready.standard.default.svg"
     },
     {
       "state": "order.ready",

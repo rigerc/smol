@@ -69,6 +69,12 @@
       "description": "Select modules."
     },
     {
+      "id": "fields.ready",
+      "screen": "fields",
+      "terminal": false,
+      "description": "Choose default text or one field for the current module."
+    },
+    {
       "id": "order.ready",
       "screen": "order",
       "terminal": false,
@@ -223,8 +229,8 @@
   "guards": [
     {
       "id": "preset.valid",
-      "expression": "event.preset in {minimal, default, detailed} OR (event.preset == existing AND context.parseStatus == valid)",
-      "description": "event.preset in {minimal, default, detailed} OR (event.preset == existing AND context.parseStatus == valid)"
+      "expression": "event.preset in {default, minimal, banner, prompt, server} OR (event.preset == existing AND context.parseStatus == valid)",
+      "description": "Known preset, or Existing when the target parses."
     },
     {
       "id": "preset.invalid",
@@ -283,8 +289,8 @@
     },
     {
       "id": "module.valid",
-      "expression": "event.module in nine_system_modules",
-      "description": "event.module in nine_system_modules"
+      "expression": "event.module in {battery, cpu, desktop, disk, host, init, kernel, load, localip, machine, mem, os, packages, processes, shell, swap, terminal, time, uptime, user, virt}",
+      "description": "One of the 21 supported system modules; face is separate."
     },
     {
       "id": "module.invalid",
@@ -292,9 +298,39 @@
       "description": "NOT module.valid"
     },
     {
-      "id": "modules.nonempty",
-      "expression": "length(selected_modules) >= 1",
-      "description": "length(selected_modules) >= 1"
+      "id": "fields.pending",
+      "expression": "length(selected_modules) >= 1 AND length(field_queue) > 0",
+      "description": "At least one enabled module declares selectable fields."
+    },
+    {
+      "id": "fields.none",
+      "expression": "length(selected_modules) >= 1 AND length(field_queue) == 0",
+      "description": "Enabled modules declare no selectable fields."
+    },
+    {
+      "id": "field.invalid",
+      "expression": "NOT (event.module == field_queue[field_index] AND (event.field == \"\" OR event.field in field_options(event.module)))",
+      "description": "Unknown module/field or a module out of sequence."
+    },
+    {
+      "id": "fields.more",
+      "expression": "(event.module == field_queue[field_index] AND (event.field == \"\" OR event.field in field_options(event.module))) AND field_index + 1 < length(field_queue)",
+      "description": "Another module field prompt follows."
+    },
+    {
+      "id": "fields.complete",
+      "expression": "(event.module == field_queue[field_index] AND (event.field == \"\" OR event.field in field_options(event.module))) AND field_index + 1 >= length(field_queue)",
+      "description": "Last module field prompt completed."
+    },
+    {
+      "id": "fields.not-first",
+      "expression": "field_index > 0",
+      "description": "A previous field prompt exists."
+    },
+    {
+      "id": "fields.first",
+      "expression": "field_index == 0",
+      "description": "The first field prompt is active."
     },
     {
       "id": "modules.empty",
@@ -453,7 +489,7 @@
       "updates": [
         {
           "field": "draft",
-          "expression": "basis(event.preset); existing preserves format/style/face; presets replace only format"
+          "expression": "apply_preset(basis(event.preset), event.preset); existing preserves all supported values; repository presets replace the keys they define"
         },
         {
           "field": "preset",
@@ -464,12 +500,24 @@
           "expression": "unique module references in draft.format"
         },
         {
+          "field": "selected_fields",
+          "expression": "field selectors in draft.format for enabled modules"
+        },
+        {
+          "field": "field_queue",
+          "expression": "enabled modules in selected_modules that declare fields"
+        },
+        {
+          "field": "field_index",
+          "expression": "0"
+        },
+        {
           "field": "face_enabled",
           "expression": "draft.format contains {face}"
         },
         {
           "field": "face_mode",
-          "expression": "infer from draft.face, else seed"
+          "expression": "infer from draft.face, else disabled"
         },
         {
           "field": "format_dirty",
@@ -480,7 +528,7 @@
           "expression": "false"
         }
       ],
-      "description": "Create draft from selected basis; clear write authorization."
+      "description": "Create draft from the selected basis; apply only keys the preset defines; clear write authorization."
     },
     {
       "id": "t008",
@@ -792,6 +840,14 @@
           "expression": "toggle event.module in selected_modules"
         },
         {
+          "field": "selected_fields",
+          "expression": "selected_fields restricted to the new selected_modules"
+        },
+        {
+          "field": "field_queue",
+          "expression": "selected_modules filtered to modules with declared fields"
+        },
+        {
           "field": "format_dirty",
           "expression": "true"
         },
@@ -800,7 +856,7 @@
           "expression": "false"
         }
       ],
-      "description": "Toggle module; preserve relative order, append newly enabled IDs."
+      "description": "Toggle module; preserve relative order, append newly enabled IDs, drop fields of disabled modules."
     },
     {
       "id": "t025",
@@ -821,11 +877,24 @@
       "id": "t026",
       "from": "modules.ready",
       "event": "modules.submit",
-      "to": "order.ready",
-      "guard": "modules.nonempty",
+      "to": "fields.ready",
+      "guard": "fields.pending",
       "commands": [],
-      "updates": [],
-      "description": "Continue to order."
+      "updates": [
+        {
+          "field": "field_queue",
+          "expression": "selected_modules filtered to modules with declared fields"
+        },
+        {
+          "field": "selected_fields",
+          "expression": "merge field selectors from draft.format with existing selected_fields, restricted to field_queue"
+        },
+        {
+          "field": "field_index",
+          "expression": "0"
+        }
+      ],
+      "description": "Continue to field selection for enabled modules that declare fields."
     },
     {
       "id": "t027",
@@ -860,10 +929,10 @@
         },
         {
           "field": "draft",
-          "expression": "if format_dirty or order changed, join tokens with \" · \"; otherwise preserve format bytes"
+          "expression": "if format_dirty or order changed, join {module} or {module:field} tokens with \" · \"; otherwise preserve format bytes"
         }
       ],
-      "description": "Accept permutation; preserve custom format if selection/order unchanged."
+      "description": "Accept permutation; preserve custom format if selection, fields and order are unchanged."
     },
     {
       "id": "t029",
@@ -1503,16 +1572,20 @@
       "id": "t073",
       "from": "order.ready",
       "event": "back.order",
-      "to": "modules.ready",
-      "guard": null,
+      "to": "fields.ready",
+      "guard": "fields.pending",
       "commands": [],
       "updates": [
+        {
+          "field": "field_index",
+          "expression": "max(length(field_queue) - 1, 0)"
+        },
         {
           "field": "authorized",
           "expression": "false"
         }
       ],
-      "description": "Back retains draft; selecting a different preset is the only explicit basis reset."
+      "description": "Back to the last field prompt; retain draft."
     },
     {
       "id": "t074",
@@ -2998,6 +3071,207 @@
       "commands": [],
       "updates": [],
       "description": "Cleanup completed after SIGTERM."
+    },
+    {
+      "id": "t167",
+      "from": "modules.ready",
+      "event": "modules.submit",
+      "guard": "fields.none",
+      "to": "order.ready",
+      "commands": [],
+      "description": "No enabled module declares fields; continue directly to order.",
+      "updates": [
+        {
+          "field": "field_queue",
+          "expression": "[]"
+        },
+        {
+          "field": "selected_fields",
+          "expression": "{}"
+        },
+        {
+          "field": "field_index",
+          "expression": "0"
+        }
+      ]
+    },
+    {
+      "id": "t168",
+      "from": "fields.ready",
+      "event": "fields.submit",
+      "guard": "fields.more",
+      "to": "fields.ready",
+      "commands": [],
+      "description": "Accept field choice; advance to the next field-capable module.",
+      "updates": [
+        {
+          "field": "selected_fields",
+          "expression": "if event.field == \"\" remove event.module else set selected_fields[event.module] = event.field"
+        },
+        {
+          "field": "format_dirty",
+          "expression": "format_dirty OR event.field != current_field(draft.format, event.module)"
+        },
+        {
+          "field": "field_index",
+          "expression": "field_index + 1"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ]
+    },
+    {
+      "id": "t169",
+      "from": "fields.ready",
+      "event": "fields.submit",
+      "guard": "fields.complete",
+      "to": "order.ready",
+      "commands": [],
+      "description": "Accept last field choice; continue to order.",
+      "updates": [
+        {
+          "field": "selected_fields",
+          "expression": "if event.field == \"\" remove event.module else set selected_fields[event.module] = event.field"
+        },
+        {
+          "field": "format_dirty",
+          "expression": "format_dirty OR event.field != current_field(draft.format, event.module)"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ]
+    },
+    {
+      "id": "t170",
+      "from": "fields.ready",
+      "event": "fields.submit",
+      "guard": "field.invalid",
+      "to": "fields.ready",
+      "commands": [],
+      "description": "Reject an unknown field or out-of-sequence module; keep the prompt.",
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "\"Choose default text or a listed field for this module.\""
+        }
+      ]
+    },
+    {
+      "id": "t171",
+      "from": "fields.ready",
+      "event": "back.fields",
+      "guard": "fields.not-first",
+      "to": "fields.ready",
+      "commands": [],
+      "description": "Go back one field prompt; retain accepted choices.",
+      "updates": [
+        {
+          "field": "field_index",
+          "expression": "field_index - 1"
+        },
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ]
+    },
+    {
+      "id": "t172",
+      "from": "fields.ready",
+      "event": "back.fields",
+      "guard": "fields.first",
+      "to": "modules.ready",
+      "commands": [],
+      "description": "Go back to module selection from the first field prompt.",
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ]
+    },
+    {
+      "id": "t173",
+      "from": "fields.ready",
+      "event": "wizard.cancel",
+      "guard": null,
+      "to": "cancelling",
+      "commands": [
+        "session.cleanup"
+      ],
+      "description": "Cancel before commit; stop worker, discard late outcomes, remove uncommitted temp files, restore terminal.",
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ]
+    },
+    {
+      "id": "t174",
+      "from": "fields.ready",
+      "event": "wizard.terminate",
+      "guard": null,
+      "to": "terminating",
+      "commands": [
+        "session.terminate"
+      ],
+      "description": "SIGTERM before commit; same cleanup, exit 143.",
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ]
+    },
+    {
+      "id": "t175",
+      "from": "fields.ready",
+      "event": "input.invalid",
+      "guard": null,
+      "to": "fields.ready",
+      "commands": [],
+      "description": "Keep active prompt and entered value; display decoder feedback.",
+      "updates": [
+        {
+          "field": "error_text",
+          "expression": "event.message"
+        }
+      ]
+    },
+    {
+      "id": "t176",
+      "from": "fields.ready",
+      "event": "cursor.move",
+      "guard": null,
+      "to": "fields.ready",
+      "commands": [],
+      "description": "Move current selection only.",
+      "updates": [
+        {
+          "field": "cursor",
+          "expression": "clamp or wrap to listed options using event.delta"
+        }
+      ]
+    },
+    {
+      "id": "t177",
+      "from": "order.ready",
+      "event": "back.order",
+      "guard": "fields.none",
+      "to": "modules.ready",
+      "commands": [],
+      "description": "No field prompts in this pass; go back to module selection.",
+      "updates": [
+        {
+          "field": "authorized",
+          "expression": "false"
+        }
+      ]
     }
   ]
 }

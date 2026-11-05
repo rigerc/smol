@@ -1,0 +1,10 @@
+mem field
+▸ default text
+  used
+  free
+  available
+  total
+  percent
+  bar
+
+up/down choose; Enter accepts; Esc back; Ctrl+C cancels

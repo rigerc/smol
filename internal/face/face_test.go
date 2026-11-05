@@ -2,6 +2,7 @@ package face
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	faceroll "github.com/rigerc/faceroll/go"
@@ -71,5 +72,39 @@ func TestDiscovery(t *testing.T) {
 	names[0] = "changed"
 	if Presets()[0] == "changed" {
 		t.Fatal("mutated upstream presets")
+	}
+}
+
+func TestRandomIdentity(t *testing.T) {
+	source := strings.NewReader(strings.Repeat("a", 32))
+	options := Options{Random: true, State: "idle"}
+	resolved, err := Resolve(options, source)
+	if err != nil || resolved.Random || resolved.Seed == nil || *resolved.Seed != strings.Repeat("61", 16) || source.Len() != 16 {
+		t.Fatalf("%#v %v", resolved, err)
+	}
+	a, err := Build(resolved)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := Build(resolved)
+	if err != nil || a.Still != b.Still {
+		t.Fatalf("identity changed: %v", err)
+	}
+	empty := ""
+	for _, invalid := range []Options{{Random: true, Seed: &empty, State: "idle"}, {Random: true, Preset: "kitty", State: "idle"}, {Random: true, State: "unknown"}} {
+		if _, err := Resolve(invalid, source); err == nil {
+			t.Fatalf("accepted %#v", invalid)
+		}
+	}
+	if _, err := Resolve(options, strings.NewReader("short")); err == nil {
+		t.Fatal("short entropy accepted")
+	}
+	if _, err := RandomSeed(nil); err == nil {
+		t.Fatal("nil entropy accepted")
+	}
+	unchanged := Options{State: "idle"}
+	got, err := Resolve(unchanged, nil)
+	if err != nil || got.Random || got.Seed != nil {
+		t.Fatalf("%#v %v", got, err)
 	}
 }

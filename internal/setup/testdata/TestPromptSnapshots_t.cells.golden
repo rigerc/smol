@@ -1,0 +1,10 @@
+1: "Replace"
+2: "/home/ada/config.to"
+3: "ml?"
+4: "▸ No               " [fg=Accent]
+5: "  Yes              " [fg=Text]
+6:
+7: "up/down choose;"
+8: "Enter accepts; Esc"
+9: "back; Ctrl+C"
+10: "cancels"

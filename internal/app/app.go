@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"flag"
 	"fmt"
@@ -20,10 +21,13 @@ import (
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/playback"
 	"github.com/rigerc/smol/internal/render"
+	"github.com/rigerc/smol/internal/setup"
 )
 
 // Runtime supplies the process inputs used by the command.
 type Runtime struct {
+	Setup       setup.Runtime
+	Entropy     io.Reader
 	Now         func() time.Time
 	Statfs      func(string) (modules.DiskStats, error)
 	Uname       func() (string, error)
@@ -37,6 +41,9 @@ type Runtime struct {
 
 // Run executes the command and returns its process exit code.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime Runtime) int {
+	if len(args) > 0 && args[0] == "init" {
+		return setup.Run(ctx, args[1:], stdout, stderr, runtime.Setup, modules.Env{FS: runtime.FS, Getenv: runtime.Getenv, Now: runtime.Now, Statfs: runtime.Statfs, Uname: runtime.Uname, Interfaces: runtime.Interfaces})
+	}
 	getenv := runtime.Getenv
 	stdoutIsTTY := runtime.StdoutIsTTY
 	version := runtime.Version
@@ -181,10 +188,10 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 			report(stderr, "smol: --face-preset must not be empty")
 			return 2
 		}
-		cfg.Face.Preset, cfg.Face.Seed = *facePreset, nil
+		cfg.Face.Preset, cfg.Face.Seed, cfg.Face.Random = *facePreset, nil, false
 	}
 	if supplied["face-seed"] {
-		cfg.Face.Seed, cfg.Face.Preset = faceSeed, ""
+		cfg.Face.Seed, cfg.Face.Preset, cfg.Face.Random = faceSeed, "", false
 	}
 	if supplied["face-state"] {
 		cfg.Face.State = *faceState
@@ -231,13 +238,29 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 	}
 	var animation faceroll.Animation
 	if hasFace {
-		animation, err = face.Build(cfg.Face)
+		entropy := runtime.Entropy
+		if entropy == nil {
+			entropy = rand.Reader
+		}
+		effective, resolveErr := face.Resolve(cfg.Face, entropy)
+		if resolveErr != nil {
+			if *debug {
+				report(stderr, "smol: face: "+resolveErr.Error())
+			}
+			hasFace = false
+			*animate = false
+		} else {
+			animation, err = face.Build(effective)
+		}
 		if err != nil {
 			report(stderr, "smol: "+err.Error())
 			return 1
 		}
 		opts.Lookup = func(name string) (modules.Module, bool) {
 			if name == "face" {
+				if !hasFace {
+					return modules.Module{}, false
+				}
 				return modules.Module{Fetch: func(context.Context, modules.Env) (modules.Result, error) {
 					return modules.Result{Text: animation.Still}, nil
 				}}, true

@@ -1,0 +1,25 @@
+System modules (face: seed; Esc returns to Face setup)
+Changing selection, fields or order normalizes format literals to · separators.
+▸ [ ] battery
+  [ ] cpu
+  [ ] desktop
+  [ ] disk
+  [ ] host
+  [ ] init
+  [x] kernel
+  [ ] load
+  [ ] localip
+  [ ] machine
+  [x] mem
+  [x] os
+  [ ] packages
+  [ ] processes
+  [ ] shell
+  [ ] swap
+  [ ] terminal
+  [ ] time
+  [x] uptime
+  [ ] user
+  [ ] virt
+
+Space toggles; Enter continues; Esc back; Ctrl+C cancels

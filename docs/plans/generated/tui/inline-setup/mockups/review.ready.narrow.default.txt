@@ -4,11 +4,15 @@ ig.toml
 Preview: [sample face] · Ubuntu · 3d 4h
 · 4.6 GiB / 15.6 GiB
 format = "{face} · {os} · {uptime} · {me
-m}"
+m:percent}"
 color = "auto"
+[display.size]
+unit = "iec"
+[modules.disk]
+mount = "/"
 [face]
-random = true
-state = "idle"
+preset = "kitty"
+state = "happy"
 Random every run: preview is a sample; n
 o seed will be saved.
 ? Save / Edit face / Edit modules / Edit

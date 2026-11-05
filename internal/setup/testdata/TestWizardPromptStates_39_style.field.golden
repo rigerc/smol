@@ -1,0 +1,21 @@
+os foreground
+  terminal default
+  black
+  red
+  green
+  yellow
+  blue
+  magenta
+▸ cyan
+  white
+  bright-black
+  bright-red
+  bright-green
+  bright-yellow
+  bright-blue
+  bright-magenta
+  bright-cyan
+  bright-white
+
+up/down choose; Enter accepts; Esc
+back; Ctrl+C cancels

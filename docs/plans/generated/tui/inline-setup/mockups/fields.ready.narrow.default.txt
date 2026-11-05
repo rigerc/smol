@@ -1,0 +1,6 @@
+$ smol init
+mem fields: default text, used, free, av
+ailable, total, percent, bar
+Choosing a field rewrites the format wit
+h a field selector.
+? mem: default text or one field ▌

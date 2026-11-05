@@ -415,6 +415,53 @@
         ]
       },
       {
+        "id": "fields.content",
+        "screen": "fields",
+        "node_id": "content",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "Session",
+            "required": true,
+            "source": "draft"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "fields.question",
+        "screen": "fields",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "literal:prompt controls and validation defined in SPEC.md"
+          },
+          {
+            "name": "stream",
+            "type": "enum(stderr|stdout)",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": [
+          "fields.submit",
+          "back.fields",
+          "cursor.move",
+          "wizard.cancel"
+        ]
+      },
+      {
         "id": "order.content",
         "screen": "order",
         "node_id": "content",
@@ -1144,14 +1191,14 @@
         "type": "string",
         "initial": "default",
         "scope": "feature",
-        "description": "Chosen configuration basis."
+        "description": "Chosen configuration basis: default, minimal, banner, prompt, server, or existing."
       },
       {
         "name": "draft",
         "type": "Config?",
         "initial": null,
         "scope": "feature",
-        "description": "Editable complete config, including preserved face and style settings."
+        "description": "Editable complete config, including preserved display, module options, face and style settings."
       },
       {
         "name": "selected_modules",
@@ -1159,6 +1206,27 @@
         "initial": [],
         "scope": "feature",
         "description": "Unique ordered enabled IDs; face appended on enabling if not already present."
+      },
+      {
+        "name": "selected_fields",
+        "type": "map<string,string>",
+        "initial": {},
+        "scope": "feature",
+        "description": "Module to chosen field; absent means default module text."
+      },
+      {
+        "name": "field_queue",
+        "type": "string[]",
+        "initial": [],
+        "scope": "feature",
+        "description": "Enabled modules with declared fields, in selection order, captured on modules.submit."
+      },
+      {
+        "name": "field_index",
+        "type": "int",
+        "initial": 0,
+        "scope": "feature",
+        "description": "Index of the active prompt in field_queue."
       },
       {
         "name": "face_enabled",
@@ -1200,7 +1268,7 @@
         "type": "bool",
         "initial": false,
         "scope": "feature",
-        "description": "Selection/order edits require normalized token-join format; otherwise preserve custom literals."
+        "description": "Selection/field/order edits require normalized token-join format; otherwise preserve custom literals."
       },
       {
         "name": "shell_choice",
@@ -1280,7 +1348,7 @@
       },
       {
         "id": "module-uniqueness",
-        "expression": "selected_modules has unique supported IDs; length >= 1 before leaving modules.ready",
+        "expression": "selected_modules has unique supported IDs; length >= 1 before leaving modules.ready; selected_fields keys are a subset of selected_modules",
         "description": "Face-only output is allowed."
       },
       {
@@ -1302,6 +1370,11 @@
         "id": "preview-seed-stability",
         "expression": "review preparation does not change sample_seed",
         "description": "Every-run sample is stable until explicit reroll or identity change."
+      },
+      {
+        "id": "field-uniqueness",
+        "expression": "selected_fields has at most one entry per module; every value is empty or a field declared by that module",
+        "description": "One format token per module, optionally with one declared field selector."
       }
     ]
   },
@@ -1381,7 +1454,7 @@
       "payload": {
         "preset": "string"
       },
-      "description": "Choose existing, minimal, default, or detailed.",
+      "description": "Choose existing, default, minimal, banner, prompt, or server.",
       "origin": "ui"
     },
     {
@@ -1442,13 +1515,22 @@
       "payload": {
         "module": "string"
       },
-      "description": "Toggle a system module. Face enablement is edited in Face setup.",
+      "description": "Toggle one of the 21 system modules. Face enablement is edited in Face setup.",
       "origin": "ui"
     },
     {
       "id": "modules.submit",
       "payload": {},
-      "description": "Continue with at least one enabled module.",
+      "description": "Continue with at least one enabled module; capture the field queue.",
+      "origin": "ui"
+    },
+    {
+      "id": "fields.submit",
+      "payload": {
+        "module": "string",
+        "field": "string"
+      },
+      "description": "Choose default text (empty field) or one declared field for the current module.",
       "origin": "ui"
     },
     {
@@ -1673,6 +1755,12 @@
       "origin": "ui"
     },
     {
+      "id": "back.fields",
+      "payload": {},
+      "description": "Go back one field prompt or to module selection without persistence.",
+      "origin": "ui"
+    },
+    {
       "id": "back.order",
       "payload": {},
       "description": "Go back from order without persistence.",
@@ -1730,7 +1818,7 @@
         "usage.failed",
         "help.ready"
       ],
-      "side_effect": "Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.",
+      "side_effect": "Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination; ignore XDG_CONFIG_DIRS for init writes. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.",
       "idempotent": true
     },
     {
@@ -1775,7 +1863,7 @@
         "preview.ready",
         "preview.failed"
       ],
-      "side_effect": "Read-only validation and serialization of exact TOML; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.",
+      "side_effect": "Read-only validation and serialization of exact TOML, including preserved display/module options and {module:field} tokens; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.",
       "idempotent": true
     },
     {
@@ -1862,7 +1950,7 @@
         "usage.failed",
         "help.ready"
       ],
-      "side_effect": "Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.",
+      "side_effect": "Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination; ignore XDG_CONFIG_DIRS for init writes. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.",
       "idempotent": true
     },
     {
@@ -1921,7 +2009,7 @@
         "preview.ready",
         "preview.failed"
       ],
-      "side_effect": "Read-only validation and serialization of exact TOML; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.",
+      "side_effect": "Read-only validation and serialization of exact TOML, including preserved display/module options and {module:field} tokens; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.",
       "idempotent": true
     },
     {
@@ -1947,10 +2035,22 @@
         "name": "Config",
         "fields": [
           {
+            "name": "display",
+            "type": "Display",
+            "required": true,
+            "description": "Display precision and unit controls; preserved unchanged by this wizard."
+          },
+          {
+            "name": "modules",
+            "type": "ModulesConfig",
+            "required": true,
+            "description": "Per-module options; preserved unchanged by this wizard."
+          },
+          {
             "name": "format",
             "type": "string",
             "required": true,
-            "description": "Validated template; selected tokens normally joined with ·."
+            "description": "Validated template; tokens may be {module} or {module:field}."
           },
           {
             "name": "color",
@@ -1962,7 +2062,7 @@
             "name": "style",
             "type": "map<string,Style>",
             "required": true,
-            "description": "Per-module foreground and bold."
+            "description": "Per-module foreground and bold; default palette covers every system module."
           },
           {
             "name": "face",
@@ -2105,26 +2205,44 @@
           {
             "name": "context",
             "type": "Context",
-            "required": false,
+            "required": true,
             "description": "Resolved destination summary."
           },
           {
             "name": "draft",
             "type": "Config",
-            "required": false,
-            "description": "In-memory answers."
+            "required": true,
+            "description": "In-memory answers including untouched display and module options."
           },
           {
             "name": "review",
             "type": "Review",
-            "required": false,
+            "required": true,
             "description": "Prepared review data."
           },
           {
             "name": "error",
             "type": "string",
-            "required": false,
+            "required": true,
             "description": "Active diagnostic."
+          },
+          {
+            "name": "fieldQueue",
+            "type": "string[]",
+            "required": true,
+            "description": "Modules with declared fields awaiting a choice."
+          },
+          {
+            "name": "fieldIndex",
+            "type": "int",
+            "required": true,
+            "description": "Active field prompt."
+          },
+          {
+            "name": "selectedFields",
+            "type": "map<string,string>",
+            "required": true,
+            "description": "Chosen field per module; absent means default text."
           }
         ]
       },
@@ -2208,6 +2326,281 @@
             "description": "Wrapping width; unknown uses 80."
           }
         ]
+      },
+      {
+        "name": "Preset",
+        "fields": [
+          {
+            "name": "id",
+            "type": "enum(default|minimal|banner|prompt|server|existing)",
+            "required": true,
+            "description": "Stable preset identifier shown in the prompt."
+          },
+          {
+            "name": "label",
+            "type": "string",
+            "required": true,
+            "description": "Short display label."
+          },
+          {
+            "name": "format",
+            "type": "string",
+            "required": false,
+            "description": "Format applied by this preset; absent for Existing."
+          },
+          {
+            "name": "color",
+            "type": "enum(auto|always|never)",
+            "required": false,
+            "description": "Color mode defined by minimal and default; otherwise preserved."
+          },
+          {
+            "name": "facePreset",
+            "type": "string",
+            "required": false,
+            "description": "Face preset applied by banner."
+          },
+          {
+            "name": "faceState",
+            "type": "string",
+            "required": false,
+            "description": "Expression applied by banner; default is idle."
+          },
+          {
+            "name": "diskMount",
+            "type": "string",
+            "required": false,
+            "description": "Disk mount applied by server."
+          }
+        ]
+      },
+      {
+        "name": "FieldOption",
+        "fields": [
+          {
+            "name": "module",
+            "type": "string",
+            "required": true,
+            "description": "Owning system module."
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "Field selector accepted after a colon."
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": true,
+            "description": "User-facing field description from the module registry."
+          }
+        ]
+      },
+      {
+        "name": "Display",
+        "fields": [
+          {
+            "name": "size",
+            "type": "SizeOptions",
+            "required": true,
+            "description": "IEC/SI units and precision."
+          },
+          {
+            "name": "duration",
+            "type": "DurationOptions",
+            "required": true,
+            "description": "Duration abbreviations and rounding."
+          },
+          {
+            "name": "percent",
+            "type": "PercentOptions",
+            "required": true,
+            "description": "Percent digits and bar width."
+          },
+          {
+            "name": "temp",
+            "type": "TempOptions",
+            "required": true,
+            "description": "Temperature unit and precision."
+          }
+        ]
+      },
+      {
+        "name": "SizeOptions",
+        "fields": [
+          {
+            "name": "unit",
+            "type": "enum(iec|si)",
+            "required": true,
+            "description": "Byte unit system."
+          },
+          {
+            "name": "digits",
+            "type": "int",
+            "required": true,
+            "description": "-1 automatic or 0..6 places."
+          }
+        ]
+      },
+      {
+        "name": "DurationOptions",
+        "fields": [
+          {
+            "name": "abbreviation",
+            "type": "bool",
+            "required": true,
+            "description": "Short unit names."
+          },
+          {
+            "name": "spaceBeforeUnit",
+            "type": "bool",
+            "required": true,
+            "description": "Space between value and unit."
+          },
+          {
+            "name": "compact",
+            "type": "bool",
+            "required": true,
+            "description": "Omit zero units."
+          },
+          {
+            "name": "round",
+            "type": "bool",
+            "required": true,
+            "description": "Round seconds into the next minute."
+          }
+        ]
+      },
+      {
+        "name": "PercentOptions",
+        "fields": [
+          {
+            "name": "digits",
+            "type": "int",
+            "required": true,
+            "description": "0..6 decimal places."
+          },
+          {
+            "name": "width",
+            "type": "int",
+            "required": true,
+            "description": "ASCII bar width, 1..100."
+          }
+        ]
+      },
+      {
+        "name": "TempOptions",
+        "fields": [
+          {
+            "name": "unit",
+            "type": "enum(c|f|k)",
+            "required": true,
+            "description": "Temperature unit."
+          },
+          {
+            "name": "digits",
+            "type": "int",
+            "required": true,
+            "description": "0..6 decimal places."
+          }
+        ]
+      },
+      {
+        "name": "ModulesConfig",
+        "fields": [
+          {
+            "name": "disk",
+            "type": "DiskOptions",
+            "required": false,
+            "description": "Disk mount selection."
+          },
+          {
+            "name": "time",
+            "type": "TimeOptions",
+            "required": false,
+            "description": "Go time layout."
+          },
+          {
+            "name": "battery",
+            "type": "BatteryOptions",
+            "required": false,
+            "description": "Battery device selection."
+          },
+          {
+            "name": "localIP",
+            "type": "LocalIPOptions",
+            "required": false,
+            "description": "Interface and address family."
+          },
+          {
+            "name": "packages",
+            "type": "PackagesOptions",
+            "required": false,
+            "description": "Package database selection."
+          }
+        ]
+      },
+      {
+        "name": "DiskOptions",
+        "fields": [
+          {
+            "name": "mount",
+            "type": "string",
+            "required": true,
+            "description": "Mount point; default /."
+          }
+        ]
+      },
+      {
+        "name": "TimeOptions",
+        "fields": [
+          {
+            "name": "format",
+            "type": "string",
+            "required": true,
+            "description": "Go time layout; default 15:04."
+          }
+        ]
+      },
+      {
+        "name": "BatteryOptions",
+        "fields": [
+          {
+            "name": "device",
+            "type": "string",
+            "required": true,
+            "description": "Power-supply name; empty selects the first battery."
+          }
+        ]
+      },
+      {
+        "name": "LocalIPOptions",
+        "fields": [
+          {
+            "name": "interface",
+            "type": "string",
+            "required": true,
+            "description": "Interface name; empty selects the first non-loopback interface."
+          },
+          {
+            "name": "family",
+            "type": "enum(ipv4|ipv6)",
+            "required": true,
+            "description": "Address family."
+          }
+        ]
+      },
+      {
+        "name": "PackagesOptions",
+        "fields": [
+          {
+            "name": "manager",
+            "type": "enum(auto|dpkg|pacman|apk)",
+            "required": true,
+            "description": "Package database; auto probes in order."
+          }
+        ]
       }
     ],
     "sources": [
@@ -2224,6 +2617,20 @@
         "cardinality": "one",
         "provider": "internal/face.Presets and internal/face.States",
         "description": "Read identifiers without mutating upstream registry; random modes are additional UI choices."
+      },
+      {
+        "id": "preset_options",
+        "model": "Preset",
+        "cardinality": "many",
+        "provider": "Built-in Default plus presets/minimal.toml, presets/banner.toml, presets/prompt.toml and presets/server.toml",
+        "description": "Read-only preset definitions; Existing is offered separately when the target parses."
+      },
+      {
+        "id": "field_options",
+        "model": "FieldOption",
+        "cardinality": "many",
+        "provider": "modules.Get(name).Fields for enabled modules",
+        "description": "Declared field selectors and descriptions; the registry is not duplicated."
       }
     ]
   },
@@ -2255,7 +2662,7 @@
         "target": "preset",
         "when": "preset.submit",
         "predicate": "preset.valid",
-        "message": "Choose an available preset."
+        "message": "Choose Default, minimal, banner, prompt, server, or Existing."
       },
       {
         "id": "face-mode-choice",
@@ -2305,6 +2712,13 @@
         "when": "modules.submit",
         "predicate": "length >= 1",
         "message": "Select at least one module."
+      },
+      {
+        "id": "field-choice",
+        "target": "selected_fields",
+        "when": "fields.submit",
+        "predicate": "event.module == field_queue[field_index] AND (event.field == \"\" OR event.field in field_options(event.module))",
+        "message": "Choose default text or a listed field for this module."
       },
       {
         "id": "permutation",

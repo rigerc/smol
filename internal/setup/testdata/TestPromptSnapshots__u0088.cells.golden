@@ -1,0 +1,6 @@
+1: "Replace /home/ada/config.toml?"
+2: "▸ No                                   " [fg=Accent]
+3: "  Yes                                  " [fg=Text]
+4:
+5: "up/down choose; Enter accepts; Esc"
+6: "back; Ctrl+C cancels"

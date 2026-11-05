@@ -101,3 +101,34 @@ manager="apk"
 		}
 	}
 }
+
+func TestRandomFaceInvocation(t *testing.T) {
+	path := writeConfig(t, "format = \"{face}/{face}\"\n[face]\nrandom = true\n")
+	runtime := Runtime{FS: os.DirFS("../../testdata/x86"), Getenv: func(string) string { return "" }, Entropy: strings.NewReader(strings.Repeat("a", 32))}
+	var out, diag bytes.Buffer
+	if code := Run(context.Background(), []string{"--config", path}, &out, &diag, runtime); code != 0 {
+		t.Fatalf("%d %s", code, diag.String())
+	}
+	parts := strings.Split(strings.TrimSpace(out.String()), "/")
+	if len(parts) != 2 || parts[0] == "" || parts[0] != parts[1] {
+		t.Fatalf("different characters %q", out.String())
+	}
+	entropy, ok := runtime.Entropy.(*strings.Reader)
+	if !ok || entropy.Len() != 16 {
+		t.Fatalf("wrong entropy consumption: %v", ok)
+	}
+	for _, args := range [][]string{{"--check-config"}, {"--print-config"}, {"--format", "{host}"}, {"--face-preset", "kitty"}, {"--face-seed", "fixed"}} {
+		runtime.Entropy = strings.NewReader("")
+		out.Reset()
+		diag.Reset()
+		if code := Run(context.Background(), append([]string{"--config", path}, args...), &out, &diag, runtime); code != 0 {
+			t.Fatalf("%v: %d %s", args, code, diag.String())
+		}
+	}
+	out.Reset()
+	diag.Reset()
+	runtime.Entropy = strings.NewReader("")
+	if code := Run(context.Background(), []string{"--config", path, "--format", "{face} · {host}", "--debug"}, &out, &diag, runtime); code != 0 || !strings.Contains(diag.String(), "face:") {
+		t.Fatalf("%d %q %s", code, out.String(), diag.String())
+	}
+}

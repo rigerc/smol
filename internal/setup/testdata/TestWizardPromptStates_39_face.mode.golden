@@ -1,0 +1,9 @@
+Face mode
+  disabled
+  preset
+▸ seed
+  random-once
+  random-each-run
+
+up/down choose; Enter accepts; Esc
+back; Ctrl+C cancels

@@ -1,0 +1,30 @@
+## initial
+command: no
+Modules
+▸ [ ] cpu
+  [x] mem
+
+Space toggles; Enter continues; Esc
+back; Ctrl+C cancels
+
+## move
+command: no
+Modules
+  [ ] cpu
+▸ [x] mem
+
+Space toggles; Enter continues; Esc
+back; Ctrl+C cancels
+
+## toggle
+command: no
+Modules
+  [ ] cpu
+▸ [ ] mem
+
+Space toggles; Enter continues; Esc
+back; Ctrl+C cancels
+
+## accept
+command: yes
+

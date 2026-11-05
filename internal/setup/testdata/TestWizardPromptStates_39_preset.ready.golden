@@ -1,0 +1,9 @@
+Configuration preset
+▸ default
+  minimal
+  banner
+  prompt
+  server
+
+up/down choose; Enter accepts; Esc
+back; Ctrl+C cancels

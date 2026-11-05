@@ -4,7 +4,7 @@
 
 ## UI contracts
 
-Most views have one data-bound stderr output and at most one focused prompt; the transient `cleanup` view uses static stderr text. Completion has separate stdout/stderr nodes. Props resolve to declared state fields or session/face_options sources. Gesture events are semantic intent; the decoder maps rich or numbered input to the same events.
+Most views have one data-bound stderr output and at most one focused prompt; the transient `cleanup` view uses static stderr text. Completion has separate stdout/stderr nodes. Props resolve to declared state fields or the session, face_options, preset_options and field_options sources. Gesture events are semantic intent; the decoder maps rich or numbered input to the same events.
 
 - `startup.content`: output at startup/content; emits none.
 - `startup.pending`: spinner at startup/pending; emits none.
@@ -24,6 +24,8 @@ Most views have one data-bound stderr output and at most one focused prompt; the
 - `expression.question`: prompt at expression/question; emits face.expression, back.expression, cursor.move, wizard.cancel.
 - `modules.content`: output at modules/content; emits none.
 - `modules.question`: prompt at modules/question; emits modules.submit, modules.toggle, back.modules, cursor.move, wizard.cancel.
+- `fields.content`: output at fields/content; emits none.
+- `fields.question`: prompt at fields/question; emits fields.submit, back.fields, cursor.move, wizard.cancel.
 - `order.content`: output at order/content; emits none.
 - `order.question`: prompt at order/question; emits order.submit, back.order, wizard.cancel.
 - `color.content`: output at color/content; emits none.
@@ -63,12 +65,15 @@ Most views have one data-bound stderr output and at most one focused prompt; the
 - `preset: string` initially `"default"`. Chosen configuration basis.
 - `draft: Config?` initially `null`. Editable complete config, including preserved face and style settings.
 - `selected_modules: string[]` initially `[]`. Unique ordered enabled IDs; face appended on enabling if not already present.
+- `selected_fields: map<string,string>` initially `{}`. Module to chosen field; absent means default module text.
+- `field_queue: string[]` initially `[]`. Enabled modules with declared fields, in selection order, captured on `modules.submit`.
+- `field_index: int` initially `0`. Index of the active prompt in `field_queue`.
 - `face_enabled: bool` initially `false`. Whether format references face; disabling preserves inactive face options.
 - `face_mode: string` initially `"seed"`. disabled, preset, seed, random-once, random-each-run.
 - `identity: string` initially `"smol"`. Selected preset or typed seed.
 - `sample_seed: string?` initially `null`. Ephemeral preview seed; persisted only for random-once.
 - `face_sample: string` initially `""`. Static sample matching current identity and expression.
-- `format_dirty: bool` initially `false`. Selection/order edits require normalized token-join format; otherwise preserve custom literals.
+- `format_dirty: bool` initially `false`. Selection/field/order edits require normalized token-join format; otherwise preserve custom literals and field selectors.
 - `shell_choice: string` initially `"none"`. bash, zsh, fish, none; detected SHELL is only a suggestion.
 - `review_data: Review?` initially `null`. Exact bytes and preview; invalidated by edits.
 - `authorized: bool` initially `false`. One-use consent bound to reviewed bytes and target fingerprint.
@@ -81,7 +86,8 @@ Most views have one data-bound stderr output and at most one focused prompt; the
 - `stable-random-once`: face_mode == random-once => saved face.seed == sample_seed AND saved face.random absent. The accepted character is repeatable.
 - `runtime-random`: face_mode == random-each-run => saved face.random == true AND sample_seed is never serialized. Generate one ephemeral identity per future invocation.
 - `one-character-per-run`: runtime random identity is resolved once and reused for all expression/frame renders in that invocation. No random change between frames or repeated face tokens.
-- `module-uniqueness`: selected_modules has unique supported IDs; length >= 1 before leaving modules.ready. Face-only output is allowed.
+- `module-uniqueness`: selected_modules has unique supported IDs; length >= 1 before leaving modules.ready; selected_fields keys are a subset of selected_modules. Face-only output is allowed.
+- `field-uniqueness`: selected_fields has at most one entry per module, and every value is empty or a field declared by that module. One token per module, optionally with one field selector.
 - `consent-binding`: commit input bytes == review_data.toml AND input snapshot == context fingerprint. Any edit or refresh clears authorization.
 - `stream-separation`: stdout contains only saved absolute path + newline after commit; all interaction and diagnostics use stderr. No JSON mode or piped input.
 - `cancel-before-commit`: terminal in {cancelled,terminated} => committed == false. Signals after the publication boundary cannot promise no writes.
@@ -99,7 +105,7 @@ Most views have one data-bound stderr output and at most one focused prompt; the
 - `usage.failed` (command), payload `{"message": "string"}`: Invalid arguments, missing path, or stdin/stderr not TTY.
 - `help.ready` (command), payload `{}`: Help printed without terminal checks or writes.
 - `destination.accept` (ui), payload `{}`: Accept resolved destination and its inspection warning.
-- `preset.submit` (ui), payload `{"preset": "string"}`: Choose existing, minimal, default, or detailed.
+- `preset.submit` (ui), payload `{"preset": "string"}`: Choose existing, default, minimal, banner, prompt, or server.
 - `face.mode` (ui), payload `{"mode": "string"}`: Choose disabled, preset, seed, random-once, or random-each-run.
 - `face.identity` (ui), payload `{"value": "string"}`: Submit a known preset ID or printable nonempty seed.
 - `face.built` (command), payload `{"sample": "string", "seed": "string?"}`: A static character sample is available.
@@ -107,8 +113,9 @@ Most views have one data-bound stderr output and at most one focused prompt; the
 - `face.accept` (ui), payload `{}`: Accept this sample and continue to expression.
 - `face.reroll` (ui), payload `{}`: Generate a fresh sample in either random mode.
 - `face.expression` (ui), payload `{"expression": "string"}`: Choose a supported expression.
-- `modules.toggle` (ui), payload `{"module": "string"}`: Toggle a system module. Face enablement is edited in Face setup.
-- `modules.submit` (ui), payload `{}`: Continue with at least one enabled module.
+- `modules.toggle` (ui), payload `{"module": "string"}`: Toggle one of the 21 system modules. Face enablement is edited in Face setup.
+- `modules.submit` (ui), payload `{}`: Continue with at least one enabled module; capture the field queue.
+- `fields.submit` (ui), payload `{"module": "string", "field": "string"}`: Choose default text (empty field) or one declared field for the current module.
 - `order.submit` (ui), payload `{"modules": "string[]"}`: Submit an exact permutation of enabled modules.
 - `color.submit` (ui), payload `{"color": "string"}`: Choose auto, always, or never.
 - `style.update` (ui), payload `{"module": "string", "fg": "string"}`: Set one enabled module foreground; retain existing bold.
@@ -142,6 +149,7 @@ Most views have one data-bound stderr output and at most one focused prompt; the
 - `back.sample` (ui), payload `{}`: Go back from sample without persistence.
 - `back.expression` (ui), payload `{}`: Go back from expression without persistence.
 - `back.modules` (ui), payload `{}`: Go back from modules without persistence.
+- `back.fields` (ui), payload `{}`: Go back one field prompt or to module selection without persistence.
 - `back.order` (ui), payload `{}`: Go back from order without persistence.
 - `back.color` (ui), payload `{}`: Go back from color without persistence.
 - `back.styles` (ui), payload `{}`: Go back from styles without persistence.
@@ -157,7 +165,7 @@ A trigger names the primary intent; machine.transitions is the complete list of 
 
 Primary trigger `wizard.start`; inputs `{"argv": "Invocation", "environment": "Environment", "capabilities": "Terminal"}`. Outcomes: inspect.ready, inspect.failed, usage.failed, help.ready. Idempotent: True.
 
-Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.
+Read only: parse smol init [--config PATH] [--help], reject other options/positionals; help precedes TTY checks. Require stdin and stderr TTY. Resolve explicit path > XDG_CONFIG_HOME > HOME, reject absent destination; ignore XDG_CONFIG_DIRS for init writes. Lstat target and parent components; refuse symlinks/special files. Read bytes and mode, SHA-256 snapshot, parse with extended config schema. Malformed existing TOML becomes a visible replacement warning and disables Existing preset. Permission/read failures emit inspect.failed. No directories, lock files, temp files or config writes.
 
 ### config.reinspect
 
@@ -191,7 +199,7 @@ Primary trigger `retry.face`; random variant with the same entropy semantics as 
 
 Primary trigger `shell.submit`; inputs `{"draft": "Config", "sample_seed": "string?", "shell": "string", "context": "Context"}`. Outcomes: preview.ready, preview.failed. Idempotent: True.
 
-Read-only validation and serialization of exact TOML; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.
+Read-only validation and serialization of exact TOML, including preserved display/module options and `{module:field}` tokens; include random=true only in every-run mode, with seed/preset absent. Static system preview uses injected providers and the existing 20ms renderer budget; unavailable modules vanish with normal separator semantics. Every-run preview reuses session sample_seed: preparing review never rerolls. Return exact TOML bytes, sample and shell instructions; no config writes or subprocesses.
 
 ### review.retry
 
@@ -235,9 +243,11 @@ SIGTERM variant. The `terminating` state exists only until `cleanup.done`; `term
 
 ### Config
 
-- `format: string` (required): Validated template; selected tokens normally joined with ·.
+- `display: Display` (required): Display precision and unit controls; preserved unchanged by this wizard.
+- `modules: ModulesConfig` (required): Per-module options; preserved unchanged by this wizard.
+- `format: string` (required): Validated template; tokens may be `{module}` or `{module:field}`.
 - `color: enum(auto|always|never)` (required): Output color mode.
-- `style: map<string,Style>` (required): Per-module foreground and bold.
+- `style: map<string,Style>` (required): Per-module foreground and bold; the default palette covers every system module.
 - `face: Face` (required): Extended face options; random flag is proposed new runtime behavior.
 
 ### Face
@@ -275,9 +285,12 @@ SIGTERM variant. The `terminating` state exists only until `cleanup.done`; `term
 ### Session
 
 - `context: Context` (optional): Resolved destination summary.
-- `draft: Config` (optional): In-memory answers.
+- `draft: Config` (optional): In-memory answers including untouched display and module options.
 - `review: Review` (optional): Prepared review data.
 - `error: string` (optional): Active diagnostic.
+- `fieldQueue: string[]` (required): Modules with declared fields awaiting a choice.
+- `fieldIndex: int` (required): Active field prompt.
+- `selectedFields: map<string,string>` (required): Chosen field per module; absent means default text.
 
 ### Invocation
 
@@ -299,15 +312,93 @@ SIGTERM variant. The `terminating` state exists only until `cleanup.done`; `term
 - `stdoutTTY: bool` (required): May be redirected; does not govern prompting.
 - `cols: int` (required): Wrapping width; unknown uses 80.
 
+### Preset
+
+- `id: enum(default|minimal|banner|prompt|server|existing)` (required): Stable preset identifier shown in the prompt.
+- `label: string` (required): Short display label.
+- `format: string` (optional): Format applied by this preset; absent for Existing.
+- `color: enum(auto|always|never)` (optional): Color mode defined by default and minimal; otherwise preserved.
+- `facePreset: string` (optional): Face preset applied by banner.
+- `faceState: string` (optional): Expression applied by banner; default is idle.
+- `diskMount: string` (optional): Disk mount applied by server.
+
+### FieldOption
+
+- `module: string` (required): Owning system module.
+- `name: string` (required): Field selector accepted after a colon.
+- `description: string` (required): User-facing field description from the module registry.
+
+### Display
+
+- `size: SizeOptions` (required): IEC/SI units and precision.
+- `duration: DurationOptions` (required): Duration abbreviations and rounding.
+- `percent: PercentOptions` (required): Percent digits and bar width.
+- `temp: TempOptions` (required): Temperature unit and precision.
+
+### SizeOptions
+
+- `unit: enum(iec|si)` (required): Byte unit system.
+- `digits: int` (required): -1 automatic or 0..6 places.
+
+### DurationOptions
+
+- `abbreviation: bool` (required): Short unit names.
+- `spaceBeforeUnit: bool` (required): Space between value and unit.
+- `compact: bool` (required): Omit zero units.
+- `round: bool` (required): Round seconds into the next minute.
+
+### PercentOptions
+
+- `digits: int` (required): 0..6 decimal places.
+- `width: int` (required): ASCII bar width, 1..100.
+
+### TempOptions
+
+- `unit: enum(c|f|k)` (required): Temperature unit.
+- `digits: int` (required): 0..6 decimal places.
+
+### ModulesConfig
+
+- `disk: DiskOptions` (optional): Disk mount selection.
+- `time: TimeOptions` (optional): Go time layout.
+- `battery: BatteryOptions` (optional): Battery device selection.
+- `localIP: LocalIPOptions` (optional): Interface and address family.
+- `packages: PackagesOptions` (optional): Package database selection.
+
+### DiskOptions
+
+- `mount: string` (required): Mount point; default `/`.
+
+### TimeOptions
+
+- `format: string` (required): Go time layout; default `15:04`.
+
+### BatteryOptions
+
+- `device: string` (required): Power-supply name; empty selects the first battery.
+
+### LocalIPOptions
+
+- `interface: string` (required): Interface name; empty selects the first non-loopback interface.
+- `family: enum(ipv4|ipv6)` (required): Address family.
+
+### PackagesOptions
+
+- `manager: enum(auto|dpkg|pacman|apk)` (required): Package database; auto probes in order.
+
+### Sources
+
 - `session` → Session (one), Injected in-memory wizard session: All screen data assembled from declared fields; no implicit I/O.
 - `face_options` → FaceOptions (one), internal/face.Presets and internal/face.States: Read identifiers without mutating upstream registry; random modes are additional UI choices.
+- `preset_options` → Preset (many), Built-in Default plus presets/minimal.toml, presets/banner.toml, presets/prompt.toml and presets/server.toml: Read-only preset definitions; Existing is offered separately when the target parses.
+- `field_options` → FieldOption (many), modules.Get(name).Fields for enabled modules: Declared field selectors and descriptions; the registry is not duplicated.
 
 ## Validation
 
 - `tty-required`, target `Terminal.stdinTTY`, when `wizard.start`: stdinTTY AND stderrTTY. Message: “smol init: interactive setup requires terminal stdin and stderr; use --print-default-config for manual setup.”
 - `destination-required`, target `destination`, when `wizard.start`: resolved path is nonempty and has no control characters. Message: “smol init: cannot resolve config path; pass --config PATH.”
 - `safe-target`, target `Context.path`, when `wizard.start`: target absent or regular file; no symlink in target/parent components. Message: “smol init: destination must be a regular file, not a symlink or special file.”
-- `preset-choice`, target `preset`, when `preset.submit`: preset.valid. Message: “Choose an available preset.”
+- `preset-choice`, target `preset`, when `preset.submit`: preset.valid. Message: “Choose Default, minimal, banner, prompt, server, or Existing.”
 - `face-mode-choice`, target `face_mode`, when `face.mode`: mode in {disabled,preset,seed,random-once,random-each-run}. Message: “Choose a listed face mode.”
 - `face-identity`, target `identity`, when `face.identity`: identity.valid. Message: “Choose a listed preset or enter a seed of 1–256 characters without controls.”
 - `face-source-exclusive`, target `Face.random`, when `shell.submit`: random true excludes any seed field and any nonempty preset; seed and nonempty preset also mutually exclusive. Message: “face: random, preset and seed are mutually exclusive.”
@@ -315,6 +406,7 @@ SIGTERM variant. The `terminating` state exists only until `cleanup.done`; `term
 - `face-expression`, target `Face.state`, when `face.expression`: state in face_options.states. Message: “Choose a listed expression.”
 - `selected-module`, target `selected_modules`, when `modules.toggle`: module.valid. Message: “Choose a system module; edit face in Face setup.”
 - `nonempty-modules`, target `selected_modules`, when `modules.submit`: length >= 1. Message: “Select at least one module.”
+- `field-choice`, target `selected_fields`, when `fields.submit`: event.module == field_queue[field_index] AND (event.field == "" OR event.field in field_options(event.module)). Message: “Choose default text or a listed field for this module.”
 - `permutation`, target `selected_modules`, when `order.submit`: order.valid. Message: “List every enabled module number once.”
 - `color-choice`, target `Config.color`, when `color.submit`: color in {auto,always,never}. Message: “Choose auto, always, or never.”
 - `foreground-choice`, target `Style.fg`, when `style.update`: style.valid. Message: “Choose an enabled module and a listed foreground color.”

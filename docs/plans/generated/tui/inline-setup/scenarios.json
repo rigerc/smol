@@ -26,7 +26,7 @@
     "preset.ready": {
       "components": {
         "content": {
-          "text": "Default: os → kernel → uptime → mem"
+          "text": "Default: os · kernel · uptime · mem\nminimal: os · kernel, color = never\nbanner: face kitty (happy) + user@host · os · cpu · mem\nprompt: user@host · mem:percent\nserver: host · uptime · load · mem · disk (mount /)\nExisting is offered only when the file parses."
         }
       },
       "focus": "question"
@@ -80,7 +80,7 @@
     "modules.ready": {
       "components": {
         "content": {
-          "text": "[x] os  [x] kernel  [x] uptime  [x] mem\n[ ] cpu  [ ] host  [ ] load  [ ] shell  [ ] user\nFace: enabled (edit in Face setup)"
+          "text": "[x] os  [x] kernel  [x] uptime  [x] mem  [ ] cpu  [ ] host\n[ ] load  [ ] shell  [ ] user  [ ] swap  [ ] disk  [ ] battery\n[ ] terminal  [ ] desktop  [ ] virt  [ ] time  [ ] processes\n[ ] init  [ ] machine  [ ] localip  [ ] packages\nFace: enabled (edit in Face setup)"
         }
       },
       "focus": "question"
@@ -88,7 +88,7 @@
     "order.ready": {
       "components": {
         "content": {
-          "text": "1. face\n2. os\n3. kernel\n4. uptime\n5. mem\nChanging order replaces custom format literals with · separators."
+          "text": "1. face\n2. os\n3. kernel\n4. uptime\n5. mem (percent)\nChanging order replaces custom format literals with · separators."
         }
       },
       "focus": "question"
@@ -127,7 +127,7 @@
     "review.ready": {
       "components": {
         "content": {
-          "text": "Destination: /home/ada/.config/smol/config.toml\nPreview: [sample face] · Ubuntu · 3d 4h · 4.6 GiB / 15.6 GiB\nformat = \"{face} · {os} · {uptime} · {mem}\"\ncolor = \"auto\"\n[face]\nrandom = true\nstate = \"idle\"\nRandom every run: preview is a sample; no seed will be saved."
+          "text": "Destination: /home/ada/.config/smol/config.toml\nPreview: [sample face] · Ubuntu · 3d 4h · 4.6 GiB / 15.6 GiB\nformat = \"{face} · {os} · {uptime} · {mem:percent}\"\ncolor = \"auto\"\n[display.size]\nunit = \"iec\"\n[modules.disk]\nmount = \"/\"\n[face]\npreset = \"kitty\"\nstate = \"happy\"\nRandom every run: preview is a sample; no seed will be saved."
         }
       },
       "focus": "question"
@@ -263,6 +263,14 @@
           "text": "SIGTERM received; cleaning up before exit 143."
         }
       }
+    },
+    "fields.ready": {
+      "components": {
+        "content": {
+          "text": "mem fields: default text, used, free, available, total, percent, bar\nChoosing a field rewrites the format with a field selector."
+        }
+      },
+      "focus": "question"
     }
   }
 }

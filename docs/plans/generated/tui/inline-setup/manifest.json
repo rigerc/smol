@@ -4,7 +4,7 @@
   "title": "smol init — inline setup wizard",
   "status": "ready",
   "entry_screen": "startup",
-  "source_brief": "Approved plan v3: interactive-only smol init; configuration presets, optional face with preset/seed/random-once/random-each-run and static preview/reroll, module order and colors, shell instructions, review and explicit create/replace confirmation. No writes on precommit cancel. Design specification only.",
+  "source_brief": "Approved plan v4: interactive-only smol init; repository presets plus built-in Default and Existing, optional face with preset/seed/random-once/random-each-run and static preview/reroll, 21 system modules, per-module field selection, order and colors, preserved display/module options, shell instructions, review and explicit create/replace confirmation. No writes on precommit cancel. Design specification only.",
   "source_mode": "brief",
   "artifact_scope": "full",
   "files": [
@@ -25,7 +25,11 @@
   ],
   "assumptions": [
     "All wizard behavior is proposed, not implemented or runtime verified.",
-    "Nine system modules in presets; optional face is configured separately.",
+    "Presets: Default plus the shipped minimal, banner, prompt and server files; each replaces only its defined keys.",
+    "All 21 current system modules are selectable alphabetically; optional face is configured separately.",
+    "Field selection covers only enabled modules that declare fields, with at most one field per module.",
+    "Display and per-module option tables pass through unchanged; presets may set disk mount.",
+    "XDG_CONFIG_DIRS is ignored for init destinations and bases.",
     "Static previews illustrate semantic output, not faithful terminal execution.",
     "Files may contain local uncommitted changes; this package changes no application source.",
     "Atomic rename prevents partial content; uncooperative concurrent writers can still race the last existing-file snapshot check."

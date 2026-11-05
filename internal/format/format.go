@@ -1,5 +1,5 @@
 // Package format provides shared display options and value formatting.
-package format //nolint:revive // Shared display formatting; distinct from go/format.
+package format
 
 import (
 	"fmt"

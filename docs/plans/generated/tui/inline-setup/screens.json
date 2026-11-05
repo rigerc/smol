@@ -138,13 +138,13 @@
               "id": "content",
               "kind": "output",
               "stream": "stderr",
-              "label": "Default: os → kernel → uptime → mem",
+              "label": "Default: os · kernel · uptime · mem\nminimal: os · kernel (color never)\nbanner: face kitty (happy)\nprompt: user@host · mem:percent\nserver: host · uptime · load · mem · disk",
               "data_ref": "session"
             },
             {
               "id": "question",
               "kind": "prompt",
-              "label": "Start from: Existing / Minimal / Default / Detailed",
+              "label": "Start from: Default / minimal / banner / prompt / server / Existing",
               "focusable": true,
               "on": {
                 "submit": "preset.submit",
@@ -509,7 +509,7 @@
     {
       "id": "modules",
       "title": "Displayed modules",
-      "purpose": "Toggle system modules; face is controlled by Face setup.",
+      "purpose": "Toggle any of the 21 system modules; face is controlled by Face setup.",
       "presentation": "inline",
       "cli": {
         "invocation": "smol init",
@@ -534,7 +534,7 @@
               "id": "content",
               "kind": "output",
               "stream": "stderr",
-              "label": "[x] os  [x] kernel  [x] uptime  [x] mem\n[ ] cpu  [ ] host  [ ] load  [ ] shell  [ ] user\nFace: enabled (edit in Face setup)",
+              "label": "[x] os  [x] kernel  [x] uptime  [x] mem  [ ] cpu  [ ] host\n[ ] load  [ ] shell  [ ] user  [ ] swap  [ ] disk  [ ] battery\n[ ] terminal  [ ] desktop  [ ] virt  [ ] time  [ ] processes\n[ ] init  [ ] machine  [ ] localip  [ ] packages\nFace: enabled (edit in Face setup)",
               "data_ref": "session"
             },
             {
@@ -578,6 +578,76 @@
       ]
     },
     {
+      "id": "fields",
+      "title": "Module fields",
+      "purpose": "Choose default text or one declared field for the current enabled module; face has no fields.",
+      "presentation": "inline",
+      "cli": {
+        "invocation": "smol init",
+        "interaction": "prompted",
+        "stdin": "tty"
+      },
+      "min_size": {
+        "cols": 20,
+        "rows": 1
+      },
+      "regions": [
+        {
+          "id": "transcript",
+          "kind": "container",
+          "orientation": "vertical",
+          "children": [
+            {
+              "id": "invocation",
+              "kind": "command"
+            },
+            {
+              "id": "content",
+              "kind": "output",
+              "stream": "stderr",
+              "label": "mem fields: default text, used, free, available, total, percent, bar\nChoosing a field rewrites the format with a field selector.",
+              "data_ref": "session"
+            },
+            {
+              "id": "question",
+              "kind": "prompt",
+              "label": "mem: default text or one field",
+              "focusable": true,
+              "on": {
+                "submit": "fields.submit",
+                "back": "back.fields",
+                "move": "cursor.move",
+                "cancel": "wizard.cancel"
+              }
+            }
+          ]
+        }
+      ],
+      "focus_order": [
+        "question"
+      ],
+      "keybindings": [
+        {
+          "key": "Enter",
+          "event": "fields.submit",
+          "scope": "question"
+        },
+        {
+          "key": "Esc",
+          "event": "back.fields",
+          "scope": "question"
+        },
+        {
+          "key": "Ctrl+C",
+          "event": "wizard.cancel",
+          "scope": "question"
+        }
+      ],
+      "states": [
+        "fields.ready"
+      ]
+    },
+    {
       "id": "order",
       "title": "Module order",
       "purpose": "Reorder enabled module IDs using an explicit numbered permutation.",
@@ -605,7 +675,7 @@
               "id": "content",
               "kind": "output",
               "stream": "stderr",
-              "label": "1. face\n2. os\n3. kernel\n4. uptime\n5. mem\nChanging order replaces custom format literals with · separators.",
+              "label": "1. face\n2. os\n3. kernel\n4. uptime\n5. mem (percent)\nChanging order replaces custom format literals with · separators.",
               "data_ref": "session"
             },
             {

@@ -3,7 +3,7 @@ $ smol init
 2. os
 3. kernel
 4. uptime
-5. mem
+5. mem (percent)
 Changing order replaces custom format li
 terals with · separators.
 ? Enter order, e.g. 1,3,2,4,5 ▌

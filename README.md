@@ -65,6 +65,47 @@ separator. Prefix and suffix literals remain. Use `{{` and `}}` for literal brac
 Static output has one trailing newline. Control characters in module values are removed;
 format strings containing control characters are rejected.
 
+## Interactive setup
+
+```sh
+./dist/smol init
+./dist/smol init --config ./smol.toml
+```
+
+Setup runs inline and keeps accepted answers in terminal scrollback. Choose a
+preset, optional face, system modules, one field per module, order, colors and
+shell instructions. Enter accepts; Esc goes back; Ctrl+C or EOF cancels. Space
+toggles system modules. Limited terminals use numbered choices, comma-separated
+module numbers, and `:back` / `:cancel`; use `none` to remove all system modules
+when keeping a face. These words are ordinary text in a seed prompt.
+
+Setup requires terminal stdin and stderr. Prompts, previews and instructions
+use stderr; after saving, stdout contains only the absolute config path and a
+newline. `smol init --help` works without a terminal. Normal `smol` never launches
+setup automatically.
+
+The destination is `--config`, then `$XDG_CONFIG_HOME/smol/config.toml`, then
+`$HOME/.config/smol/config.toml`. Relative paths use the startup working directory;
+there is no shell expansion. Setup ignores `XDG_CONFIG_DIRS`. Existing valid
+configs default to Existing and retain display settings, module options, bold
+and inactive styles. The other presets apply only their defined keys. Unedited
+custom formats, repeated tokens and field selectors survive; changing module
+selection, a field or order normalizes the format to tokens separated by ` · `.
+Comments and original TOML formatting are not retained.
+
+Review shows the exact TOML and a static preview. Saving always requires an
+explicit Yes; No is the default. Before confirmation, setup creates no config,
+temporary files or directories. It refuses symlinks and special files, checks
+for destination changes and publishes atomically. New files use mode 0600 and
+new parent directories 0700; replacement preserves file permissions. A conflict
+requires Refresh, review and fresh confirmation. Existing-file replacement has
+a short final check-to-rename race with uncooperative external writers.
+
+Cancellation before publication leaves the config unchanged; SIGTERM exits
+143 and Ctrl+C/EOF exits 130. After publication, setup reports that the file was
+saved even if completion output fails (exit 1). Shell commands are printed for
+you to add manually; setup never executes them or edits shell files.
+
 ## Configuration
 
 ```sh
@@ -193,9 +234,19 @@ state = "idle"
 face = { fg = "cyan", bold = true }
 ```
 
+Set `[face] random = true` to generate a fresh character once per invocation.
+It cannot be combined with a present seed (including an empty seed) or a
+nonempty preset. Repeated face tokens and animation frames share that identity.
+No entropy is read if face is absent or when checking/printing configuration.
+An entropy failure makes the face unavailable, with diagnostics under `--debug`.
+
+Setup offers Random, keep (stores the accepted seed) and Random every run
+(stores `random = true`, without its preview seed). Reroll is explicit; revisiting
+review does not change the sample.
+
 CLI face options override configuration. `--face-preset` replaces a configured
-seed; `--face-seed` replaces a configured preset. Supplying both selectors on the
-CLI, or both in the file, is an error. `--face-state` selects the expression.
+seed and clears random; `--face-seed` replaces a configured preset and clears
+random. Supplying both selectors on the CLI, or both in the file, is an error. `--face-state` selects the expression.
 Face settings are validated even when the format does not include `{face}`.
 
 Animation is enabled only through `--animate`. It redraws the complete line using
