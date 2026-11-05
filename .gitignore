@@ -1,0 +1,15 @@
+/dist/
+/coverage.out
+/coverage.html
+/.env
+*.local
+*.log
+*.test
+*.out
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Generated custom golangci-lint binary with anti-slop-go plugin.
+/custom-gcl

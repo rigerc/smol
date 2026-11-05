@@ -1,0 +1,4 @@
+# Alpine-style: no PRETTY_NAME
+NAME='Alpine Linux'
+ID=alpine
+VERSION_ID=3.20.3

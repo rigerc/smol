@@ -1,0 +1,19 @@
+processor	: 0
+vendor_id	: GenuineIntel
+model name	: Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+cpu MHz		: 1200.000
+
+processor	: 1
+vendor_id	: GenuineIntel
+model name	: Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+cpu MHz		: 1300.000
+
+processor	: 2
+vendor_id	: GenuineIntel
+model name	: Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+cpu MHz		: 1100.000
+
+processor	: 3
+vendor_id	: GenuineIntel
+model name	: Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+cpu MHz		: 1250.000
