@@ -14,6 +14,7 @@ import (
 
 	"github.com/rigerc/smol/internal/face"
 	"github.com/rigerc/smol/internal/format"
+	"github.com/rigerc/smol/internal/icons"
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/render"
 )
@@ -23,6 +24,7 @@ const DefaultFormat = "{os} · {kernel} · {uptime} · {mem}"
 
 // Config is the on-disk configuration.
 type Config struct {
+	Icons   icons.Options           `toml:"icons"`
 	Display format.Options          `toml:"display"`
 	Modules ModulesConfig           `toml:"modules"`
 	Face    face.Options            `toml:"face"`
@@ -37,6 +39,7 @@ type Config struct {
 func Default() Config {
 	cfg := Config{
 		Format:  DefaultFormat,
+		Icons:   icons.Default(),
 		Display: format.Default(),
 		Modules: defaultModules(),
 		Face:    face.Options{State: "idle"},
@@ -124,6 +127,9 @@ func decodeError(name string, err error) error {
 
 // Validate checks values that decoding alone cannot.
 func (c Config) Validate() error {
+	if err := c.Icons.Validate(modules.Known); err != nil {
+		return err
+	}
 	if err := c.Display.Validate(); err != nil {
 		return err
 	}
@@ -153,6 +159,9 @@ func (c Config) Validate() error {
 		if fg := c.Style[n].FG; !render.ValidColor(fg) {
 			return fmt.Errorf("style.%s.fg: unknown color %q (try one of: %s)",
 				n, fg, strings.Join(render.ColorNames(), ", "))
+		}
+		if bg := c.Style[n].BG; !render.ValidColor(bg) {
+			return fmt.Errorf("style.%s.bg: unknown color %q (use a name, index:0..255 or #RRGGBB)", n, bg)
 		}
 	}
 	return nil
@@ -200,6 +209,15 @@ format = "{os} · {kernel} · {uptime} · {mem}"
 # or NO_COLOR is set.
 color = "auto"
 
+# Icons are opt-in and independent of color. Nerd Font glyphs need a compatible
+# terminal font (Nerd Font Mono recommended). auto hides icons in redirected output.
+[icons]
+mode = "never" # auto | always | never
+set = "nerd-font" # nerd-font | ascii
+separator = " "
+# [icons.overrides]
+# mem = "M" # literal text; empty string suppresses this module icon
+
 # Optional character. Add {face} to format to show it.
 [face]
 state = "idle"
@@ -242,7 +260,9 @@ state = "idle"
 
 # Per-module styling. Entries here override smol's built-in palette for that
 # module only. Colors: black red green yellow blue magenta cyan white
-# (and bright-* variants). Use fg = "" for the terminal's default color.
+# (and bright-* variants), index:0..255, or #RRGGBB. Use fg/bg = "" for
+# terminal defaults. Attributes: bold, dim, italic, underline, reverse.
+# Example: mem = { fg = "cyan", bg = "index:0", underline = true }
 [style]
 os  = { fg = "cyan", bold = true }
 mem = { fg = "yellow" }

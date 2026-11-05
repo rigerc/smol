@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.1.0",
+  "generator": "semantic-terminal-mockup-v1.6",
+  "source": "canonical screens.json + machine.json",
+  "note": "Mockups are semantic previews, not termcn runtime captures.",
+  "viewport": {
+    "cols": 80,
+    "rows": 24
+  },
+  "viewports": {
+    "default": {
+      "cols": 80,
+      "rows": 24
+    }
+  },
+  "scenarios": [
+    "default"
+  ],
+  "outputs": [
+    "txt",
+    "svg",
+    "html"
+  ],
+  "theme": "dark",
+  "components_cataloged": 0,
+  "screen_count": 2,
+  "state_count": 7,
+  "variant_count": 7,
+  "transition_count": 39,
+  "presentations": [
+    "inline"
+  ],
+  "items": [
+    {
+      "state": "editing",
+      "screen": "wizard",
+      "presentation": "inline",
+      "exit_code": null,
+      "viewport": "default",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/editing.txt",
+      "svg": "mockups/editing.svg"
+    },
+    {
+      "state": "working",
+      "screen": "wizard",
+      "presentation": "inline",
+      "exit_code": null,
+      "viewport": "default",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/working.txt",
+      "svg": "mockups/working.svg"
+    },
+    {
+      "state": "basic",
+      "screen": "wizard",
+      "presentation": "inline",
+      "exit_code": null,
+      "viewport": "default",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/basic.txt",
+      "svg": "mockups/basic.svg"
+    },
+    {
+      "state": "saved",
+      "screen": "result",
+      "presentation": "inline",
+      "exit_code": 0,
+      "viewport": "default",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/saved.txt",
+      "svg": "mockups/saved.svg"
+    },
+    {
+      "state": "failed",
+      "screen": "result",
+      "presentation": "inline",
+      "exit_code": 1,
+      "viewport": "default",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/failed.txt",
+      "svg": "mockups/failed.svg"
+    },
+    {
+      "state": "cancelled",
+      "screen": "result",
+      "presentation": "inline",
+      "exit_code": 130,
+      "viewport": "default",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/cancelled.txt",
+      "svg": "mockups/cancelled.svg"
+    },
+    {
+      "state": "terminated",
+      "screen": "result",
+      "presentation": "inline",
+      "exit_code": 143,
+      "viewport": "default",
+      "scenario": "default",
+      "warnings": [],
+      "text": "mockups/terminated.txt",
+      "svg": "mockups/terminated.svg"
+    }
+  ],
+  "mapping_warnings": []
+}

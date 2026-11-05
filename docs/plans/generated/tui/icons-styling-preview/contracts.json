@@ -1,0 +1,429 @@
+{
+  "schema_version": "1.0.0",
+  "ui": {
+    "components": [
+      {
+        "id": "wizard.header",
+        "screen": "wizard",
+        "node_id": "header",
+        "kind": "text",
+        "props": [
+          {
+            "name": "text",
+            "type": "string",
+            "required": true,
+            "source": "literal:smol setup"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "wizard.preview",
+        "screen": "wizard",
+        "node_id": "preview",
+        "kind": "output",
+        "props": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "source": "preview"
+          },
+          {
+            "name": "stream",
+            "type": "stderr",
+            "required": true,
+            "source": "literal:stderr"
+          }
+        ],
+        "emits": []
+      },
+      {
+        "id": "wizard.question",
+        "screen": "wizard",
+        "node_id": "question",
+        "kind": "prompt",
+        "props": [
+          {
+            "name": "question",
+            "type": "Question",
+            "required": true,
+            "source": "question"
+          }
+        ],
+        "emits": [
+          "draft.edit",
+          "draft.accept",
+          "draft.back",
+          "wizard.cancel"
+        ]
+      }
+    ]
+  },
+  "state": {
+    "fields": [
+      {
+        "name": "accepted_draft",
+        "type": "Config",
+        "initial": {},
+        "scope": "feature",
+        "description": "Workflow-owned accepted configuration; isolated from tentative edits."
+      },
+      {
+        "name": "candidate",
+        "type": "Config",
+        "initial": {},
+        "scope": "feature",
+        "description": "Last valid tentative configuration."
+      },
+      {
+        "name": "preview",
+        "type": "string",
+        "initial": "Preview: preparing…",
+        "scope": "feature",
+        "description": "Rendered trusted output for the last valid candidate."
+      },
+      {
+        "name": "generation",
+        "type": "integer",
+        "initial": 0,
+        "scope": "feature",
+        "description": "Changes when snapshot inputs change; stale results are discarded."
+      },
+      {
+        "name": "snapshot",
+        "type": "Snapshot",
+        "initial": {},
+        "scope": "feature",
+        "description": "Cached fetched results and attempted/pending modules."
+      },
+      {
+        "name": "question",
+        "type": "Question",
+        "initial": {},
+        "scope": "feature",
+        "description": "Immutable question snapshot and tentative control values."
+      }
+    ],
+    "invariants": [
+      {
+        "id": "draft-isolation",
+        "expression": "tentative changes do not mutate accepted_draft",
+        "description": "Acceptance occurs only after validation and Enter."
+      },
+      {
+        "id": "preview-output",
+        "expression": "header precedes preview; preview precedes question; all on stderr",
+        "description": "No preview output leaks into stdout."
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "draft.edit",
+      "payload": {
+        "value": "string"
+      },
+      "origin": "ui",
+      "description": "Preview a tentative answer without accepting it."
+    },
+    {
+      "id": "draft.accept",
+      "payload": {
+        "value": "string"
+      },
+      "origin": "ui",
+      "description": "Accept the validated current answer into workflow state."
+    },
+    {
+      "id": "draft.back",
+      "payload": {},
+      "origin": "ui",
+      "description": "Discard the tentative answer and navigate Back."
+    },
+    {
+      "id": "preview.completed",
+      "payload": {
+        "generation": "integer",
+        "values": "Snapshot"
+      },
+      "origin": "command",
+      "description": "Merge a bounded module read only if the generation is current."
+    },
+    {
+      "id": "terminal.resize",
+      "payload": {
+        "width": "integer",
+        "rows": "integer"
+      },
+      "origin": "system",
+      "description": "Reflow the header, preview, controls, and hints."
+    },
+    {
+      "id": "terminal.basic",
+      "payload": {},
+      "origin": "system",
+      "description": "Transfer input to numbered mode after renderer shutdown."
+    },
+    {
+      "id": "workflow.work",
+      "payload": {
+        "label": "string"
+      },
+      "origin": "command",
+      "description": "Workflow is inspecting, generating a face, preparing review, or saving."
+    },
+    {
+      "id": "workflow.question",
+      "payload": {
+        "question": "Question"
+      },
+      "origin": "command",
+      "description": "Workflow supplies an immutable question snapshot."
+    },
+    {
+      "id": "wizard.cancel",
+      "payload": {},
+      "origin": "ui",
+      "description": "Cancel while awaiting workflow cleanup or publication outcome."
+    },
+    {
+      "id": "workflow.saved",
+      "payload": {
+        "path": "string"
+      },
+      "origin": "command",
+      "description": "Publication and completion output succeeded."
+    },
+    {
+      "id": "workflow.failed",
+      "payload": {
+        "message": "string"
+      },
+      "origin": "command",
+      "description": "Workflow exits with an operational failure."
+    },
+    {
+      "id": "workflow.cancelled",
+      "payload": {},
+      "origin": "command",
+      "description": "Prepublication cancellation and cleanup completed."
+    },
+    {
+      "id": "workflow.terminated",
+      "payload": {},
+      "origin": "command",
+      "description": "Prepublication SIGTERM and cleanup completed."
+    }
+  ],
+  "commands": [
+    {
+      "id": "preview.read",
+      "trigger": "draft.edit",
+      "input": {
+        "candidate": "Config",
+        "generation": "integer"
+      },
+      "outcomes": [
+        "preview.completed"
+      ],
+      "side_effect": "Read only unattempted selected modules under the shared deadline; never write config or spawn font commands.",
+      "idempotent": true
+    },
+    {
+      "id": "workflow.cancel",
+      "trigger": "wizard.cancel",
+      "input": {},
+      "outcomes": [
+        "workflow.cancelled",
+        "workflow.saved",
+        "workflow.failed",
+        "workflow.terminated"
+      ],
+      "side_effect": "Cancel pending work and await cleanup; completed publication wins over cancellation.",
+      "idempotent": true
+    }
+  ],
+  "data": {
+    "models": [
+      {
+        "name": "Icons",
+        "fields": [
+          {
+            "name": "mode",
+            "type": "enum(auto|always|never)",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for mode."
+          },
+          {
+            "name": "set",
+            "type": "enum(nerd-font|ascii)",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for set."
+          },
+          {
+            "name": "separator",
+            "type": "string",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for separator."
+          },
+          {
+            "name": "overrides",
+            "type": "map<string,string>",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for overrides."
+          }
+        ]
+      },
+      {
+        "name": "Style",
+        "fields": [
+          {
+            "name": "fg",
+            "type": "string",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for fg."
+          },
+          {
+            "name": "bg",
+            "type": "string",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for bg."
+          },
+          {
+            "name": "bold",
+            "type": "bool",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for bold."
+          },
+          {
+            "name": "dim",
+            "type": "bool",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for dim."
+          },
+          {
+            "name": "italic",
+            "type": "bool",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for italic."
+          },
+          {
+            "name": "underline",
+            "type": "bool",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for underline."
+          },
+          {
+            "name": "reverse",
+            "type": "bool",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for reverse."
+          }
+        ]
+      },
+      {
+        "name": "Snapshot",
+        "fields": [
+          {
+            "name": "values",
+            "type": "map<string,Result>",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for values."
+          },
+          {
+            "name": "attempted",
+            "type": "map<string,bool>",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for attempted."
+          },
+          {
+            "name": "pending",
+            "type": "map<string,bool>",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for pending."
+          }
+        ]
+      },
+      {
+        "name": "Question",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for title."
+          },
+          {
+            "name": "choices",
+            "type": "string[]",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for choices."
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for value."
+          },
+          {
+            "name": "checked",
+            "type": "string[]",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for checked."
+          }
+        ]
+      },
+      {
+        "name": "Config",
+        "fields": [
+          {
+            "name": "icons",
+            "type": "Icons",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for icons."
+          },
+          {
+            "name": "style",
+            "type": "map<string,Style>",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for style."
+          },
+          {
+            "name": "format",
+            "type": "string",
+            "required": true,
+            "description": "See PLAN.md and implementation contracts for format."
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "module-snapshot",
+        "provider": "modules.Env",
+        "description": "Injected filesystem and syscall inputs; no font scan or subprocess.",
+        "model": "Snapshot",
+        "cardinality": "one"
+      }
+    ]
+  },
+  "validation": {
+    "rules": [
+      {
+        "id": "color-syntax",
+        "target": "candidate",
+        "when": "draft.edit",
+        "predicate": "foreground/background are a named color, empty, index:0..255, or #RRGGBB",
+        "message": "use a color name, index:0..255 or #RRGGBB"
+      },
+      {
+        "id": "icon-text",
+        "target": "candidate",
+        "when": "draft.accept",
+        "predicate": "icons use known modules and valid UTF-8 without controls",
+        "message": "controls and invalid UTF-8 are not allowed"
+      }
+    ]
+  }
+}

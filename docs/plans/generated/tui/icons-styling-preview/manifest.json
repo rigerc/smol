@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "feature_id": "icons-styling-preview",
+  "title": "Icons, richer styles, and persistent wizard preview",
+  "status": "ready",
+  "entry_screen": "wizard",
+  "source_brief": "User requested icon/styling planning, supplied go-nf, requested persistent preview below header and FIGlet Standard/Phoenix artwork, authorized implementation, then supplied the exact dark/light PNGs.",
+  "files": [
+    "CONTRACTS.md",
+    "DECISIONS.md",
+    "FLOWS.md",
+    "IMPLEMENTATION.md",
+    "PLAN.md",
+    "SPEC.md",
+    "contracts-viewer.html",
+    "contracts.json",
+    "machine.json",
+    "manifest.json",
+    "screens.json",
+    "storyboard.html",
+    "validation-report.json"
+  ],
+  "assumptions": [
+    "This is the implemented design contract at the presentation boundary, not a reconstruction of all destination/save substates.",
+    "Existing save protocol is inherited from inline-setup; PLAN.md and CONTRACTS.md specify changes.",
+    "The user-supplied PNG artwork supersedes the planned generated SVG assets."
+  ],
+  "open_questions": [],
+  "source_mode": "brief",
+  "artifact_scope": "full"
+}

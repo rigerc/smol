@@ -46,7 +46,7 @@ func runSetup(t *testing.T, input, path string) (int, string, string) {
 }
 func TestNewConfig(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "nested", "config.toml")
-	code, out, diag := runSetup(t, strings.Repeat("\n", 13)+"2\n", path)
+	code, out, diag := runSetup(t, strings.Repeat("\n", 15)+"2\n", path)
 	if code != 0 || out != path+"\n" {
 		t.Fatalf("code %d out %q diag %s", code, out, diag)
 	}
@@ -92,7 +92,7 @@ bold = true
 	if err := os.Chmod(path, 0o640); err != nil { //nolint:gosec // G302: verifies preservation of an existing group-readable config.
 		t.Fatal(err)
 	}
-	code, out, diag := runSetup(t, strings.Repeat("\n", 9)+"2\n", path)
+	code, out, diag := runSetup(t, strings.Repeat("\n", 11)+"2\n", path)
 	if code != 0 || out != path+"\n" {
 		t.Fatalf("code %d %s", code, diag)
 	}
@@ -311,6 +311,8 @@ func TestFieldsOrderAndStyles(t *testing.T) {
 		t.Fatal(s.draft.Format)
 	}
 	accept(t, s, "never")
+	accept(t, s, "ascii")
+	accept(t, s, "never")
 	accept(t, s, "Edit foregrounds")
 	accept(t, s, "terminal default")
 	accept(t, s, "red")
@@ -344,7 +346,7 @@ func TestBackNavigation(t *testing.T) {
 		from, to    string
 		index, want int
 	}{
-		{"preset.ready", "destination.ready", 0, 0}, {"face.mode", "preset.ready", 0, 0}, {"face.identity", "face.mode", 0, 0}, {"face.sample", "face.identity", 0, 0}, {"face.expression", "face.sample", 0, 0}, {"modules.ready", "face.expression", 0, 0}, {"fields.ready", "fields.ready", 1, 0}, {"fields.ready", "modules.ready", 0, 0}, {"order.ready", "fields.ready", 0, 1}, {"color.ready", "order.ready", 0, 0}, {"styles.ready", "color.ready", 0, 0}, {"style.field", "style.field", 1, 0}, {"style.field", "styles.ready", 0, 0}, {"shell.ready", "styles.ready", 0, 0}, {"review.ready", "shell.ready", 0, 0}, {"confirm.ready", "review.ready", 0, 0},
+		{"preset.ready", "destination.ready", 0, 0}, {"face.mode", "preset.ready", 0, 0}, {"face.identity", "face.mode", 0, 0}, {"face.sample", "face.identity", 0, 0}, {"face.expression", "face.sample", 0, 0}, {"modules.ready", "face.expression", 0, 0}, {"fields.ready", "fields.ready", 1, 0}, {"fields.ready", "modules.ready", 0, 0}, {"order.ready", "fields.ready", 0, 1}, {"icons.ready", "order.ready", 0, 0}, {"icons.set", "icons.ready", 0, 0}, {"color.ready", "icons.set", 0, 0}, {"styles.ready", "color.ready", 0, 0}, {"style.field", "style.field", 1, 0}, {"style.field", "styles.ready", 0, 0}, {"shell.ready", "styles.ready", 0, 0}, {"review.ready", "shell.ready", 0, 0}, {"confirm.ready", "review.ready", 0, 0},
 	} {
 		t.Run(tc.from+strconv.Itoa(tc.index), func(t *testing.T) {
 			s := freshSession(t)
@@ -390,7 +392,7 @@ type brokenWriter struct{}
 func (brokenWriter) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
 func TestOutputFailures(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.toml")
-	runtime := testRuntime(t, strings.Repeat("\n", 13)+"2\n", path)
+	runtime := testRuntime(t, strings.Repeat("\n", 15)+"2\n", path)
 	var diag bytes.Buffer
 	code := Run(context.Background(), []string{"--config", path}, brokenWriter{}, &diag, runtime, testEnv())
 	if code != 1 || !strings.Contains(diag.String(), "WAS saved") {

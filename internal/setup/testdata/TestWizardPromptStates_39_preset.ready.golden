@@ -6,6 +6,7 @@ Configuration preset
   banner
   prompt
   server
+  icons
 
 up/down choose; Enter accepts; Esc
 back; Ctrl+C cancels

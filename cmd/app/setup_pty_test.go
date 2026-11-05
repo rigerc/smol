@@ -52,7 +52,7 @@ func TestSetupTerminal(t *testing.T) {
 			if mode == "narrow-cancel" {
 				columns = 19
 			}
-			if err = unix.IoctlSetWinsize(terminalFD(slave), unix.TIOCSWINSZ, &unix.Winsize{Row: 40, Col: columns}); err != nil {
+			if err = unix.IoctlSetWinsize(terminalFD(slave), unix.TIOCSWINSZ, &unix.Winsize{Row: 24, Col: columns}); err != nil {
 				t.Fatal(err)
 			}
 			before, err := unix.IoctlGetTermios(terminalFD(slave), unix.TCGETS)
@@ -125,7 +125,7 @@ func TestSetupTerminal(t *testing.T) {
 			switch mode {
 			case "rich-save":
 				_, err = io.WriteString(master, "\r")
-				prompts := []string{"Configuration preset", "Face mode", "System modules", "os field", "kernel field", "uptime field", "mem field", "Module order", "Output color policy", "Foreground styles", "Print shell startup instructions", "Review configuration", "Create "}
+				prompts := []string{"Configuration preset", "Face mode", "System modules", "os field", "kernel field", "uptime field", "mem field", "Module order", "Output icons", "Icon set", "Output color policy", "Module styles", "Print shell startup instructions", "Review configuration", "Create "}
 				offset := transcript.Len()
 				for i, prompt := range prompts {
 					found := false
@@ -151,7 +151,7 @@ func TestSetupTerminal(t *testing.T) {
 					}
 				}
 			case "basic-save":
-				_, err = io.WriteString(master, strings.Repeat("\n", 13)+"2\n")
+				_, err = io.WriteString(master, strings.Repeat("\n", 15)+"2\n")
 			case "rich-term":
 				err = command.Process.Signal(syscall.SIGTERM)
 			case "narrow-cancel":
@@ -197,6 +197,9 @@ func TestSetupTerminal(t *testing.T) {
 			expected := ""
 			if want == 0 {
 				expected = path + "\n"
+			}
+			if mode == "rich-save" && !strings.Contains(transcript.String(), "Saved ") {
+				t.Fatal("missing save completion: " + transcript.String())
 			}
 			if stdout.String() != expected {
 				t.Fatalf("stdout %q want %q", stdout.String(), expected)

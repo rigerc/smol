@@ -2,46 +2,34 @@ package setup
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/lsferreira42/figlet-go/figlet"
+	"github.com/rigerc/smol/internal/brand"
 )
 
-// welcome prints once to scrollback, outside the transient prompt renderer.
+// welcome prints once to scrollback, outside the persistent prompt renderer.
 func (t *terminal) welcome() error {
 	art := "smol"
 	if t.runtime.Width >= 40 && (t.runtime.Rows == 0 || t.runtime.Rows >= 16) {
-		parser := "terminal-color"
-		if t.runtime.Basic || t.runtime.Getenv("NO_COLOR") != "" {
-			parser = "terminal"
-		}
-		// Sunset stops from the supplied banner palette. Keep the font stable so
-		// the header remains compact and readable on every wizard invocation.
-		rendered, err := figlet.Render("smol",
-			figlet.WithFont("small"),
-			figlet.WithWidth(t.runtime.Width),
-			figlet.WithJustification(0),
-			figlet.WithColors(
-				figlet.TrueColor{R: 255, G: 78, B: 80},
-				figlet.TrueColor{R: 249, G: 132, B: 91},
-				figlet.TrueColor{R: 252, G: 145, B: 58},
-				figlet.TrueColor{R: 245, G: 208, B: 99},
-				figlet.TrueColor{R: 254, G: 202, B: 87},
-				figlet.TrueColor{R: 255, G: 179, B: 198},
-				figlet.TrueColor{R: 255, G: 159, B: 243},
-			),
-			// WithColors selects the colored parser, so apply the explicit
-			// parser last to honor NO_COLOR and numbered-input mode.
-			figlet.WithParser(parser),
-		)
+		rendered, err := brand.Art()
 		if err != nil {
 			return fmt.Errorf("render setup banner: %w", err)
 		}
-		art = strings.TrimRight(rendered, "\n")
+		art = rendered
+		if !t.runtime.Basic && t.runtime.Getenv("NO_COLOR") == "" && t.runtime.Getenv("TERM") != "dumb" {
+			art = brand.Gradient(art, brand.LightBackground(t.runtime.Getenv("COLORFGBG")))
+		}
 	}
-	// Banner ANSI escapes are generated locally; say sanitizes user content.
 	if _, err := fmt.Fprintln(t.out, "\n"+art); err != nil {
 		return err
 	}
 	return t.say("\nSet up your smol configuration.\n")
+}
+
+// header reuses the banner palette in the compact persistent wizard header.
+func header(runtime Runtime) string {
+	text := "smol · setup"
+	if runtime.Basic || runtime.Getenv("NO_COLOR") != "" || runtime.Getenv("TERM") == "dumb" {
+		return text
+	}
+	return brand.Gradient("smol", brand.LightBackground(runtime.Getenv("COLORFGBG"))) + " · setup"
 }

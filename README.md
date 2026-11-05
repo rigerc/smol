@@ -1,5 +1,11 @@
 # smol
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/logo-light.png">
+  <img src="assets/logo-dark.png" alt="smol" width="960">
+</picture>
+
 A one-line Linux system-info CLI for login banners and shell prompts.
 
 ```text
@@ -78,16 +84,25 @@ format strings containing control characters are rejected.
 ./dist/smol init --config ./smol.toml
 ```
 
-Setup runs inline and keeps accepted answers in terminal scrollback. Choose a
-preset, optional face, system modules, one field per module, order, colors and
-shell instructions. Enter accepts; Esc goes back; Ctrl+C or EOF cancels. Space
+Setup runs inline with a persistent output preview directly below its header.
+Choose a preset, optional face, system modules, fields, order, icons, styles, and
+shell instructions. Highlighting a choice previews it before Enter; invalid input
+keeps the last valid preview. Module values are cached during setup, and random
+face samples stay stable until rerolled. Enter accepts; Esc goes back; Ctrl+C or EOF cancels. Space
 toggles system modules. Limited terminals use numbered choices, comma-separated
 module numbers, and `:back` / `:cancel`; use `none` to remove all system modules
 when keeping a face. These words are ordinary text in a seed prompt.
 
-A compact ASCII banner introduces setup, with blank lines separating questions,
-answers and keyboard hints. The banner uses a sunset gradient; `NO_COLOR` and
-numbered-input mode keep it plain. Narrow or short terminals use a text heading.
+A FIGlet Standard banner introduces setup in a Phoenix red-to-amber gradient.
+The dark palette runs from `#F83600` to `#FCDF57`; the light palette uses darker
+stops for readability on cream. `COLORFGBG` supplies a background hint; unknown
+backgrounds use the dark palette. `NO_COLOR` and numbered-input mode keep the
+banner plain. Narrow or short terminals use a text heading. Basic mode prints
+the current preview before each question; interactive previews wrap to at most
+two rows, then truncate without changing the saved format.
+
+The supplied [dark](assets/logo-dark.png) and [light](assets/logo-light.png) logo
+artwork is stored unchanged. The terminal banner uses matching sampled palettes.
 
 Setup requires terminal stdin and stderr. Prompts, previews and instructions
 use stderr; after saving, stdout contains only the absolute config path and a
@@ -97,8 +112,9 @@ setup automatically.
 The destination is `--config`, then `$XDG_CONFIG_HOME/smol/config.toml`, then
 `$HOME/.config/smol/config.toml`. Relative paths use the startup working directory;
 there is no shell expansion. Setup ignores `XDG_CONFIG_DIRS`. Existing valid
-configs default to Existing and retain display settings, module options, bold
-and inactive styles. The other presets apply only their defined keys. Unedited
+configs default to Existing and retain display settings, module options, icon
+overrides, and inactive styles. Style editing supports foreground, background,
+and attributes per module. The other presets apply only their defined keys. Unedited
 custom formats, repeated tokens and field selectors survive; changing module
 selection, a field or order normalizes the format to tokens separated by ` · `.
 Comments and original TOML formatting are not retained.
@@ -148,9 +164,39 @@ os = { fg = "cyan", bold = true }
 mem = { fg = "yellow" }
 ```
 
-Styles override defaults per module. Foreground colors are `black`, `red`,
-`green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, their `bright-` variants,
-or `""` for the terminal default. Unknown keys, modules, and colors are rejected.
+Styles override defaults per module. Foreground (`fg`) and background (`bg`)
+accept `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, their
+`bright-` variants, `index:0` through `index:255`, `#RRGGBB`, or `""` for the
+terminal default. Attributes are `bold`, `dim`, `italic`, `underline`, and
+`reverse`. The color policy gates all attributes. Indexed/RGB colors emit their
+requested ANSI form; terminal support determines their appearance. Unknown keys,
+modules, and colors are rejected.
+
+```toml
+[icons]
+mode = "auto"       # auto | always | never (default: never)
+set = "nerd-font"   # nerd-font | ascii
+separator = " "
+
+[icons.overrides]
+mem = "RAM"         # literal override; "" suppresses an icon
+
+[style.cpu]
+fg = "#a6e3a1"
+bg = "index:0"
+underline = true
+```
+
+Icons use [go-nf](https://github.com/lrstanley/go-nf) glyphs generated for Nerd
+Fonts 3.5.1. Select a compatible terminal font (Nerd Font Mono is recommended),
+or choose the ASCII set. Font detection does not run during normal rendering.
+`auto` shows icons on a terminal unless `TERM=dumb`; `always` includes them in
+redirected output, and `never` hides them. `NO_COLOR` affects styles, independently
+of icons. `--icons` and `--icon-set` override their configuration fields; choosing
+a set alone does not enable icons. Use `--icons always` for captured shell prompts.
+The `icons` setup preset enables automatic Nerd Font icons. Glyph cell widths
+can vary with terminal and font; custom multi-character overrides are allowed.
+Unavailable values disappear with their icons and separators.
 TOML decoding uses [go-toml/v2](https://github.com/pelletier/go-toml/tree/v2.2.3)
 to support the supplied TOML configuration syntax
 and diagnostics without maintaining a custom parser.
