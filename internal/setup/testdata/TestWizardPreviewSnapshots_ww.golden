@@ -1,11 +1,16 @@
 smol · setup · 3/4 · Appearance
-Preview: Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB
 
-Output icons
-Show module values without icons.
+╭ Preview ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│ Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB        │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
 
-▸ never
-  auto
-  always
-
-up/down choose; Enter accepts; Esc back; Ctrl+C cancels
+◆  Appearance · Output icons
+│  Show module values without icons.
+│  ❯ ● never
+│    ○ auto
+│    ○ always
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

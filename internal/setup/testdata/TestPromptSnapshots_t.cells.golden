@@ -3,11 +3,12 @@
 3: "/home/ada/config.to"
 4: "ml?"
 5:
-6: "▸ No               " [fg=Accent]
-7: "  Yes              " [fg=Text]
-8:
-9: "up/down choose;"
-10: "Enter accepts; Esc"
-11: "back; Ctrl+C"
-12: "cancels"
-13:
+6: "◆" [fg=Info bold]
+7: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "No" [fg=Text bold]
+8: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Yes" [fg=TextMuted]
+9: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate…" [fg=TextMuted]
+10: "└" [fg=TextFaint]
+11: "Enter accepts; Esc"
+12: "back; Ctrl+C"
+13: "cancels"
+14:

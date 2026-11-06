@@ -41,13 +41,20 @@ jobs:
           set -euo pipefail
           cd demos/vhs
           mkdir -p outputs/screens
+          rm -f /tmp/smol-demo.toml
           vhs demo.tape
+          vhs wizard.tape
           test -s outputs/demo.gif
           test -s outputs/demo.mp4
+          test -s outputs/wizard.gif
+          test -s outputs/wizard.mp4
           ffmpeg -v error -i outputs/demo.mp4 -frames:v 1 -update 1 outputs/screens/01-demo.png
+          ffmpeg -v error -i outputs/wizard.mp4 -frames:v 1 -update 1 outputs/screens/02-wizard.png
           test -s outputs/screens/01-demo.png
+          test -s outputs/screens/02-wizard.png
           ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 outputs/demo.mp4
-          file --mime-type outputs/screens/01-demo.png | grep -q 'image/png'
+          ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 outputs/wizard.mp4
+          file --mime-type outputs/screens/01-demo.png outputs/screens/02-wizard.png | grep -c 'image/png' | grep -qx 2
       - name: Upload VHS evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

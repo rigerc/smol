@@ -1,10 +1,10 @@
 
-Shell instructions
-No shell files are modified.
-
-▸ none
-  bash
-  zsh
-  fish
-
-up/down choose; Enter accepts; Esc back; Ctrl+C cancels
+◆  Shell instructions
+│  No shell files are modified.
+│  ❯ ● none
+│    ○ bash
+│    ○ zsh
+│    ○ fish
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

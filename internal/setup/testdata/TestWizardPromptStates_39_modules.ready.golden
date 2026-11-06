@@ -1,29 +1,27 @@
 
-System modules
-
-▸ [ ] battery
-  [ ] cpu
-  [ ] desktop
-  [ ] disk
-  [ ] host
-  [ ] init
-  [x] kernel
-  [ ] load
-  [ ] localip
-  [ ] machine
-  [x] mem
-  [x] os
-  [ ] packages
-  [ ] processes
-  [ ] shell
-  [ ] swap
-  [ ] terminal
-  [ ] time
-  [x] uptime
-  [ ] user
-  [ ] virt
+◆  Modules · System modules
+│  ❯ ◻ battery
+│    ◻ cpu
+│    ◻ desktop
+│    ◻ disk
+│    ◻ host
+│    ◻ init
+│    ◼ kernel
+│    ◻ load
+│    ◻ localip
+│    ◻ machine
+│    ◼ mem
+│    ◼ os
+│    ◻ packages
+│    ◻ processes
+│    ◻ shell
+│    ◻ swap
+│    ◻ terminal
+│    ◻ time
+│    ◼ uptime
+│    ◻ user
+│    ◻ virt
+│  ↑/↓ to navigate • Space: select • E…
+└
 4 selected
-
-up/down choose; Space toggles
-Enter continues; Esc back; Ctrl+C
-cancels
+Enter accepts; Esc back; Ctrl+C cancels

@@ -1,11 +1,10 @@
 
-Character
-
-  No character
-  Choose a character
-▸ Use a fixed seed
-  Randomize once
-  Randomize every run
-
-up/down choose; Enter accepts; Esc
-back; Ctrl+C cancels
+◆  Face · Character
+│    ○ No character
+│    ○ Choose a character
+│  ❯ ● Use a fixed seed
+│    ○ Randomize once
+│    ○ Randomize every run
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

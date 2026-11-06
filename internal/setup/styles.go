@@ -11,11 +11,11 @@ import (
 func (s *session) styleQuestion() question {
 	switch s.state {
 	case "icons.ready":
-		return question{title: "Output icons", choices: []string{"never", "auto", "always"}, value: s.draft.Icons.Mode, details: map[string]string{
+		return question{title: "Output icons", label: "Icons", choices: []string{"never", "auto", "always"}, value: s.draft.Icons.Mode, details: map[string]string{
 			"never": "Show module values without icons.", "auto": "Show icons in a terminal; font support is not detected.", "always": "Show icons even when output is redirected.",
 		}}
 	case "icons.set":
-		return question{title: "Icon set", choices: []string{"nerd-font", "ascii"}, value: s.draft.Icons.Set, details: map[string]string{
+		return question{title: "Icon set", label: "Icon set", choices: []string{"nerd-font", "ascii"}, value: s.draft.Icons.Set, details: map[string]string{
 			"nerd-font": "Requires a Nerd Font: " + icons.Default().Prefix("os", "") + icons.Default().Prefix("cpu", "") + icons.Default().Prefix("mem", ""),
 			"ascii":     "Plain text labels: OS CPU MEM",
 		}}

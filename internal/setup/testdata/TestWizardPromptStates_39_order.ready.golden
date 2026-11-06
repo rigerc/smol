@@ -1,10 +1,9 @@
 
-Module order
-
-▸ 1. os
-  2. kernel
-  3. uptime
-  4. mem
-
-up/down choose; Ctrl+up/down move
+◆  Modules · Module order
+│  ❯ ≡ os
+│    ≡ kernel
+│    ≡ uptime
+│    ≡ mem
+│  ↑/↓ • Space grab • Shift+↑/↓ move
+└
 Enter accepts; Esc back; Ctrl+C cancels

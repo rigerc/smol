@@ -28,7 +28,7 @@ func TestSetupChild(_ *testing.T) {
 }
 
 func TestSetupTerminal(t *testing.T) {
-	for _, mode := range []string{"basic-save", "rich-save", "rich-cancel", "rich-term", "narrow-cancel"} {
+	for _, mode := range []string{"basic-save", "rich-save", "rich-fallback-save", "rich-cancel", "rich-term", "narrow-cancel"} {
 		t.Run(mode, func(t *testing.T) {
 			fd, err := unix.Open("/dev/ptmx", unix.O_RDWR|unix.O_NOCTTY|unix.O_CLOEXEC, 0)
 			if err != nil {
@@ -52,7 +52,11 @@ func TestSetupTerminal(t *testing.T) {
 			if mode == "narrow-cancel" {
 				columns = 19
 			}
-			if err = unix.IoctlSetWinsize(terminalFD(slave), unix.TIOCSWINSZ, &unix.Winsize{Row: 24, Col: columns}); err != nil {
+			rows := uint16(24)
+			if mode == "rich-fallback-save" {
+				rows = 10
+			}
+			if err = unix.IoctlSetWinsize(terminalFD(slave), unix.TIOCSWINSZ, &unix.Winsize{Row: rows, Col: columns}); err != nil {
 				t.Fatal(err)
 			}
 			before, err := unix.IoctlGetTermios(terminalFD(slave), unix.TCGETS)
@@ -123,9 +127,10 @@ func TestSetupTerminal(t *testing.T) {
 				}
 			}
 			switch mode {
-			case "rich-save":
+			case "rich-save", "rich-fallback-save":
 				_, err = io.WriteString(master, "\r")
-				prompts := []string{"Configuration preset", "Character", "System modules", "os display", "kernel display", "uptime display", "mem display", "Module order", "Output icons", "Icon set", "Output colors", "Module styles", "Shell instructions", "Review configuration", "Exact TOML to save", "Review configuration", "Create "}
+				// Bubble Tea may retain the unchanged "display" suffix when replacing uptime with mem.
+				prompts := []string{"Configuration preset", "Character", "System modules", "os display", "kernel display", "uptime display", "mem ", "Module order", "Output icons", "Icon set", "Output colors", "Module styles", "Shell instructions", "Review configuration", "Exact TOML to save", "Review configuration", "Create "}
 				offset := transcript.Len()
 				for i, prompt := range prompts {
 					found := false
@@ -145,19 +150,32 @@ func TestSetupTerminal(t *testing.T) {
 					answer := "\r"
 					switch prompt {
 					case "Module order":
-						answer = "\x1b[1;5B\r" // Ctrl+Down moves os below kernel.
+						if mode == "rich-save" {
+							answer = "\x1b[1;5B\r"
+						}
 					case "Exact TOML to save":
-						answer = "\x1b[6~\r" // Page down, then return to review.
+						if mode == "rich-save" {
+							answer = "\x1b[6~\r"
+						}
 					}
 					if i == len(prompts)-4 {
-						answer = "\x1b[B\r" // Open the full TOML viewer.
+						answer = "\x1b[B\r"
+						if mode == "rich-fallback-save" {
+							answer = "2\n"
+						}
 					}
 					if i == len(prompts)-1 {
 						answer = "\x1b[B\r"
+						if mode == "rich-fallback-save" {
+							answer = "2\n"
+						}
 					}
 					if _, err = io.WriteString(master, answer); err != nil {
 						t.Fatal(err)
 					}
+				}
+				if mode == "rich-save" && strings.Contains(transcript.String(), ":back / :cancel") {
+					t.Fatal("80x24 wizard switched to numbered forms")
 				}
 			case "basic-save":
 				_, err = io.WriteString(master, strings.Repeat("\n", 15)+"2\n")
@@ -194,7 +212,7 @@ func TestSetupTerminal(t *testing.T) {
 				code = exit.ExitCode()
 			}
 			want := 130
-			if mode == "basic-save" || mode == "rich-save" {
+			if mode == "basic-save" || mode == "rich-save" || mode == "rich-fallback-save" {
 				want = 0
 			}
 			if mode == "rich-term" {
@@ -207,7 +225,7 @@ func TestSetupTerminal(t *testing.T) {
 			if want == 0 {
 				expected = path + "\n"
 			}
-			if mode == "rich-save" && !strings.Contains(transcript.String(), "Saved ") {
+			if (mode == "rich-save" || mode == "rich-fallback-save") && !strings.Contains(transcript.String(), "Saved ") {
 				t.Fatal("missing save completion: " + transcript.String())
 			}
 			if stdout.String() != expected {

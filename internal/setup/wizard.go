@@ -7,8 +7,11 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/ishan5ain/tuiweave"
+	"github.com/ishan5ain/tuiweave/focus"
 	"github.com/ishan5ain/tuiweave/inspect"
 	"github.com/ishan5ain/tuiweave/layout"
 	"github.com/muesli/cancelreader"
@@ -68,6 +71,11 @@ type previewFetched struct {
 	values     map[string]modules.Result
 }
 
+type answeredField struct {
+	q     question
+	value string
+}
+
 type wizardModel struct {
 	bridge    *wizardBridge
 	run       tea.Cmd
@@ -75,6 +83,7 @@ type wizardModel struct {
 	runtime   Runtime
 	env       modules.Env
 	prompt    promptModel
+	history   []answeredField
 	reply     chan answer
 	status    string
 	preview   string
@@ -87,7 +96,7 @@ type wizardModel struct {
 
 func (m wizardModel) Init() tea.Cmd { return tea.Batch(m.run, m.bridge.next()) }
 func (m *wizardModel) size() {
-	rows := max(1, m.runtime.Rows-4)
+	rows := max(1, m.runtime.Rows-m.bodyOffset()-1-2*len(m.visibleHistory()))
 	if m.runtime.Rows == 0 {
 		rows = 0
 	}
@@ -110,6 +119,11 @@ func (m *wizardModel) refreshPreview() tea.Cmd {
 	}
 	m.candidate = cfg
 	m.preview = m.cache.line(cfg, m.runtime)
+	m.size()
+	if m.reply != nil && m.prompt.needsBasic() {
+		m.fallback = true
+		return tea.Quit
+	}
 	var missing []render.Token
 	for _, tok := range m.cache.missing(cfg) {
 		if !m.pending[tok.Module] {
@@ -158,6 +172,7 @@ func (m wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.bridge.next()
 		}
 		if msg.q != nil {
+			m.pruneHistory(*msg.q)
 			m.prompt = newPrompt(*msg.q, m.runtime.Width)
 			m.reply = msg.reply
 			m.status = ""
@@ -179,6 +194,11 @@ func (m wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.candidate.Format != "" {
 			m.preview = m.cache.line(m.candidate, m.runtime)
+			m.size()
+			if m.reply != nil && m.prompt.needsBasic() {
+				m.fallback = true
+				return m, tea.Quit
+			}
 		}
 		return m, nil
 	case tea.WindowSizeMsg:
@@ -210,6 +230,9 @@ func (m wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.fallback = true
 			return m, tea.Quit
 		}
+		if m.prompt.result.err == nil {
+			m.remember(m.prompt.q, m.prompt.result.value)
+		}
 		m.reply <- m.prompt.result
 		m.reply = nil
 		m.status = "Updating…"
@@ -223,26 +246,158 @@ func previewRows(text string, width int) string {
 	if len(lines) <= 2 {
 		return strings.Join(lines, "\n")
 	}
-	clipped := lines[0] + "\n" + ansi.Truncate(lines[1], max(1, width-1), "") + "…"
+	clipped := lines[0] + "\n" + ansi.Truncate(lines[1], max(0, width-1), "") + "…"
 	if strings.Contains(text, "\x1b[") {
 		clipped += "\x1b[0m"
 	}
 	return clipped
 }
+
+// previewPanel reserves the border and padding before wrapping the live output.
+// The panel is transparent: the terminal background shows through.
+func previewPanel(text string, runtime Runtime) string {
+	plain := runtime.Basic || runtime.Getenv("NO_COLOR") != "" || runtime.Getenv("TERM") == "dumb"
+	if plain {
+		text = ansi.Strip(text)
+	}
+	width := runtime.Width
+	if width <= 0 {
+		width = 80
+	}
+	if width < 6 {
+		return previewRows(text, width)
+	}
+	inner := width - 2
+	contentWidth := inner - 2
+	content := previewRows(strings.TrimPrefix(text, "Preview: "), contentWidth)
+	theme := tuiweave.CatppuccinMocha()
+	border := lipgloss.NewStyle().Foreground(theme.Border)
+	titleStyle := lipgloss.NewStyle().Foreground(theme.TextMuted)
+	title := " Preview "
+	top := border.Render("╭")
+	if ansi.StringWidth(title) < inner {
+		top += titleStyle.Render(title) + border.Render(strings.Repeat("─", inner-ansi.StringWidth(title))+"╮")
+	} else {
+		top += border.Render(strings.Repeat("─", inner) + "╮")
+	}
+	rows := []string{top}
+	compact := runtime.Rows > 0 && runtime.Rows < 20
+	if !compact {
+		rows = append(rows, panelRow(border, "", inner))
+	}
+	for _, line := range strings.Split(content, "\n") {
+		rows = append(rows, panelLine(border, line, contentWidth))
+	}
+	if !compact {
+		rows = append(rows, panelRow(border, "", inner))
+	}
+	rows = append(rows, border.Render("╰"+strings.Repeat("─", inner)+"╯"))
+	panel := strings.Join(rows, "\n")
+	if plain {
+		return ansi.Strip(panel)
+	}
+	return panel
+}
+
+func panelRow(border lipgloss.Style, text string, inner int) string {
+	pad := max(0, inner-ansi.StringWidth(text))
+	return border.Render("│") + text + strings.Repeat(" ", pad) + border.Render("│")
+}
+
+func panelLine(border lipgloss.Style, text string, contentWidth int) string {
+	pad := max(0, contentWidth-ansi.StringWidth(text))
+	return border.Render("│") + " " + text + strings.Repeat(" ", pad) + " " + border.Render("│")
+}
+
+func (m wizardModel) bodyOffset() int {
+	return 2 + len(strings.Split(previewPanel(m.preview, m.runtime), "\n"))
+}
+
+// pruneHistory keeps collapsed answers only for the current section and
+// truncates them when Esc re-asks an earlier field.
+func (m *wizardModel) pruneHistory(q question) {
+	if len(m.history) > 0 && m.history[0].q.section != q.section {
+		m.history = nil
+	}
+	for i, h := range m.history {
+		if q.key != "" && h.q.key == q.key {
+			m.history = m.history[:i]
+			return
+		}
+	}
+}
+
+func (m *wizardModel) remember(q question, value string) {
+	if q.key == "" || q.action {
+		return
+	}
+	for i := range m.history {
+		if m.history[i].q.key == q.key {
+			m.history[i] = answeredField{q: q, value: value}
+			return
+		}
+	}
+	m.history = append(m.history, answeredField{q: q, value: value})
+}
+
+// visibleHistory gives the active field priority when terminal space is limited.
+func (m wizardModel) visibleHistory() []answeredField {
+	if m.runtime.Rows <= 0 {
+		return m.history
+	}
+	slots := max(0, (m.runtime.Rows-m.bodyOffset()-1-12)/2)
+	return m.history[max(0, len(m.history)-slots):]
+}
+
+// formBody stacks collapsed answers above the focused tuiweave field. A
+// focus.Manager keeps exactly the active field focused, matching tuiweave's
+// inline form recipe.
+func (m wizardModel) formBody() string {
+	if len(m.visibleHistory()) == 0 {
+		return m.prompt.View().Content
+	}
+	width := m.runtime.Width
+	if width <= 0 {
+		width = 80
+	}
+	prompts := make([]promptModel, len(m.visibleHistory()))
+	fields := make([]focus.Focusable, 0, len(m.visibleHistory())+1)
+	for i, h := range m.visibleHistory() {
+		q := h.q
+		q.title, q.section, q.description = q.shortLabel(), "", ""
+		q.value = h.value
+		if q.multiple {
+			q.checked = strings.Split(h.value, ",")
+		}
+		prompts[i] = newPrompt(q, width)
+		fields = append(fields, prompts[i].focusable())
+	}
+	fields = append(fields, m.prompt.focusable())
+	manager := focus.NewManager(len(fields))
+	manager.Set(len(fields) - 1)
+	manager.Apply(fields...)
+	rows := make([]string, 0, len(fields))
+	for i := range prompts {
+		prompts[i].size()
+		rows = append(rows, prompts[i].fieldView())
+	}
+	rows = append(rows, strings.Trim(m.prompt.View().Content, "\n"))
+	return "\n" + strings.Join(rows, "\n") + "\n"
+}
+
 func (m wizardModel) View() tea.View {
 	if m.done || m.fallback {
 		return tea.NewView("")
 	}
 	body := m.status
 	if m.reply != nil {
-		body = m.prompt.View().Content
+		body = m.formBody()
 	}
 	if m.runtime.Getenv("NO_COLOR") != "" || m.runtime.Getenv("TERM") == "dumb" {
 		body = ansi.Strip(body)
 	}
-	return tea.NewView(m.header() + "\n" + previewRows(m.preview, m.runtime.Width) + "\n" + body)
+	return tea.NewView(m.header() + "\n\n" + previewPanel(m.preview, m.runtime) + "\n" + body)
 }
-
 func (m wizardModel) header() string {
 	text := header(m.runtime)
 	if m.prompt.q.phase != "" {
@@ -252,15 +407,16 @@ func (m wizardModel) header() string {
 }
 
 func (m wizardModel) Inspect() inspect.Node {
-	preview := previewRows(m.preview, m.runtime.Width)
-	offset := 1 + len(strings.Split(preview, "\n"))
+	preview := previewPanel(m.preview, m.runtime)
+	offset := m.bodyOffset()
 	children := []inspect.Node{
 		{ID: "header", Kind: "text", Label: ansi.Strip(m.header()), Bounds: inspect.Bounds{Width: m.runtime.Width, Height: 1}},
-		{ID: "preview", Kind: "output", Label: ansi.Strip(preview), Bounds: inspect.Bounds{Y: 1, Width: m.runtime.Width, Height: offset - 1}},
+		{ID: "preview", Kind: "output", Label: ansi.Strip(preview), Bounds: inspect.Bounds{Y: 2, Width: m.runtime.Width, Height: offset - 2}},
 	}
 	if m.reply != nil {
 		question := m.prompt.Inspect()
 		question.ID = "question"
+		offset += 2 * len(m.visibleHistory())
 		question.Bounds.Y += offset
 		for i := range question.Children {
 			question.Children[i].Bounds.Y += offset

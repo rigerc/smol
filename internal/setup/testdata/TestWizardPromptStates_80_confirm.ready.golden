@@ -1,7 +1,7 @@
 
-Create /home/ada/.config/smol/config.toml?
-
-▸ No
-  Create configuration
-
-up/down choose; Enter accepts; Esc back; Ctrl+C cancels
+◆  Save · Create /home/ada/.config/smol/config.toml?
+│  ❯ ● No
+│    ○ Create configuration
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

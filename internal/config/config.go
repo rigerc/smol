@@ -12,8 +12,8 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/rigerc/smol/internal/displayfmt"
 	"github.com/rigerc/smol/internal/face"
-	"github.com/rigerc/smol/internal/format"
 	"github.com/rigerc/smol/internal/icons"
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/render"
@@ -25,7 +25,7 @@ const DefaultFormat = "{os} · {kernel} · {uptime} · {mem}"
 // Config is the on-disk configuration.
 type Config struct {
 	Icons   icons.Options           `toml:"icons"`
-	Display format.Options          `toml:"display"`
+	Display displayfmt.Options      `toml:"display"`
 	Modules ModulesConfig           `toml:"modules"`
 	Face    face.Options            `toml:"face"`
 	Format  string                  `toml:"format"`
@@ -40,7 +40,7 @@ func Default() Config {
 	cfg := Config{
 		Format:  DefaultFormat,
 		Icons:   icons.Default(),
-		Display: format.Default(),
+		Display: displayfmt.Default(),
 		Modules: defaultModules(),
 		Face:    face.Options{State: "idle"},
 		Color:   "auto",

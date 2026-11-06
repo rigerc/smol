@@ -6,19 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"slices"
 	"strconv"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	lipgloss "charm.land/lipgloss/v2"
 	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/ishan5ain/tuiweave"
+	"github.com/ishan5ain/tuiweave/focus"
 	"github.com/ishan5ain/tuiweave/inspect"
-	"github.com/ishan5ain/tuiweave/layout"
 	"github.com/ishan5ain/tuiweave/menu"
-	"github.com/ishan5ain/tuiweave/textarea"
+	"github.com/ishan5ain/tuiweave/multiselect"
+	"github.com/ishan5ain/tuiweave/reorder"
+	"github.com/ishan5ain/tuiweave/textinput"
 	"github.com/ishan5ain/tuiweave/viewport"
 	"github.com/muesli/cancelreader"
 	"github.com/rigerc/smol/internal/config"
@@ -59,20 +59,24 @@ var errCancel = errors.New("cancelled")
 var errAbort = errors.New("setup exited")
 
 type question struct {
-	preview  func(string) (config.Config, error)
-	title    string
-	phase    string
-	help     string
-	labels   map[string]string
-	details  map[string]string
-	document string
-	choices  []string
-	value    string
-	checked  []string
-	multiple bool
-	reorder  bool
-	seed     bool
-	validate func(string) error
+	preview     func(string) (config.Config, error)
+	title       string
+	phase       string
+	labels      map[string]string
+	details     map[string]string
+	document    string
+	description string
+	label       string
+	section     string
+	key         string
+	order       []reorder.Item
+	choices     []string
+	value       string
+	checked     []string
+	multiple    bool
+	seed        bool
+	action      bool
+	validate    func(string) error
 }
 type answer struct {
 	q     question
@@ -82,8 +86,11 @@ type answer struct {
 type promptModel struct {
 	q        question
 	menu     menu.Model
-	editor   textarea.Model
+	multi    multiselect.Model
+	order    reorder.Model
+	editor   textinput.Model
 	document viewport.Model
+	focus    focus.Manager
 	width    int
 	height   int
 	result   answer
@@ -93,22 +100,29 @@ type promptModel struct {
 
 func newPrompt(q question, width int) promptModel {
 	theme := tuiweave.CatppuccinMocha()
-	choices := theme
-	choices.SelectionBg = lipgloss.NoColor{}
-	choices.SelectionFg = theme.Accent
-	q.choices = slices.Clone(q.choices)
-	m := promptModel{q: q, menu: menu.New(choices), editor: textarea.New(theme), document: viewport.New(theme), width: width}
+	m := promptModel{q: q, menu: menu.NewOn(theme, nil), editor: textinput.New(theme), multi: multiselect.New(theme), order: reorder.New(theme), focus: focus.NewManager(1), document: viewport.New(theme), width: width}
+	m.menu.Inline = true
+	m.editor.Inline = true
+	m.multi.Inline = true
+	m.order.Inline = true
+	if q.order != nil {
+		items := make([]reorder.Item, 0, len(q.order))
+		for _, id := range strings.Fields(q.value) {
+			for _, item := range q.order {
+				if item.ID == id {
+					items = append(items, item)
+					break
+				}
+			}
+		}
+		m.order.SetItems(items...)
+	}
 	m.editor.SetValue(q.value)
-	switch {
-	case q.document != "":
-		m.document.Focus()
-	case len(q.choices) > 0:
+	if len(q.choices) > 0 {
 		m.rebuild()
 		m.menu.SelectID(q.value)
-		m.menu.Focus()
-	default:
-		m.editor.Focus()
 	}
+	m.focus.Apply(m.focusable())
 	m.size()
 	return m
 }
@@ -116,11 +130,11 @@ func (m promptModel) currentValue() string {
 	if m.q.document != "" {
 		return m.q.value
 	}
-	if m.q.reorder {
-		return strings.Join(m.q.choices, " ")
+	if m.q.order != nil {
+		return strings.Join(m.order.IDs(), " ")
 	}
 	if m.q.multiple {
-		return strings.Join(m.q.checked, ",")
+		return strings.Join(m.multi.SelectedIDs(), ",")
 	}
 	if len(m.q.choices) > 0 {
 		return m.menu.SelectedID()
@@ -129,24 +143,16 @@ func (m promptModel) currentValue() string {
 }
 func (m *promptModel) rebuild() {
 	items := make([]menu.Item, 0, len(m.q.choices))
-	for i, choice := range m.q.choices {
+	for _, choice := range m.q.choices {
 		label := choice
 		if text, ok := m.q.labels[choice]; ok {
 			label = text
 		}
-		if m.q.reorder {
-			label = fmt.Sprintf("%d. %s", i+1, label)
-		}
-		if m.q.multiple {
-			mark := "[ ] "
-			if contains(m.q.checked, choice) {
-				mark = "[x] "
-			}
-			label = mark + choice
-		}
 		items = append(items, menu.Item{ID: choice, Label: label})
 	}
 	m.menu.SetItems(items...)
+	m.multi.SetItems(items...)
+	m.multi.SetCheckedIDs(m.q.checked...)
 }
 
 // SetSize lets the session owner allocate space below its persistent header.
@@ -155,33 +161,39 @@ func (m *promptModel) size() {
 	if m.width <= 0 {
 		m.width = 80
 	}
-	m.editor.SetSize(m.width, max(1, m.editor.ContentHeight()))
-	// Recompute after setting width, since wrapping changes content height.
-	m.editor.SetSize(m.width, max(1, m.editor.ContentHeight()))
 	if m.q.document != "" {
 		m.document.SetContent(ansi.Hardwrap(safe(strings.TrimSuffix(m.q.document, "\n")), m.width, true))
 		document := m.document
 		m.document.SetSize(m.width, 1)
 		rows := min(10, m.document.TotalLines())
 		if m.height > 0 {
-			rows = min(m.document.TotalLines(), max(1, m.height-m.viewHeight()))
+			rows = min(m.document.TotalLines(), max(1, m.height-len(strings.Split(m.View().Content, "\n"))))
 		}
 		m.document = document
-		layout.Vertical(layout.Len(rows)).Apply(layout.NewRect(0, 0, m.width, rows), &m.document)
-	} else if len(m.q.choices) > 0 {
-		menu := m.menu
-		m.menu.SetSize(m.width, 1)
-		rows := len(m.q.choices)
-		if m.height > 0 {
-			rows = min(rows, max(1, m.height-m.viewHeight()))
-		}
-		m.menu = menu
-		layout.Vertical(layout.Len(rows)).Apply(layout.NewRect(0, 0, m.width, rows), &m.menu)
+		m.document.SetSize(m.width, rows)
+		return
 	}
+	description := m.description()
+	title := m.q.displayTitle()
+	// Keep long questions visible in full above the component's clipped header.
+	if ansi.StringWidth(title) > m.width-3 || strings.Contains(title, "\n") || strings.Contains(description, "\n") || ansi.StringWidth(description) > m.width-3 {
+		title = ""
+		description = ""
+	}
+	m.menu.Title = title
+	m.editor.Title = title
+	m.multi.Title = title
+	m.order.Title = title
+	m.menu.Description = safe(description)
+	m.editor.Description = safe(description)
+	m.multi.Description = safe(description)
+	m.order.Description = safe(description)
+	m.menu.SetSize(m.width, m.menu.NaturalHeight())
+	m.editor.SetSize(m.width, m.editor.NaturalHeight())
+	m.multi.SetSize(m.width, m.multi.NaturalHeight())
+	m.order.SetSize(m.width, m.order.NaturalHeight())
 }
-
-func (m promptModel) viewHeight() int { return len(strings.Split(m.View().Content, "\n")) }
-func (m promptModel) Init() tea.Cmd   { return nil }
+func (m promptModel) Init() tea.Cmd { return nil }
 func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case inspect.ActionMsg:
@@ -192,15 +204,20 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					continue
 				}
 				local := strings.TrimPrefix(msg.ID, child.ID+".")
-				if local == "activate" {
+				if local == "activate" || child.ID == "modules" && local == multiselect.ActionSubmit {
 					return m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 				}
 				var cmd tea.Cmd
 				switch child.ID {
-				case "choices":
-					m.menu, cmd = m.menu.Update(inspect.Invoke(local))
 				case "document":
 					m.document, cmd = m.document.Update(inspect.Invoke(local))
+				case "order":
+					m.order, cmd = m.order.Update(inspect.Invoke(local))
+				case "modules":
+					m.multi, cmd = m.multi.Update(inspect.Invoke(local))
+					m.q.checked = m.multi.SelectedIDs()
+				case "choices":
+					m.menu, cmd = m.menu.Update(inspect.Invoke(local))
 				default:
 					m.editor, cmd = m.editor.Update(inspect.Invoke(local))
 				}
@@ -250,17 +267,6 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.result.value = value
 			m.finished = true
 			return m, tea.Quit
-		case "space":
-			if m.q.multiple {
-				m.q.checked = toggle(m.q.checked, m.menu.SelectedID())
-				m.rebuild()
-				return m, nil
-			}
-		case "ctrl+up", "ctrl+down":
-			if m.q.reorder {
-				m.moveChoice(msg.String() == "ctrl+down")
-				return m, nil
-			}
 		}
 	case tea.PasteMsg:
 		if controls(msg.Content) {
@@ -272,6 +278,11 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch {
 	case m.q.document != "":
 		m.document, cmd = m.document.Update(msg)
+	case m.q.order != nil:
+		m.order, cmd = m.order.Update(msg)
+	case m.q.multiple:
+		m.multi, cmd = m.multi.Update(msg)
+		m.q.checked = m.multi.SelectedIDs()
 	case len(m.q.choices) > 0:
 		m.menu, cmd = m.menu.Update(msg)
 	default:
@@ -286,94 +297,167 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 func (m promptModel) needsBasic() bool {
-	return m.width < 40 || (m.height > 0 && m.viewHeight() >= m.height)
+	return m.width < 40 || (m.height > 0 && len(strings.Split(m.View().Content, "\n")) >= m.height)
 }
-
-func (m *promptModel) moveChoice(down bool) {
-	index := m.menu.Selected()
-	target := index - 1
-	if down {
-		target = index + 1
-	}
-	if index < 0 || target < 0 || target >= len(m.q.choices) {
-		return
-	}
-	m.q.choices = slices.Clone(m.q.choices)
-	m.q.choices[index], m.q.choices[target] = m.q.choices[target], m.q.choices[index]
-	m.rebuild()
-}
-
-func (m promptModel) heading() string {
-	text := safe(m.q.title)
-	detail := m.q.help
-	if selected, ok := m.q.details[m.menu.SelectedID()]; ok {
-		detail = selected
-	}
-	if detail != "" {
-		text += "\n" + safe(detail)
-	}
-	return ansi.Wrap(text, m.width, "")
-}
-
-func (m promptModel) hints() string {
-	switch {
-	case m.q.document != "":
-		return "up/down scroll; PgUp/PgDn page\nEnter returns; Esc back; Ctrl+C cancels"
-	case m.q.reorder:
-		return "up/down choose; Ctrl+up/down move\nEnter accepts; Esc back; Ctrl+C cancels"
-	case m.q.multiple:
-		return "up/down choose; Space toggles\nEnter continues; Esc back; Ctrl+C cancels"
-	case len(m.q.choices) > 0:
-		return "up/down choose; Enter accepts; Esc back; Ctrl+C cancels"
-	default:
-		return "Enter accepts; Esc back; Ctrl+C cancels"
-	}
-}
-
-func (m promptModel) position() string {
-	if m.q.document != "" {
-		return fmt.Sprintf("Lines %d-%d of %d", m.document.YOffset()+1, min(m.document.TotalLines(), m.document.YOffset()+m.document.VisibleLines()), m.document.TotalLines())
-	}
-	var parts []string
-	if m.menu.VisibleLines() < len(m.q.choices) {
-		parts = append(parts, fmt.Sprintf("Choices %d-%d of %d", m.menu.YOffset()+1, min(len(m.q.choices), m.menu.YOffset()+m.menu.VisibleLines()), len(m.q.choices)))
-	}
-	if m.q.multiple {
-		parts = append(parts, fmt.Sprintf("%d selected", len(m.q.checked)))
-	}
-	return strings.Join(parts, " · ")
-}
-
 func (m promptModel) View() tea.View {
 	if m.finished {
 		return tea.NewView("")
 	}
-	content := m.menu.View()
 	if m.q.document != "" {
-		content = m.document.View()
-	} else if len(m.q.choices) == 0 {
-		content = m.editor.View()
+		text := "\n" + ansi.Wrap(m.q.displayTitle(), m.width, "") + "\n\n" + m.document.View()
+		text += fmt.Sprintf("\nLines %d-%d of %d\n", m.document.YOffset()+1, min(m.document.TotalLines(), m.document.YOffset()+m.document.VisibleLines()), m.document.TotalLines())
+		return tea.NewView(text + m.footer())
 	}
-	if position := m.position(); position != "" {
-		content += "\n" + ansi.Wrap(position, m.width, "")
-	}
-	body := m.heading() + "\n\n" + content + "\n\n"
-	if m.feedback != "" {
-		body += ansi.Wrap(safe(m.feedback), m.width, "") + "\n"
-	}
-	body += ansi.Wrap(m.hints(), m.width, "")
-	return tea.NewView("\n" + body + "\n")
+	return tea.NewView("\n" + m.titlePrefix() + m.fieldView() + m.footer())
 }
-func (m promptModel) Inspect() inspect.Node {
-	bounds := inspect.Bounds{Width: m.width, Height: m.viewHeight()}
-	y := 2 + len(strings.Split(m.heading(), "\n"))
+
+// footer adds workflow navigation to the component's own interaction hints.
+func (m promptModel) footer() string {
 	if m.q.document != "" {
-		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("document", inspect.Bounds{Y: y, Width: m.width, Height: m.document.VisibleLines()}, m.document))
+		return "\nup/down scroll; PgUp/PgDn page\nEnter returns; Esc back; Ctrl+C cancels\n"
+	}
+	text := "\n"
+	if m.feedback != "" {
+		text += ansi.Wrap(safe(m.feedback), m.width, "") + "\n"
+	}
+	return text + ansi.Wrap("Enter accepts; Esc back; Ctrl+C cancels", m.width, "") + "\n"
+}
+
+// fieldWindow uses a tuiweave viewport for long inline lists. Component
+// headers and interaction hints stay visible while the cursor scrolls.
+func (m promptModel) fieldWindow() (string, *inspect.Scroll) {
+	var content string
+	var selected, count int
+	switch {
+	case m.q.order != nil:
+		content, selected, count = m.order.View(), m.order.Selected(), m.order.Len()
+	case m.q.multiple:
+		content, selected, count = m.multi.View(), m.multi.Selected(), len(m.q.choices)
+	case len(m.q.choices) > 0:
+		content, selected, count = m.menu.View(), m.menu.Selected(), len(m.q.choices)
+	default:
+		return m.editor.View(), nil
+	}
+	if m.height <= 0 || count == 0 {
+		return content, nil
+	}
+	rows := strings.Split(content, "\n")
+	header := 1
+	if m.menu.Description != "" {
+		header++
+	}
+	// Leave one row unused so the inline renderer never scrolls the screen.
+	budget := m.height - 3 - strings.Count(m.titlePrefix(), "\n") - strings.Count(m.footer(), "\n")
+	visible := min(count, max(1, budget-header-2))
+	if len(rows) <= budget || len(rows) < header+count+2 {
+		return content, nil
+	}
+	offset := min(max(0, selected-visible/2), count-visible)
+	window := viewport.New(tuiweave.CatppuccinMocha())
+	window.SetContent(strings.Join(rows[header:header+count], "\n"))
+	window.SetSize(m.width, visible)
+	window.ScrollTo(offset)
+	parts := append([]string(nil), rows[:header]...)
+	parts = append(parts, window.View())
+	parts = append(parts, rows[header+count:]...)
+	return strings.Join(parts, "\n"), &inspect.Scroll{Total: count, Visible: visible, Offset: offset}
+}
+
+func (m promptModel) fieldView() string {
+	content, scroll := m.fieldWindow()
+	var position []string
+	if scroll != nil {
+		position = append(position, fmt.Sprintf("Choices %d-%d of %d", scroll.Offset+1, scroll.Offset+scroll.Visible, scroll.Total))
+	}
+	if m.q.multiple && m.multi.Focused() {
+		position = append(position, fmt.Sprintf("%d selected", len(m.multi.SelectedIDs())))
+	}
+	if len(position) > 0 {
+		content += "\n" + ansi.Wrap(strings.Join(position, " · "), m.width, "")
+	}
+	return content
+}
+
+// displayTitle groups the field under its section without a separate header.
+func (q question) displayTitle() string {
+	title := safe(q.title)
+	if q.section != "" && !strings.HasPrefix(strings.ToLower(title), strings.ToLower(q.section)+" ") {
+		return q.section + " · " + title
+	}
+	return title
+}
+
+// shortLabel names a field in the collapsed form history.
+func (q question) shortLabel() string {
+	if q.label != "" {
+		return safe(q.label)
+	}
+	title := strings.SplitN(safe(q.title), "\n", 2)[0]
+	if i := strings.Index(title, " ("); i > 0 {
+		title = title[:i]
+	}
+	return title
+}
+
+// titlePrefix preserves questions too long for a single inline header row.
+func (m promptModel) titlePrefix() string {
+	if m.menu.Title != "" {
+		return ""
+	}
+	text := m.q.displayTitle()
+	if desc := m.description(); desc != "" {
+		text += "\n" + safe(desc)
+	}
+	return ansi.Wrap(text, m.width, "") + "\n\n"
+}
+
+func (m promptModel) description() string {
+	if detail, ok := m.q.details[m.menu.SelectedID()]; ok {
+		return detail
+	}
+	return m.q.description
+}
+
+func (m *promptModel) focusable() focus.Focusable {
+	if m.q.document != "" {
+		return &m.document
+	}
+	if m.q.order != nil {
+		return &m.order
+	}
+	if m.q.multiple {
+		return &m.multi
 	}
 	if len(m.q.choices) > 0 {
-		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("choices", inspect.Bounds{Y: y, Width: m.width, Height: m.menu.VisibleLines()}, m.menu))
+		return &m.menu
 	}
-	return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("editor", inspect.Bounds{Y: y, Width: m.width, Height: m.editor.ContentHeight()}, m.editor))
+	return &m.editor
+}
+func (m promptModel) Inspect() inspect.Node {
+	bounds := inspect.Bounds{Width: m.width, Height: len(strings.Split(m.View().Content, "\n"))}
+	if m.q.document != "" {
+		y := 2 + len(strings.Split(ansi.Wrap(m.q.displayTitle(), m.width, ""), "\n"))
+		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("document", inspect.Bounds{Y: y, Width: m.width, Height: m.document.VisibleLines()}, m.document))
+	}
+	y := 1 + strings.Count(m.titlePrefix(), "\n")
+	var id string
+	var component inspect.Inspectable
+	switch {
+	case m.q.order != nil:
+		id, component = "order", m.order
+	case m.q.multiple:
+		id, component = "modules", m.multi
+	case len(m.q.choices) > 0:
+		id, component = "choices", m.menu
+	default:
+		id, component = "editor", m.editor
+	}
+	content, scroll := m.fieldWindow()
+	node := inspect.BindAt(id, inspect.Bounds{Y: y, Width: m.width, Height: len(strings.Split(content, "\n"))}, component)
+	if scroll != nil {
+		node.Scroll = scroll
+	}
+	return inspect.Group("prompt", "prompt", bounds, node)
 }
 
 type terminal struct {
@@ -473,14 +557,6 @@ func (t *terminal) ask(ctx context.Context, q question) (string, error) {
 	return result.result.value, nil
 }
 func (t *terminal) basic(ctx context.Context, q question) (string, error) {
-	if q.reorder {
-		q.title += ": enter every number once"
-		for i := range q.choices {
-			id := strconv.Itoa(i + 1)
-			q.title += "\n" + id + ". " + q.labels[id]
-		}
-		q.choices = nil
-	}
 	if q.document != "" {
 		if err := t.say(q.document); err != nil {
 			return "", err
@@ -501,7 +577,7 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 			if q.phase != "" {
 				heading += " · " + q.phase
 			}
-			if _, err = fmt.Fprintln(t.out, heading+"\n"+previewRows(t.preview.line(cfg, t.runtime), t.runtime.Width)); err != nil {
+			if _, err = fmt.Fprintln(t.out, heading+"\n\n"+previewPanel(t.preview.line(cfg, t.runtime), t.runtime)+"\n"); err != nil {
 				return "", err
 			}
 		}
@@ -516,11 +592,17 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 	}
 	stop := context.AfterFunc(ctx, func() { t.cancel.Cancel() })
 	defer stop()
+	if q.order != nil {
+		q.title += ": enter every number once"
+		for _, item := range q.order {
+			q.title += "\n" + item.ID + ". " + item.Label
+		}
+	}
+	if q.description != "" {
+		q.title += "\n" + q.description
+	}
 	if q.multiple {
 		q.title += "\nUse comma-separated numbers, or none for no system modules."
-	}
-	if q.help != "" {
-		q.title += "\n" + q.help
 	}
 	if err := t.say("\n" + strings.NewReplacer("–", "-", "—", "-", "…", "...").Replace(q.title) + "\n"); err != nil {
 		return "", err
@@ -623,13 +705,4 @@ func contains(values []string, value string) bool {
 		}
 	}
 	return false
-}
-func toggle(values []string, value string) []string {
-	result := append([]string(nil), values...)
-	for i, v := range result {
-		if v == value {
-			return append(result[:i], result[i+1:]...)
-		}
-	}
-	return append(result, value)
 }

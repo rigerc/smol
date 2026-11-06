@@ -1,12 +1,12 @@
 
-Configuration preset
-Operating system, kernel, uptime and memory.
-
-▸ default
-  minimal
-  banner
-  prompt
-  server
-  icons
-
-up/down choose; Enter accepts; Esc back; Ctrl+C cancels
+◆  Configuration preset
+│  Operating system, kernel, uptime and memory.
+│  ❯ ● default
+│    ○ minimal
+│    ○ banner
+│    ○ prompt
+│    ○ server
+│    ○ icons
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

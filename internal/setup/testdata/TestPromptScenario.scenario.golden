@@ -1,41 +1,35 @@
 ## initial
 command: no
 
-Modules
-
-▸ [ ] cpu
-  [x] mem
+◆  Modules
+│  ❯ ◻ cpu
+│    ◼ mem
+│  ↑/↓ to navigate • Space: select • En…
+└
 1 selected
-
-up/down choose; Space toggles
-Enter continues; Esc back; Ctrl+C
-cancels
+Enter accepts; Esc back; Ctrl+C cancels
 
 ## move
 command: no
 
-Modules
-
-  [ ] cpu
-▸ [x] mem
+◆  Modules
+│    ◻ cpu
+│  ❯ ◼ mem
+│  ↑/↓ to navigate • Space: select • En…
+└
 1 selected
-
-up/down choose; Space toggles
-Enter continues; Esc back; Ctrl+C
-cancels
+Enter accepts; Esc back; Ctrl+C cancels
 
 ## toggle
-command: no
+command: yes
 
-Modules
-
-  [ ] cpu
-▸ [ ] mem
+◆  Modules
+│    ◻ cpu
+│  ❯ ◻ mem
+│  ↑/↓ to navigate • Space: select • En…
+└
 0 selected
-
-up/down choose; Space toggles
-Enter continues; Esc back; Ctrl+C
-cancels
+Enter accepts; Esc back; Ctrl+C cancels
 
 ## accept
 command: yes

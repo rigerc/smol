@@ -1,11 +1,12 @@
 smol · setup · 4/4 · Finish
-Preview: Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB
 
-Exact TOML to save
+╭ Preview ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│ Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB        │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
 
-[style.uptime]
-fg = 'green'
-bold = false
+Save · Exact TOML to save
 
 [style.user]
 fg = 'green'
@@ -14,7 +15,7 @@ bold = true
 [style.virt]
 fg = 'cyan'
 bold = false
-Lines 106-116 of 116
+Lines 110-116 of 116
 
 up/down scroll; PgUp/PgDn page
 Enter returns; Esc back; Ctrl+C cancels
