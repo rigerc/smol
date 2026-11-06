@@ -5,7 +5,7 @@ LINTER_BIN := ./custom-gcl
 COVERAGE_FILE := coverage.out
 COVERAGE_MIN := 80
 
-.PHONY: check fix format format-check lint test test-coverage build run audit hooks-install clean
+.PHONY: check fix format format-check lint test test-coverage build run demos audit hooks-install clean
 
 check: format-check lint test-coverage build
 
@@ -48,6 +48,12 @@ build:
 
 run:
 	$(GO) run ./cmd/app
+
+# Refresh the committed README gifs; requires VHS (https://github.com/charmbracelet/vhs).
+demos:
+	cd demos/vhs && vhs demo.tape && vhs wizard.tape
+	cp demos/vhs/outputs/demo.gif demos/vhs/demo.gif
+	cp demos/vhs/outputs/wizard.gif demos/vhs/wizard.gif
 
 audit:
 	@command -v govulncheck >/dev/null 2>&1 || { \

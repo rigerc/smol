@@ -15,9 +15,9 @@ Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB
 
 ![smol demo](demos/vhs/demo.gif)
 
-The demo above is recorded with [VHS](https://github.com/charmbracelet/vhs) in CI
-from [demos/vhs/demo.tape](demos/vhs/demo.tape); the gif is committed when the
-tape changes (`vhs demos/vhs/demo.tape`).
+The demos are recorded with [VHS](https://github.com/charmbracelet/vhs) in CI
+from [demos/vhs/](demos/vhs/); the gifs are committed when the tapes change
+(`make demos`).
 
 ## Build and use
 
@@ -83,6 +83,12 @@ format strings containing control characters are rejected.
 ./dist/smol init
 ./dist/smol init --config ./smol.toml
 ```
+
+![smol init demo](demos/vhs/wizard.gif)
+
+The short tour picks the banner preset, follows its live preview through the
+face steps, and stops before saving. It is recorded from
+[demos/vhs/wizard.tape](demos/vhs/wizard.tape).
 
 Setup runs inline with a persistent output preview directly below its header.
 Choose a preset, optional face, system modules, fields, order, icons, styles, and
