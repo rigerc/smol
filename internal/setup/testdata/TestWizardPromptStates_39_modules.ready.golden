@@ -1,11 +1,5 @@
 
-Modules · System modules (face: seed;
-Esc returns to Face setup)
-Changing selection, fields or order
-normalizes format literals to ·
-separators.
-
-◆
+◆  Modules · System modules
 │  ❯ ◻ battery
 │    ◻ cpu
 │    ◻ desktop
@@ -29,4 +23,5 @@ separators.
 │    ◻ virt
 │  ↑/↓ to navigate • Space: select • E…
 └
+4 selected
 Enter accepts; Esc back; Ctrl+C cancels

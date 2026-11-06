@@ -6,6 +6,7 @@ command: no
 │    ◼ mem
 │  ↑/↓ to navigate • Space: select • En…
 └
+1 selected
 Enter accepts; Esc back; Ctrl+C cancels
 
 ## move
@@ -16,6 +17,7 @@ command: no
 │  ❯ ◼ mem
 │  ↑/↓ to navigate • Space: select • En…
 └
+1 selected
 Enter accepts; Esc back; Ctrl+C cancels
 
 ## toggle
@@ -26,6 +28,7 @@ command: yes
 │  ❯ ◻ mem
 │  ↑/↓ to navigate • Space: select • En…
 └
+0 selected
 Enter accepts; Esc back; Ctrl+C cancels
 
 ## accept

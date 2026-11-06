@@ -280,11 +280,18 @@ func previewPanel(text string, runtime Runtime) string {
 	} else {
 		top += border.Render(strings.Repeat("─", inner) + "╮")
 	}
-	rows := []string{top, panelRow(border, "", inner)}
+	rows := []string{top}
+	compact := runtime.Rows > 0 && runtime.Rows < 20
+	if !compact {
+		rows = append(rows, panelRow(border, "", inner))
+	}
 	for _, line := range strings.Split(content, "\n") {
 		rows = append(rows, panelLine(border, line, contentWidth))
 	}
-	rows = append(rows, panelRow(border, "", inner), border.Render("╰"+strings.Repeat("─", inner)+"╯"))
+	if !compact {
+		rows = append(rows, panelRow(border, "", inner))
+	}
+	rows = append(rows, border.Render("╰"+strings.Repeat("─", inner)+"╯"))
 	panel := strings.Join(rows, "\n")
 	if plain {
 		return ansi.Strip(panel)
@@ -389,13 +396,21 @@ func (m wizardModel) View() tea.View {
 	if m.runtime.Getenv("NO_COLOR") != "" || m.runtime.Getenv("TERM") == "dumb" {
 		body = ansi.Strip(body)
 	}
-	return tea.NewView(header(m.runtime) + "\n\n" + previewPanel(m.preview, m.runtime) + "\n" + body)
+	return tea.NewView(m.header() + "\n\n" + previewPanel(m.preview, m.runtime) + "\n" + body)
 }
+func (m wizardModel) header() string {
+	text := header(m.runtime)
+	if m.prompt.q.phase != "" {
+		text += " · " + m.prompt.q.phase
+	}
+	return ansi.Truncate(text, max(1, m.runtime.Width), "…")
+}
+
 func (m wizardModel) Inspect() inspect.Node {
 	preview := previewPanel(m.preview, m.runtime)
 	offset := m.bodyOffset()
 	children := []inspect.Node{
-		{ID: "header", Kind: "text", Label: "smol · setup", Bounds: inspect.Bounds{Width: m.runtime.Width, Height: 1}},
+		{ID: "header", Kind: "text", Label: ansi.Strip(m.header()), Bounds: inspect.Bounds{Width: m.runtime.Width, Height: 1}},
 		{ID: "preview", Kind: "output", Label: ansi.Strip(preview), Bounds: inspect.Bounds{Y: 2, Width: m.runtime.Width, Height: offset - 2}},
 	}
 	if m.reply != nil {

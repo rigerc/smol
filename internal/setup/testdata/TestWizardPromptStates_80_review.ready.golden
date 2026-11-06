@@ -1,6 +1,12 @@
 
-◆  Save · Review configuration
+Save · Review configuration
+Modules: os, kernel, uptime, mem
+Face: seed · Color: auto · Icons: never
+Shell instructions: none
+
+◆
 │  ❯ ● Save
+│    ○ View full TOML
 │    ○ Edit face
 │    ○ Edit modules
 │    ○ Edit icons

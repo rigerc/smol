@@ -23,7 +23,7 @@ Down
 Down
 Sleep 1s
 Enter
-Wait+Screen /Face mode/
+Wait+Screen /Character/
 Enter
 Wait+Screen /Face preset/
 Enter

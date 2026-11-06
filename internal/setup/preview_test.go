@@ -1,12 +1,16 @@
 package setup
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/ishan5ain/tuiweave"
 	"github.com/ishan5ain/tuiweave/inspect"
 	"github.com/ishan5ain/tuiweave/snaptest"
 	"github.com/rigerc/smol/internal/config"
@@ -150,7 +154,7 @@ func TestPersistentPreviewNavigation(t *testing.T) {
 		t.Fatal("tentative icons")
 	}
 	plain := ansi.Strip(m.View().Content)
-	if !strings.HasPrefix(plain, "smol · setup\n\n╭ Preview") || strings.Index(plain, "Output icons") < strings.Index(plain, "╭ Preview") {
+	if !strings.HasPrefix(plain, "smol · setup · 3/4 · Appearance\n\n╭ Preview") || strings.Index(plain, "Output icons") < strings.Index(plain, "╭ Preview") {
 		t.Fatal(plain)
 	}
 	if strings.Count(plain, "smol · setup") != 1 {
@@ -348,7 +352,7 @@ func TestQuestionGroupsAndTitles(t *testing.T) {
 		t.Fatalf("destination prompt = %+v", q)
 	}
 	view := ansi.Strip(newPrompt(q, 80).View().Content)
-	if !strings.Contains(view, "◆  Configuration · Destination") || !strings.Contains(view, "Fixed for this session.") {
+	if !strings.Contains(view, "◆  Configuration · Destination") || !strings.Contains(view, "Fixed for this session") {
 		t.Fatal(view)
 	}
 	wd, m := newTestWizard(t)
@@ -373,7 +377,7 @@ func TestQuestionGroupsAndTitles(t *testing.T) {
 	wd.state = "face.identity"
 	m = askWizard(t, m, wd)
 	plain = ansi.Strip(m.View().Content)
-	if !strings.Contains(plain, "◇  Face mode") || !strings.Contains(plain, "│  seed") || !strings.Contains(plain, "◆  Face seed") {
+	if !strings.Contains(plain, "◇  Character") || !strings.Contains(plain, "│  Use a fixed seed") || !strings.Contains(plain, "◆  Face seed") {
 		t.Fatal(plain)
 	}
 }
@@ -421,7 +425,7 @@ func TestWizardInspectionUsesAbsoluteBounds(t *testing.T) {
 	question := tree.Children[len(tree.Children)-1]
 	bounds := question.Children[0].Bounds
 	lines := strings.Split(ansi.Strip(m.View().Content), "\n")
-	if bounds.Y < 3 || bounds.Y >= len(lines) || !strings.Contains(lines[bounds.Y], "◆") || !strings.Contains(lines[bounds.Y+1], "nerd-font") {
+	if bounds.Y < 3 || bounds.Y >= len(lines) || !strings.Contains(lines[bounds.Y], "◆") || !strings.Contains(lines[bounds.Y+2], "nerd-font") {
 		t.Fatalf("bounds %+v do not match %q", bounds, lines)
 	}
 	m.reply = nil
@@ -508,5 +512,144 @@ func TestInlineHistoryLeavesRoomForActiveField(t *testing.T) {
 	}
 	if len(strings.Split(m.View().Content, "\n")) >= 24 {
 		t.Fatal("history overflowed terminal")
+	}
+}
+
+func TestInlineMenuScrollPosition(t *testing.T) {
+	for _, rows := range []int{16, 24} {
+		for _, width := range []int{40, 80} {
+			t.Run(fmt.Sprintf("%dx%d", width, rows), func(t *testing.T) {
+				s, m := newTestWizard(t)
+				m.runtime.Rows, m.runtime.Width = rows, width
+				s.state = "modules.ready"
+				m = askWizard(t, m, s)
+				if m.fallback || !strings.Contains(m.View().Content, "Choices 1-") || !strings.Contains(m.View().Content, "4 selected") {
+					t.Fatal("missing scroll affordance", m.View().Content)
+				}
+				for range len(m.prompt.q.choices) {
+					next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+					m = requireWizard(t, next)
+				}
+				tree := m.prompt.Inspect().Children[0]
+				if m.fallback || tree.Scroll == nil || tree.Scroll.Offset+tree.Scroll.Visible != tree.Scroll.Total {
+					t.Fatal("last choice is not visible", m.View().Content)
+				}
+				if len(strings.Split(m.View().Content, "\n")) >= rows {
+					t.Fatal("menu overflow", m.View().Content)
+				}
+			})
+		}
+	}
+}
+
+func TestInlineReorderPreviewAndBack(t *testing.T) {
+	s, m := newTestWizard(t)
+	s.state = "order.ready"
+	m = askWizard(t, m, s)
+	original := s.draft.Format
+	next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyUp, Mod: tea.ModCtrl})
+	m = requireWizard(t, next)
+	if m.prompt.currentValue() != "1 2 3 4" {
+		t.Fatal("moving the first item up changed the order")
+	}
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown, Mod: tea.ModCtrl})
+	m = requireWizard(t, next)
+	if m.prompt.currentValue() != "2 1 3 4" || m.prompt.order.SelectedItem().ID != "1" || m.candidate.Format != "{kernel} · {os} · {uptime} · {mem}" || s.draft.Format != original {
+		t.Fatal("reorder did not preserve focus and tentative state", m.prompt.currentValue(), m.candidate.Format)
+	}
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	m = requireWizard(t, next)
+	if !errors.Is(m.prompt.result.err, errBack) || s.draft.Format != original {
+		t.Fatal("back accepted a tentative order")
+	}
+	m = askWizard(t, m, s)
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown, Mod: tea.ModCtrl})
+	m = requireWizard(t, next)
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = requireWizard(t, next)
+	accept(t, s, m.prompt.result.value)
+	if s.draft.Format != "{kernel} · {os} · {uptime} · {mem}" {
+		t.Fatal("accepted order was not applied", s.draft.Format)
+	}
+}
+
+func TestReorderSurvivesNumberedFallback(t *testing.T) {
+	s, m := newTestWizard(t)
+	s.state = "order.ready"
+	m = askWizard(t, m, s)
+	next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown, Mod: tea.ModCtrl})
+	m = requireWizard(t, next)
+	next, _ = m.Update(tea.WindowSizeMsg{Width: 19, Height: 10})
+	m = requireWizard(t, next)
+	if !m.fallback {
+		t.Fatal("narrow terminal did not switch input modes")
+	}
+	q := m.prompt.q
+	q.value = m.prompt.currentValue()
+	s.term.runtime.Input = strings.NewReader("1 1 3 4\n\n")
+	var diag bytes.Buffer
+	s.term.out = &diag
+	defer func() { _ = s.term.close() }()
+	value, err := s.term.basic(context.Background(), q)
+	if err != nil || value != "2 1 3 4" {
+		t.Fatal("fallback lost tentative order", value, err)
+	}
+	if !strings.Contains(diag.String(), "1. os") || !strings.Contains(diag.String(), "2. kernel") || !strings.Contains(diag.String(), "list every enabled module number once") {
+		t.Fatal("numbered mode lost stable indices or validation", diag.String())
+	}
+}
+
+func TestInlineReviewAndFullTOML(t *testing.T) {
+	s, m := newTestWizard(t)
+	s.state = "review.ready"
+	s.faceMode = "disabled"
+	var diag bytes.Buffer
+	s.term.out = &diag
+	s.term.bridge = &wizardBridge{ctx: context.Background(), requests: make(chan wizardRequest, 1)}
+	if err := s.prepare(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if diag.Len() != 0 || s.review == "" {
+		t.Fatal("inline review should not dump TOML into scrollback")
+	}
+	m = askWizard(t, m, s)
+	if !strings.Contains(m.View().Content, "Modules: os, kernel, uptime, mem") || strings.Contains(m.View().Content, "[style.") {
+		t.Fatal("review summary missing", m.View().Content)
+	}
+	accept(t, s, "View full TOML")
+	m = askWizard(t, m, s)
+	if m.prompt.q.document != s.review || m.fallback {
+		t.Fatal("full TOML is unavailable")
+	}
+	t.Run("top", func(t *testing.T) {
+		snaptest.Snap(t, m.View().Content)
+		snaptest.SnapCells(t, m.View().Content, snaptest.WithRoles(tuiweave.CatppuccinMocha()))
+	})
+	next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnd})
+	m = requireWizard(t, next)
+	if !m.prompt.document.AtBottom() || m.prompt.document.YOffset() == 0 {
+		t.Fatal("full TOML does not scroll")
+	}
+	t.Run("bottom", func(t *testing.T) {
+		snaptest.Snap(t, m.View().Content)
+	})
+	q := m.prompt.q
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = requireWizard(t, next)
+	accept(t, s, m.prompt.result.value)
+	if s.state != "review.ready" || m.prompt.result.value != "Back to review" {
+		t.Fatal("TOML viewer did not return to review")
+	}
+	accept(t, s, "View full TOML")
+	s.back()
+	if s.state != "review.ready" {
+		t.Fatal("Esc from TOML must return to review")
+	}
+	s.term.bridge = nil
+	s.term.runtime.Input = strings.NewReader("\n")
+	defer func() { _ = s.term.close() }()
+	value, err := s.term.basic(context.Background(), q)
+	if err != nil || value != "Back to review" || !strings.Contains(diag.String(), "[style.os]") {
+		t.Fatal("numbered TOML view cannot return", value, err, diag.String())
 	}
 }

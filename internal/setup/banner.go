@@ -9,7 +9,7 @@ import (
 // welcome prints once to scrollback, outside the persistent prompt renderer.
 func (t *terminal) welcome() error {
 	art := "smol"
-	if t.runtime.Width >= 40 && (t.runtime.Rows == 0 || t.runtime.Rows >= 16) {
+	if t.runtime.Width >= 40 && (t.runtime.Rows == 0 || t.runtime.Rows >= 24) {
 		rendered, err := brand.Art()
 		if err != nil {
 			return fmt.Errorf("render setup banner: %w", err)

@@ -1,5 +1,6 @@
 
-◆  Appearance · Output color policy
+◆  Appearance · Output colors
+│  Use color in a terminal, unless NO_COLOR is set.
 │  ❯ ● auto
 │    ○ always
 │    ○ never

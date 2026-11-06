@@ -1,0 +1,22 @@
+1: "smol · setup · 4/4 · Finish"
+2:
+3: "╭ Preview ─────────────────────────────────────────────────────────────────────╮"
+4: "│                                                                              │"
+5: "│ Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB        │"
+6: "│                                                                              │"
+7: "╰──────────────────────────────────────────────────────────────────────────────╯"
+8:
+9: "Save · Exact TOML to save"
+10:
+11: "format = '{os} · {kernel} · {uptime} · {mem}'"
+12: "color = 'auto'"
+13:
+14: "[icons]"
+15: "mode = 'never'"
+16: "set = 'nerd-font'"
+17: "separator = ' '"
+18: "Lines 1-7 of 116"
+19:
+20: "up/down scroll; PgUp/PgDn page"
+21: "Enter returns; Esc back; Ctrl+C cancels"
+22:
