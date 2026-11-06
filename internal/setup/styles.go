@@ -11,11 +11,16 @@ import (
 func (s *session) styleQuestion() question {
 	switch s.state {
 	case "icons.ready":
-		return question{title: "Output icons (Nerd Font glyphs require a compatible terminal font)", choices: []string{"never", "auto", "always"}, value: s.draft.Icons.Mode}
+		return question{title: "Output icons", choices: []string{"never", "auto", "always"}, value: s.draft.Icons.Mode, details: map[string]string{
+			"never": "Show module values without icons.", "auto": "Show icons in a terminal; font support is not detected.", "always": "Show icons even when output is redirected.",
+		}}
 	case "icons.set":
-		return question{title: "Icon set — Nerd Font sample: " + icons.Default().Prefix("os", "") + icons.Default().Prefix("cpu", "") + icons.Default().Prefix("mem", "") + "; ASCII sample: OS CPU MEM", choices: []string{"nerd-font", "ascii"}, value: s.draft.Icons.Set}
+		return question{title: "Icon set", choices: []string{"nerd-font", "ascii"}, value: s.draft.Icons.Set, details: map[string]string{
+			"nerd-font": "Requires a Nerd Font: " + icons.Default().Prefix("os", "") + icons.Default().Prefix("cpu", "") + icons.Default().Prefix("mem", ""),
+			"ascii":     "Plain text labels: OS CPU MEM",
+		}}
 	case "style.module":
-		return question{title: "Choose a module to style", choices: append(append([]string{}, s.selected...), "Done"), value: "Done"}
+		return question{title: "Choose a module to style", choices: append(append([]string{}, s.selected...), "Edit foregrounds", "Done"), labels: map[string]string{"Edit foregrounds": "Set foregrounds in order"}, value: "Done"}
 	case "style.property":
 		return question{title: s.selected[s.index] + " style", choices: []string{"Foreground", "Background", "Attributes", "Done"}, value: "Done"}
 	case "style.color":
@@ -72,6 +77,11 @@ func (s *session) acceptStyle(value string) {
 		s.draft.Icons.Set = value
 		s.state = "color.ready"
 	case "style.module":
+		if value == "Edit foregrounds" {
+			s.index = 0
+			s.state = "style.field"
+			return
+		}
 		if value == "Done" {
 			s.state = "shell.ready"
 			return

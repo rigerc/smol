@@ -313,6 +313,7 @@ func TestFieldsOrderAndStyles(t *testing.T) {
 	accept(t, s, "never")
 	accept(t, s, "ascii")
 	accept(t, s, "never")
+	accept(t, s, "Edit styles")
 	accept(t, s, "Edit foregrounds")
 	accept(t, s, "terminal default")
 	accept(t, s, "red")

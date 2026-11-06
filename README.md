@@ -85,13 +85,18 @@ format strings containing control characters are rejected.
 ```
 
 Setup runs inline with a persistent output preview directly below its header.
+The header tracks four phases: Start, Modules, Appearance, and Finish.
 Choose a preset, optional face, system modules, fields, order, icons, styles, and
 shell instructions. Highlighting a choice previews it before Enter; invalid input
 keeps the last valid preview. Module values are cached during setup, and random
 face samples stay stable until rerolled. Enter accepts; Esc goes back; Ctrl+C or EOF cancels. Space
-toggles system modules. Limited terminals use numbered choices, comma-separated
+toggles system modules. Scrolling menus show their visible range, and module
+selection shows how many are selected. Use Up/Down to choose a module in the
+order list and Ctrl+Up/Down to move it; Enter accepts the order.
+Limited terminals use numbered choices, comma-separated
 module numbers, and `:back` / `:cancel`; use `none` to remove all system modules
-when keeping a face. These words are ordinary text in a seed prompt.
+when keeping a face. Module order uses a numeric permutation in numbered mode.
+These words are ordinary text in a seed prompt.
 
 A FIGlet Standard banner introduces setup in a Phoenix red-to-amber gradient.
 The dark palette runs from `#F83600` to `#FCDF57`; the light palette uses darker
@@ -119,8 +124,11 @@ custom formats, repeated tokens and field selectors survive; changing module
 selection, a field or order normalizes the format to tokens separated by ` · `.
 Comments and original TOML formatting are not retained.
 
-Review shows the exact TOML and a static preview. Saving always requires an
-explicit Yes; No is the default. Before confirmation, setup creates no config,
+Inline review shows a compact summary and preview. Choose **View full TOML** to
+inspect the exact configuration with Up/Down or PgUp/PgDn; Enter or Esc returns
+to review. Numbered mode prints the full TOML in the transcript.
+Saving requires an explicit **Create configuration** or **Replace configuration**;
+**No** is the default. Before confirmation, setup creates no config,
 temporary files or directories. It refuses symlinks and special files, checks
 for destination changes and publishes atomically. New files use mode 0600 and
 new parent directories 0700; replacement preserves file permissions. A conflict

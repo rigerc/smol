@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -17,8 +18,8 @@ import (
 	"github.com/ishan5ain/tuiweave/inspect"
 	"github.com/ishan5ain/tuiweave/layout"
 	"github.com/ishan5ain/tuiweave/menu"
-	"github.com/ishan5ain/tuiweave/stack"
 	"github.com/ishan5ain/tuiweave/textarea"
+	"github.com/ishan5ain/tuiweave/viewport"
 	"github.com/muesli/cancelreader"
 	"github.com/rigerc/smol/internal/config"
 	"github.com/rigerc/smol/internal/modules"
@@ -60,10 +61,16 @@ var errAbort = errors.New("setup exited")
 type question struct {
 	preview  func(string) (config.Config, error)
 	title    string
+	phase    string
+	help     string
+	labels   map[string]string
+	details  map[string]string
+	document string
 	choices  []string
 	value    string
 	checked  []string
 	multiple bool
+	reorder  bool
 	seed     bool
 	validate func(string) error
 }
@@ -76,6 +83,7 @@ type promptModel struct {
 	q        question
 	menu     menu.Model
 	editor   textarea.Model
+	document viewport.Model
 	width    int
 	height   int
 	result   answer
@@ -88,19 +96,29 @@ func newPrompt(q question, width int) promptModel {
 	choices := theme
 	choices.SelectionBg = lipgloss.NoColor{}
 	choices.SelectionFg = theme.Accent
-	m := promptModel{q: q, menu: menu.New(choices), editor: textarea.New(theme), width: width}
+	q.choices = slices.Clone(q.choices)
+	m := promptModel{q: q, menu: menu.New(choices), editor: textarea.New(theme), document: viewport.New(theme), width: width}
 	m.editor.SetValue(q.value)
-	if len(q.choices) > 0 {
+	switch {
+	case q.document != "":
+		m.document.Focus()
+	case len(q.choices) > 0:
 		m.rebuild()
 		m.menu.SelectID(q.value)
 		m.menu.Focus()
-	} else {
+	default:
 		m.editor.Focus()
 	}
 	m.size()
 	return m
 }
 func (m promptModel) currentValue() string {
+	if m.q.document != "" {
+		return m.q.value
+	}
+	if m.q.reorder {
+		return strings.Join(m.q.choices, " ")
+	}
 	if m.q.multiple {
 		return strings.Join(m.q.checked, ",")
 	}
@@ -111,8 +129,14 @@ func (m promptModel) currentValue() string {
 }
 func (m *promptModel) rebuild() {
 	items := make([]menu.Item, 0, len(m.q.choices))
-	for _, choice := range m.q.choices {
+	for i, choice := range m.q.choices {
 		label := choice
+		if text, ok := m.q.labels[choice]; ok {
+			label = text
+		}
+		if m.q.reorder {
+			label = fmt.Sprintf("%d. %s", i+1, label)
+		}
 		if m.q.multiple {
 			mark := "[ ] "
 			if contains(m.q.checked, choice) {
@@ -131,19 +155,33 @@ func (m *promptModel) size() {
 	if m.width <= 0 {
 		m.width = 80
 	}
-	rows := len(m.q.choices)
-	if m.height > 0 && rows > 0 {
-		rows = min(rows, max(3, m.height-8-len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n"))))
-	}
-	if rows == 0 {
-		rows = max(1, m.editor.ContentHeight())
-	}
-	layout.Vertical(layout.Len(rows)).Apply(layout.NewRect(0, 0, m.width, rows), &m.menu)
 	m.editor.SetSize(m.width, max(1, m.editor.ContentHeight()))
 	// Recompute after setting width, since wrapping changes content height.
 	m.editor.SetSize(m.width, max(1, m.editor.ContentHeight()))
+	if m.q.document != "" {
+		m.document.SetContent(ansi.Hardwrap(safe(strings.TrimSuffix(m.q.document, "\n")), m.width, true))
+		document := m.document
+		m.document.SetSize(m.width, 1)
+		rows := min(10, m.document.TotalLines())
+		if m.height > 0 {
+			rows = min(m.document.TotalLines(), max(1, m.height-m.viewHeight()))
+		}
+		m.document = document
+		layout.Vertical(layout.Len(rows)).Apply(layout.NewRect(0, 0, m.width, rows), &m.document)
+	} else if len(m.q.choices) > 0 {
+		menu := m.menu
+		m.menu.SetSize(m.width, 1)
+		rows := len(m.q.choices)
+		if m.height > 0 {
+			rows = min(rows, max(1, m.height-m.viewHeight()))
+		}
+		m.menu = menu
+		layout.Vertical(layout.Len(rows)).Apply(layout.NewRect(0, 0, m.width, rows), &m.menu)
+	}
 }
-func (m promptModel) Init() tea.Cmd { return nil }
+
+func (m promptModel) viewHeight() int { return len(strings.Split(m.View().Content, "\n")) }
+func (m promptModel) Init() tea.Cmd   { return nil }
 func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case inspect.ActionMsg:
@@ -158,12 +196,15 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 				}
 				var cmd tea.Cmd
-				if child.ID == "choices" {
+				switch child.ID {
+				case "choices":
 					m.menu, cmd = m.menu.Update(inspect.Invoke(local))
-				} else {
+				case "document":
+					m.document, cmd = m.document.Update(inspect.Invoke(local))
+				default:
 					m.editor, cmd = m.editor.Update(inspect.Invoke(local))
-					m.size()
 				}
+				m.size()
 				return m, cmd
 			}
 		}
@@ -193,16 +234,16 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.finished = true
 			return m, tea.Quit
 		case "enter":
-			value := m.editor.Value()
-			if len(m.q.choices) > 0 {
-				value = m.menu.SelectedID()
-			}
-			if m.q.multiple {
-				value = strings.Join(m.q.checked, ",")
-			}
+			value := m.currentValue()
 			if m.q.validate != nil {
 				if err := m.q.validate(value); err != nil {
 					m.feedback = err.Error()
+					m.size()
+					if m.needsBasic() {
+						m.result.err = errBasic
+						m.finished = true
+						return m, tea.Quit
+					}
 					return m, nil
 				}
 			}
@@ -215,6 +256,11 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.rebuild()
 				return m, nil
 			}
+		case "ctrl+up", "ctrl+down":
+			if m.q.reorder {
+				m.moveChoice(msg.String() == "ctrl+down")
+				return m, nil
+			}
 		}
 	case tea.PasteMsg:
 		if controls(msg.Content) {
@@ -223,12 +269,15 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	var cmd tea.Cmd
-	if len(m.q.choices) > 0 {
+	switch {
+	case m.q.document != "":
+		m.document, cmd = m.document.Update(msg)
+	case len(m.q.choices) > 0:
 		m.menu, cmd = m.menu.Update(msg)
-	} else {
+	default:
 		m.editor, cmd = m.editor.Update(msg)
-		m.size()
 	}
+	m.size()
 	if m.needsBasic() {
 		m.result.err = errBasic
 		m.finished = true
@@ -237,35 +286,94 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 func (m promptModel) needsBasic() bool {
-	return m.width < 40 || (m.height > 0 && len(strings.Split(m.View().Content, "\n")) >= m.height)
+	return m.width < 40 || (m.height > 0 && m.viewHeight() >= m.height)
 }
+
+func (m *promptModel) moveChoice(down bool) {
+	index := m.menu.Selected()
+	target := index - 1
+	if down {
+		target = index + 1
+	}
+	if index < 0 || target < 0 || target >= len(m.q.choices) {
+		return
+	}
+	m.q.choices = slices.Clone(m.q.choices)
+	m.q.choices[index], m.q.choices[target] = m.q.choices[target], m.q.choices[index]
+	m.rebuild()
+}
+
+func (m promptModel) heading() string {
+	text := safe(m.q.title)
+	detail := m.q.help
+	if selected, ok := m.q.details[m.menu.SelectedID()]; ok {
+		detail = selected
+	}
+	if detail != "" {
+		text += "\n" + safe(detail)
+	}
+	return ansi.Wrap(text, m.width, "")
+}
+
+func (m promptModel) hints() string {
+	switch {
+	case m.q.document != "":
+		return "up/down scroll; PgUp/PgDn page\nEnter returns; Esc back; Ctrl+C cancels"
+	case m.q.reorder:
+		return "up/down choose; Ctrl+up/down move\nEnter accepts; Esc back; Ctrl+C cancels"
+	case m.q.multiple:
+		return "up/down choose; Space toggles\nEnter continues; Esc back; Ctrl+C cancels"
+	case len(m.q.choices) > 0:
+		return "up/down choose; Enter accepts; Esc back; Ctrl+C cancels"
+	default:
+		return "Enter accepts; Esc back; Ctrl+C cancels"
+	}
+}
+
+func (m promptModel) position() string {
+	if m.q.document != "" {
+		return fmt.Sprintf("Lines %d-%d of %d", m.document.YOffset()+1, min(m.document.TotalLines(), m.document.YOffset()+m.document.VisibleLines()), m.document.TotalLines())
+	}
+	var parts []string
+	if m.menu.VisibleLines() < len(m.q.choices) {
+		parts = append(parts, fmt.Sprintf("Choices %d-%d of %d", m.menu.YOffset()+1, min(len(m.q.choices), m.menu.YOffset()+m.menu.VisibleLines()), len(m.q.choices)))
+	}
+	if m.q.multiple {
+		parts = append(parts, fmt.Sprintf("%d selected", len(m.q.checked)))
+	}
+	return strings.Join(parts, " · ")
+}
+
 func (m promptModel) View() tea.View {
 	if m.finished {
 		return tea.NewView("")
 	}
 	content := m.menu.View()
-	hints := "up/down choose; Enter accepts; Esc back; Ctrl+C cancels"
-	if m.q.multiple {
-		hints = "Space toggles; Enter continues; Esc back; Ctrl+C cancels"
-	}
-	if len(m.q.choices) == 0 {
+	if m.q.document != "" {
+		content = m.document.View()
+	} else if len(m.q.choices) == 0 {
 		content = m.editor.View()
-		hints = "Enter accepts; Esc back; Ctrl+C cancels"
 	}
-	body := stack.Vertical(tuiweave.CatppuccinMocha(), m.width, stack.Options{Gap: 1},
-		func(width int) string { return ansi.Wrap(safe(m.q.title), width, "") },
-		func(int) string { return content },
-		func(width int) string { return ansi.Wrap(safe(m.feedback), width, "") },
-		func(width int) string { return ansi.Wrap(hints, width, "") },
-	)
+	if position := m.position(); position != "" {
+		content += "\n" + ansi.Wrap(position, m.width, "")
+	}
+	body := m.heading() + "\n\n" + content + "\n\n"
+	if m.feedback != "" {
+		body += ansi.Wrap(safe(m.feedback), m.width, "") + "\n"
+	}
+	body += ansi.Wrap(m.hints(), m.width, "")
 	return tea.NewView("\n" + body + "\n")
 }
 func (m promptModel) Inspect() inspect.Node {
-	bounds := inspect.Bounds{Width: m.width, Height: len(strings.Split(m.View().Content, "\n"))}
-	if len(m.q.choices) > 0 {
-		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("choices", inspect.Bounds{Y: 2 + len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n")), Width: m.width, Height: len(m.q.choices)}, m.menu))
+	bounds := inspect.Bounds{Width: m.width, Height: m.viewHeight()}
+	y := 2 + len(strings.Split(m.heading(), "\n"))
+	if m.q.document != "" {
+		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("document", inspect.Bounds{Y: y, Width: m.width, Height: m.document.VisibleLines()}, m.document))
 	}
-	return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("editor", inspect.Bounds{Y: 2 + len(strings.Split(ansi.Wrap(safe(m.q.title), m.width, ""), "\n")), Width: m.width, Height: m.editor.ContentHeight()}, m.editor))
+	if len(m.q.choices) > 0 {
+		return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("choices", inspect.Bounds{Y: y, Width: m.width, Height: m.menu.VisibleLines()}, m.menu))
+	}
+	return inspect.Group("prompt", "prompt", bounds, inspect.BindAt("editor", inspect.Bounds{Y: y, Width: m.width, Height: m.editor.ContentHeight()}, m.editor))
 }
 
 type terminal struct {
@@ -352,10 +460,8 @@ func (t *terminal) ask(ctx context.Context, q question) (string, error) {
 		t.runtime.Basic = true
 		t.runtime.Width = result.width
 		t.runtime.Rows = result.height
-		q.checked = result.q.checked
-		if len(q.choices) == 0 {
-			q.value = result.editor.Value()
-		}
+		q = result.q
+		q.value = result.currentValue()
 		return t.basic(ctx, q)
 	}
 	if result.result.err != nil {
@@ -367,6 +473,21 @@ func (t *terminal) ask(ctx context.Context, q question) (string, error) {
 	return result.result.value, nil
 }
 func (t *terminal) basic(ctx context.Context, q question) (string, error) {
+	if q.reorder {
+		q.title += ": enter every number once"
+		for i := range q.choices {
+			id := strconv.Itoa(i + 1)
+			q.title += "\n" + id + ". " + q.labels[id]
+		}
+		q.choices = nil
+	}
+	if q.document != "" {
+		if err := t.say(q.document); err != nil {
+			return "", err
+		}
+		q.choices = []string{"Back to review"}
+		q.value = "Back to review"
+	}
 	if q.preview != nil {
 		cfg, err := q.preview(q.value)
 		if q.multiple {
@@ -376,7 +497,11 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 			t.preview.configure(cfg)
 			missing := t.preview.missing(cfg)
 			t.preview.remember(missing, fetchPreview(ctx, cfg, t.env, missing))
-			if _, err = fmt.Fprintln(t.out, "smol · setup\n"+previewRows(t.preview.line(cfg, t.runtime), t.runtime.Width)); err != nil {
+			heading := "smol · setup"
+			if q.phase != "" {
+				heading += " · " + q.phase
+			}
+			if _, err = fmt.Fprintln(t.out, heading+"\n"+previewRows(t.preview.line(cfg, t.runtime), t.runtime.Width)); err != nil {
 				return "", err
 			}
 		}
@@ -394,11 +519,21 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 	if q.multiple {
 		q.title += "\nUse comma-separated numbers, or none for no system modules."
 	}
+	if q.help != "" {
+		q.title += "\n" + q.help
+	}
 	if err := t.say("\n" + strings.NewReplacer("–", "-", "—", "-", "…", "...").Replace(q.title) + "\n"); err != nil {
 		return "", err
 	}
 	for i, choice := range q.choices {
-		if err := t.say(fmt.Sprintf("%d. %s", i+1, choice)); err != nil {
+		label := choice
+		if text, ok := q.labels[choice]; ok {
+			label = text
+		}
+		if detail := q.details[choice]; detail != "" {
+			label += " — " + detail
+		}
+		if err := t.say(fmt.Sprintf("%d. %s", i+1, label)); err != nil {
 			return "", err
 		}
 	}

@@ -240,13 +240,22 @@ func (m wizardModel) View() tea.View {
 	if m.runtime.Getenv("NO_COLOR") != "" || m.runtime.Getenv("TERM") == "dumb" {
 		body = ansi.Strip(body)
 	}
-	return tea.NewView(header(m.runtime) + "\n" + previewRows(m.preview, m.runtime.Width) + "\n" + body)
+	return tea.NewView(m.header() + "\n" + previewRows(m.preview, m.runtime.Width) + "\n" + body)
 }
+
+func (m wizardModel) header() string {
+	text := header(m.runtime)
+	if m.prompt.q.phase != "" {
+		text += " · " + m.prompt.q.phase
+	}
+	return ansi.Truncate(text, max(1, m.runtime.Width), "…")
+}
+
 func (m wizardModel) Inspect() inspect.Node {
 	preview := previewRows(m.preview, m.runtime.Width)
 	offset := 1 + len(strings.Split(preview, "\n"))
 	children := []inspect.Node{
-		{ID: "header", Kind: "text", Label: "smol · setup", Bounds: inspect.Bounds{Width: m.runtime.Width, Height: 1}},
+		{ID: "header", Kind: "text", Label: ansi.Strip(m.header()), Bounds: inspect.Bounds{Width: m.runtime.Width, Height: 1}},
 		{ID: "preview", Kind: "output", Label: ansi.Strip(preview), Bounds: inspect.Bounds{Y: 1, Width: m.runtime.Width, Height: offset - 1}},
 	}
 	if m.reply != nil {

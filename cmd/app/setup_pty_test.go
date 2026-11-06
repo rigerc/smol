@@ -125,7 +125,7 @@ func TestSetupTerminal(t *testing.T) {
 			switch mode {
 			case "rich-save":
 				_, err = io.WriteString(master, "\r")
-				prompts := []string{"Configuration preset", "Face mode", "System modules", "os field", "kernel field", "uptime field", "mem field", "Module order", "Output icons", "Icon set", "Output color policy", "Module styles", "Print shell startup instructions", "Review configuration", "Create "}
+				prompts := []string{"Configuration preset", "Character", "System modules", "os display", "kernel display", "uptime display", "mem display", "Module order", "Output icons", "Icon set", "Output colors", "Module styles", "Shell instructions", "Review configuration", "Exact TOML to save", "Review configuration", "Create "}
 				offset := transcript.Len()
 				for i, prompt := range prompts {
 					found := false
@@ -143,6 +143,15 @@ func TestSetupTerminal(t *testing.T) {
 					}
 					offset = transcript.Len()
 					answer := "\r"
+					switch prompt {
+					case "Module order":
+						answer = "\x1b[1;5B\r" // Ctrl+Down moves os below kernel.
+					case "Exact TOML to save":
+						answer = "\x1b[6~\r" // Page down, then return to review.
+					}
+					if i == len(prompts)-4 {
+						answer = "\x1b[B\r" // Open the full TOML viewer.
+					}
 					if i == len(prompts)-1 {
 						answer = "\x1b[B\r"
 					}

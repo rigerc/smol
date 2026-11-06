@@ -1,10 +1,10 @@
 
-Face mode
+Character
 
-  disabled
-  preset
-▸ seed
-  random-once
-  random-each-run
+  No character
+  Choose a character
+▸ Use a fixed seed
+  Randomize once
+  Randomize every run
 
 up/down choose; Enter accepts; Esc back; Ctrl+C cancels

@@ -5,9 +5,11 @@ Modules
 
 ▸ [ ] cpu
   [x] mem
+1 selected
 
-Space toggles; Enter continues; Esc
-back; Ctrl+C cancels
+up/down choose; Space toggles
+Enter continues; Esc back; Ctrl+C
+cancels
 
 ## move
 command: no
@@ -16,9 +18,11 @@ Modules
 
   [ ] cpu
 ▸ [x] mem
+1 selected
 
-Space toggles; Enter continues; Esc
-back; Ctrl+C cancels
+up/down choose; Space toggles
+Enter continues; Esc back; Ctrl+C
+cancels
 
 ## toggle
 command: no
@@ -27,9 +31,11 @@ Modules
 
   [ ] cpu
 ▸ [ ] mem
+0 selected
 
-Space toggles; Enter continues; Esc
-back; Ctrl+C cancels
+up/down choose; Space toggles
+Enter continues; Esc back; Ctrl+C
+cancels
 
 ## accept
 command: yes

@@ -1,9 +1,5 @@
 
-System modules (face: seed; Esc returns
-to Face setup)
-Changing selection, fields or order
-normalizes format literals to ·
-separators.
+System modules
 
 ▸ [ ] battery
   [ ] cpu
@@ -26,6 +22,8 @@ separators.
   [x] uptime
   [ ] user
   [ ] virt
+4 selected
 
-Space toggles; Enter continues; Esc
-back; Ctrl+C cancels
+up/down choose; Space toggles
+Enter continues; Esc back; Ctrl+C
+cancels

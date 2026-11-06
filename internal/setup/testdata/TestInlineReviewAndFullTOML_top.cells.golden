@@ -1,0 +1,21 @@
+1: "smol · setup · 4/4 · Finish"
+2: "Preview: Ubuntu 24.04.1 LTS · 6.8.0-48-generic · 3d 4h 4m · 4.6 GiB / 15.6 GiB"
+3:
+4: "Exact TOML to save"
+5:
+6: "format = '{os} · {kernel} · {uptime} · {mem}'"
+7: "color = 'auto'"
+8:
+9: "[icons]"
+10: "mode = 'never'"
+11: "set = 'nerd-font'"
+12: "separator = ' '"
+13:
+14: "[display]"
+15: "[display.size]"
+16: "unit = 'iec'"
+17: "Lines 1-11 of 116"
+18:
+19: "up/down scroll; PgUp/PgDn page"
+20: "Enter returns; Esc back; Ctrl+C cancels"
+21:
