@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rigerc/smol/internal/format"
+	"github.com/rigerc/smol/internal/displayfmt"
 )
 
 // ErrUnavailable is returned by a module that has nothing to report on this
@@ -28,7 +28,7 @@ type Env struct {
 	Statfs     func(string) (DiskStats, error)
 	Uname      func() (string, error)
 	Interfaces func() ([]Interface, error)
-	Display    *format.Options
+	Display    *displayfmt.Options
 	Options    *Options
 }
 
@@ -124,11 +124,11 @@ func Known(name string) bool {
 	_, ok := Get(name)
 	return ok
 }
-func display(env Env) format.Options {
+func display(env Env) displayfmt.Options {
 	if env.Display != nil {
 		return *env.Display
 	}
-	return format.Default()
+	return displayfmt.Default()
 }
 
 func fieldDescription(module, field string) string {

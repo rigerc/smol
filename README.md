@@ -90,16 +90,20 @@ The short tour picks the banner preset, follows its live preview through the
 face steps, and stops before saving. It is recorded from
 [demos/vhs/wizard.tape](demos/vhs/wizard.tape).
 
-Setup runs inline with a persistent output preview directly below its header.
-Choose a preset, optional face, system modules, fields, order, icons, styles, and
-shell instructions. Highlighting a choice previews it before Enter; invalid input
+Setup uses inline prompts from [rigerc/tuiweave](https://github.com/rigerc/tuiweave),
+with a transparent, bordered output preview below its header. Related prompts
+accumulate as collapsed tuiweave fields under Configuration, Face, Modules,
+Appearance, Shell, and Save. Choose a preset, optional face, system modules,
+fields, order, icons, styles, and shell instructions. Highlighting a choice previews it before Enter; invalid input
 keeps the last valid preview. Module values are cached during setup, and random
 face samples stay stable until rerolled. Enter accepts; Esc goes back; Ctrl+C or EOF cancels. Space
-toggles system modules. Limited terminals use numbered choices, comma-separated
-module numbers, and `:back` / `:cancel`; use `none` to remove all system modules
+toggles system modules. For module order, Space grabs or drops an item and
+arrows move it; Shift+Up/Down moves it directly. Long lists scroll within the
+inline form, including in an 80×24 terminal. Limited terminals use numbered choices, comma-separated
+module numbers, numeric module order, and `:back` / `:cancel`; use `none` to remove all system modules
 when keeping a face. These words are ordinary text in a seed prompt.
 
-A FIGlet Standard banner introduces setup in a Phoenix red-to-amber gradient.
+A tuiweave FIGlet Standard banner introduces setup in a Phoenix red-to-amber gradient.
 The dark palette runs from `#F83600` to `#FCDF57`; the light palette uses darker
 stops for readability on cream. `COLORFGBG` supplies a background hint; unknown
 backgrounds use the dark palette. `NO_COLOR` and numbered-input mode keep the
@@ -352,7 +356,7 @@ Run `make audit` with `govulncheck` before dependency upgrades or releases.
 - `internal/app/`: CLI execution with injected filesystem, environment, and writers.
 - `internal/config/`: TOML defaults, strict parsing, and validation.
 - `internal/modules/`: built-in system-info modules and injected detection hooks.
-- `internal/format/`: shared size, duration, percent, and temperature formatting.
+- `internal/displayfmt/`: shared size, duration, percent, and temperature formatting.
 - `internal/render/`: format parsing, module snapshots, separators, and color escapes.
 - `internal/face/`: faceroll character selection, validation, and discovery.
 - `internal/playback/`: synchronous animation with checked writes and terminal cleanup.

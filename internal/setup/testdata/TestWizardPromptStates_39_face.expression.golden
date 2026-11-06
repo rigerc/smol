@@ -1,16 +1,15 @@
 
-Face expression
-
-▸ idle
-  angry
-  dead
-  happy
-  questioning
-  sad
-  sleepy
-  surprised
-  waiting
-  working
-
-up/down choose; Enter accepts; Esc
-back; Ctrl+C cancels
+◆  Face expression
+│  ❯ ● idle
+│    ○ angry
+│    ○ dead
+│    ○ happy
+│    ○ questioning
+│    ○ sad
+│    ○ sleepy
+│    ○ surprised
+│    ○ waiting
+│    ○ working
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

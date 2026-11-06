@@ -1,11 +1,13 @@
 
-Print shell startup instructions (no
-shell files are modified)
+Shell · Print shell startup
+instructions (no shell files are
+modified)
 
-▸ none
-  bash
-  zsh
-  fish
-
-up/down choose; Enter accepts; Esc
-back; Ctrl+C cancels
+◆
+│  ❯ ● none
+│    ○ bash
+│    ○ zsh
+│    ○ fish
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

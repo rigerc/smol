@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/rigerc/smol/internal/config"
+	"github.com/rigerc/smol/internal/displayfmt"
 	"github.com/rigerc/smol/internal/face"
-	"github.com/rigerc/smol/internal/format"
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/render"
 )
@@ -71,7 +71,7 @@ func cloneDraft(cfg config.Config) config.Config {
 }
 
 type previewCache struct {
-	display    format.Options
+	display    displayfmt.Options
 	options    modules.Options
 	generation int
 	values     map[string]modules.Result

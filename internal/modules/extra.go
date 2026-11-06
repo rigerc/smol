@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rigerc/smol/internal/format"
+	"github.com/rigerc/smol/internal/displayfmt"
 )
 
 func extraSpecs() []Module {
@@ -57,13 +57,13 @@ func extraFetch(ctx context.Context, name string, env Env) (Result, error) {
 		}
 		used := stats.Total - stats.Free
 		r := sizeResult(used, stats.Free, stats.Total, env)
-		r.Fields["available"] = format.Size(stats.Available, display(env).Size)
+		r.Fields["available"] = displayfmt.Size(stats.Available, display(env).Size)
 		denominator := used + stats.Available
 		if denominator == 0 {
 			delete(r.Fields, "percent")
 			delete(r.Fields, "bar")
 		} else {
-			r.Fields["percent"], r.Fields["bar"] = format.Percent(float64(used)/float64(denominator)*100, display(env).Percent)
+			r.Fields["percent"], r.Fields["bar"] = displayfmt.Percent(float64(used)/float64(denominator)*100, display(env).Percent)
 		}
 		return r, nil
 	case "battery":
@@ -131,7 +131,7 @@ func battery(env Env) (Result, error) {
 		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 || v > 100 {
 			return Result{}, ErrUnavailable
 		}
-		pct, _ := format.Percent(v, display(env).Percent)
+		pct, _ := displayfmt.Percent(v, display(env).Percent)
 		status, _ := readTrim(env.FS, p+"/status")
 		status = strings.ToLower(status)
 		switch status {

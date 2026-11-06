@@ -150,7 +150,7 @@ func TestPersistentPreviewNavigation(t *testing.T) {
 		t.Fatal("tentative icons")
 	}
 	plain := ansi.Strip(m.View().Content)
-	if !strings.HasPrefix(plain, "smol · setup\nPreview:") || strings.Index(plain, "Output icons") < strings.Index(plain, "Preview:") {
+	if !strings.HasPrefix(plain, "smol · setup\n\n╭ Preview") || strings.Index(plain, "Output icons") < strings.Index(plain, "╭ Preview") {
 		t.Fatal(plain)
 	}
 	if strings.Count(plain, "smol · setup") != 1 {
@@ -191,6 +191,7 @@ func TestWizardSizingAndInspection(t *testing.T) {
 		s, m := newTestWizard(t)
 		s.state = "modules.ready"
 		m.runtime.Width = width
+		m.runtime.Rows = 48
 		m = askWizard(t, m, s)
 		if width < 40 {
 			if !m.fallback {
@@ -198,7 +199,7 @@ func TestWizardSizingAndInspection(t *testing.T) {
 			}
 			continue
 		}
-		if m.fallback || len(strings.Split(m.View().Content, "\n")) >= 24 {
+		if m.fallback || len(strings.Split(m.View().Content, "\n")) >= m.runtime.Rows {
 			t.Fatal("menu does not fit", m.View().Content)
 		}
 		node := m.Inspect()
@@ -233,6 +234,7 @@ func TestWizardPreviewSnapshots(t *testing.T) {
 			s, m := newTestWizard(t)
 			s.state = "icons.ready"
 			m.runtime.Width = width
+			m.runtime.Rows = 32
 			m = askWizard(t, m, s)
 			snaptest.Snap(t, m.View().Content)
 		})
@@ -279,6 +281,103 @@ func TestRichStyleEditor(t *testing.T) {
 	}
 }
 
+func TestPreviewPanelFitsAndHonorsNoColor(t *testing.T) {
+	for _, width := range []int{1, 5, 19, 40, 80} {
+		runtime := Runtime{Width: width, Getenv: func(string) string { return "1" }}
+		panel := previewPanel("Preview: \x1b[31m"+strings.Repeat("preview ", 30)+"\x1b[0m", runtime)
+		if strings.Contains(panel, "\x1b") {
+			t.Fatal("preview ignored NO_COLOR")
+		}
+		for _, line := range strings.Split(panel, "\n") {
+			if ansi.StringWidth(line) > width {
+				t.Fatalf("preview exceeds %d columns: %q", width, line)
+			}
+		}
+		if width >= 6 && (!strings.HasPrefix(panel, "╭ Preview") || !strings.Contains(panel, "╰")) {
+			t.Fatal("missing preview border")
+		}
+	}
+}
+
+func TestPreviewPanelIsTransparent(t *testing.T) {
+	runtime := Runtime{Width: 40, Getenv: func(key string) string {
+		if key == "TERM" {
+			return "xterm"
+		}
+		return ""
+	}}
+	panel := previewPanel("Preview: plain", runtime)
+	if !strings.Contains(panel, "\x1b[") {
+		t.Fatal("expected styled preview")
+	}
+	for _, background := range []string{"[48;", "[48m"} {
+		if strings.Contains(panel, background) {
+			t.Fatalf("preview paints a background: %q", panel)
+		}
+	}
+}
+
+func TestQuestionGroupsAndTitles(t *testing.T) {
+	for _, tc := range []struct{ state, section string }{
+		{"destination.ready", "Configuration"}, {"preset.ready", "Configuration"},
+		{"face.mode", "Face"}, {"face.identity", "Face"}, {"face.sample", "Face"}, {"face.expression", "Face"},
+		{"modules.ready", "Modules"}, {"fields.ready", "Modules"}, {"order.ready", "Modules"},
+		{"icons.ready", "Appearance"}, {"icons.set", "Appearance"}, {"color.ready", "Appearance"}, {"styles.ready", "Appearance"}, {"style.field", "Appearance"},
+		{"shell.ready", "Shell"}, {"review.ready", "Save"}, {"confirm.ready", "Save"},
+	} {
+		t.Run(tc.state, func(t *testing.T) {
+			s := freshSession(t)
+			s.state = tc.state
+			s.selected = []string{"mem"}
+			s.queue = []string{"mem"}
+			s.faceMode = "seed"
+			q := s.question()
+			if q.section != tc.section {
+				t.Fatalf("section = %q, want %q", q.section, tc.section)
+			}
+			if q.title == "" {
+				t.Fatal("missing title")
+			}
+		})
+	}
+	s := freshSession(t)
+	s.path = "/home/ada/.config/smol/config.toml"
+	s.state = "destination.ready"
+	q := s.question()
+	if q.title != "Destination" || q.description == "" {
+		t.Fatalf("destination prompt = %+v", q)
+	}
+	view := ansi.Strip(newPrompt(q, 80).View().Content)
+	if !strings.Contains(view, "◆  Configuration · Destination") || !strings.Contains(view, "Fixed for this session.") {
+		t.Fatal(view)
+	}
+	wd, m := newTestWizard(t)
+	wd.state = "destination.ready"
+	m = askWizard(t, m, wd)
+	next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = requireWizard(t, next)
+	wd.state = "preset.ready"
+	m = askWizard(t, m, wd)
+	plain := ansi.Strip(m.View().Content)
+	if strings.Contains(plain, "◇  Destination") || !strings.Contains(plain, "◆  Configuration preset") {
+		t.Fatal(plain)
+	}
+	wd.state = "face.mode"
+	m = askWizard(t, m, wd)
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = requireWizard(t, next)
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = requireWizard(t, next)
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = requireWizard(t, next)
+	wd.state = "face.identity"
+	m = askWizard(t, m, wd)
+	plain = ansi.Strip(m.View().Content)
+	if !strings.Contains(plain, "◇  Face mode") || !strings.Contains(plain, "│  seed") || !strings.Contains(plain, "◆  Face seed") {
+		t.Fatal(plain)
+	}
+}
+
 func TestPreviewClippingRespectsPlainOutput(t *testing.T) {
 	text := strings.Repeat("plain ", 30)
 	clipped := previewRows(text, 20)
@@ -296,6 +395,24 @@ func TestPreviewClippingRespectsPlainOutput(t *testing.T) {
 	}
 }
 
+func TestInlineMenuScrollsWithoutLosingSelections(t *testing.T) {
+	s, m := newTestWizard(t)
+	s.state = "modules.ready"
+	m.runtime.Rows = 24
+	m = askWizard(t, m, s)
+	if m.fallback || m.reply == nil {
+		t.Fatal("long menus must remain inline at 80x24")
+	}
+	if got := strings.Split(m.prompt.currentValue(), ","); len(got) != len(s.selected) {
+		t.Fatal("fallback lost selected modules")
+	}
+	for _, name := range s.selected {
+		if !contains(m.prompt.multi.SelectedIDs(), name) {
+			t.Fatalf("fallback lost %s", name)
+		}
+	}
+}
+
 func TestWizardInspectionUsesAbsoluteBounds(t *testing.T) {
 	s, m := newTestWizard(t)
 	s.state = "icons.set"
@@ -304,11 +421,92 @@ func TestWizardInspectionUsesAbsoluteBounds(t *testing.T) {
 	question := tree.Children[len(tree.Children)-1]
 	bounds := question.Children[0].Bounds
 	lines := strings.Split(ansi.Strip(m.View().Content), "\n")
-	if bounds.Y < 3 || bounds.Y >= len(lines) || !strings.Contains(lines[bounds.Y], "nerd-font") {
+	if bounds.Y < 3 || bounds.Y >= len(lines) || !strings.Contains(lines[bounds.Y], "◆") || !strings.Contains(lines[bounds.Y+1], "nerd-font") {
 		t.Fatalf("bounds %+v do not match %q", bounds, lines)
 	}
 	m.reply = nil
 	if len(m.Inspect().Children) != 2 {
 		t.Fatal("hidden controls exposed while working")
+	}
+}
+
+func TestWizardReorderPreviewAndHistory(t *testing.T) {
+	s, m := newTestWizard(t)
+	s.state = "order.ready"
+	m.runtime.Rows = 80
+	m = askWizard(t, m, s)
+	before := m.candidate.Format
+	next, _ := m.Update(inspect.Invoke("order.move-down"))
+	m = requireWizard(t, next)
+	if m.candidate.Format == before || m.candidate.Format == "" {
+		t.Fatal("reorder did not refresh preview")
+	}
+	value := m.prompt.currentValue()
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = requireWizard(t, next)
+	if len(m.history) != 1 || m.history[0].value != value {
+		t.Fatal("accepted order was not retained")
+	}
+	s.state = "fields.ready"
+	// Keep the following prompt in Modules so order remains collapsed above it.
+	s.queue = []string{"mem"}
+	s.index = 0
+	m = askWizard(t, m, s)
+	plain := ansi.Strip(m.View().Content)
+	if !strings.Contains(plain, "◇  Order") || !strings.Contains(plain, "◆  Modules") {
+		t.Fatal(plain)
+	}
+	question := m.Inspect().Children[2]
+	if lines := strings.Split(plain, "\n"); !strings.Contains(lines[question.Children[0].Bounds.Y], "◆") {
+		t.Fatal("collapsed history displaced inspection bounds")
+	}
+}
+
+func TestInlineListsKeepCursorVisible(t *testing.T) {
+	for _, state := range []string{"modules.ready", "order.ready"} {
+		t.Run(state, func(t *testing.T) {
+			s, m := newTestWizard(t)
+			s.state = state
+			if state == "order.ready" {
+				s.selected = modules.Names()
+			}
+			m = askWizard(t, m, s)
+			if m.fallback {
+				t.Fatal("long list fell back")
+			}
+			next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnd})
+			m = requireWizard(t, next)
+			tree := m.prompt.Inspect().Children[0]
+			if tree.Scroll == nil || tree.Scroll.Offset == 0 || tree.Scroll.Offset+tree.Scroll.Visible != tree.Scroll.Total {
+				t.Fatalf("cursor did not scroll to end: %+v", tree.Scroll)
+			}
+			plain := ansi.Strip(m.View().Content)
+			if tree.Selected == nil || !strings.Contains(plain, tree.Selected.Label) || len(strings.Split(plain, "\n")) >= 24 {
+				t.Fatal("selected item not visible in terminal", plain)
+			}
+			if state == "order.ready" {
+				next, _ = m.Update(inspect.Invoke("order.move-up"))
+				m = requireWizard(t, next)
+				if m.prompt.order.Selected() != len(s.selected)-2 {
+					t.Fatal("scrolling prevented reorder")
+				}
+			}
+		})
+	}
+}
+
+func TestInlineHistoryLeavesRoomForActiveField(t *testing.T) {
+	s, m := newTestWizard(t)
+	for _, state := range []string{"face.mode", "face.identity", "face.expression", "face.sample"} {
+		s.state = state
+		m = askWizard(t, m, s)
+		next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+		m = requireWizard(t, next)
+		if m.fallback {
+			t.Fatalf("%s fell back", state)
+		}
+	}
+	if len(strings.Split(m.View().Content, "\n")) >= 24 {
+		t.Fatal("history overflowed terminal")
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rigerc/smol/internal/format"
+	"github.com/rigerc/smol/internal/displayfmt"
 )
 
 type uptimeModule struct{}
@@ -30,4 +30,4 @@ func (uptimeModule) Fetch(_ context.Context, env Env) (Result, error) {
 }
 
 // formatUptime preserves the original duration formatting.
-func formatUptime(secs int64) string { return format.Duration(secs, format.Default().Duration) }
+func formatUptime(secs int64) string { return displayfmt.Duration(secs, displayfmt.Default().Duration) }

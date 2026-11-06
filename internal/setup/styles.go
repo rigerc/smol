@@ -11,9 +11,9 @@ import (
 func (s *session) styleQuestion() question {
 	switch s.state {
 	case "icons.ready":
-		return question{title: "Output icons (Nerd Font glyphs require a compatible terminal font)", choices: []string{"never", "auto", "always"}, value: s.draft.Icons.Mode}
+		return question{title: "Output icons (Nerd Font glyphs require a compatible terminal font)", label: "Icons", choices: []string{"never", "auto", "always"}, value: s.draft.Icons.Mode}
 	case "icons.set":
-		return question{title: "Icon set — Nerd Font sample: " + icons.Default().Prefix("os", "") + icons.Default().Prefix("cpu", "") + icons.Default().Prefix("mem", "") + "; ASCII sample: OS CPU MEM", choices: []string{"nerd-font", "ascii"}, value: s.draft.Icons.Set}
+		return question{title: "Icon set — Nerd Font sample: " + icons.Default().Prefix("os", "") + icons.Default().Prefix("cpu", "") + icons.Default().Prefix("mem", "") + "; ASCII sample: OS CPU MEM", label: "Icon set", choices: []string{"nerd-font", "ascii"}, value: s.draft.Icons.Set}
 	case "style.module":
 		return question{title: "Choose a module to style", choices: append(append([]string{}, s.selected...), "Done"), value: "Done"}
 	case "style.property":

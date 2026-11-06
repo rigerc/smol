@@ -1,8 +1,7 @@
 
-Replace /home/ada/config.toml?
-
-▸ No
-  Yes
-
-up/down choose; Enter accepts; Esc
-back; Ctrl+C cancels
+◆  Replace /home/ada/config.toml?
+│  ❯ ● No
+│    ○ Yes
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

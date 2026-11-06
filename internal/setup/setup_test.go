@@ -843,12 +843,84 @@ func TestSpacedPromptGeometry(t *testing.T) {
 		if node.Bounds.Y < 2 || node.Bounds.Y+node.Bounds.Height > len(lines) {
 			t.Fatalf("invalid component bounds: %+v", node.Bounds)
 		}
-		if strings.TrimSpace(lines[node.Bounds.Y-1]) != "" || !strings.Contains(lines[node.Bounds.Y], "No") {
+		if strings.TrimSpace(lines[node.Bounds.Y-1]) != "" || !strings.Contains(lines[node.Bounds.Y], "◆") || !strings.Contains(lines[node.Bounds.Y+1], "No") {
 			t.Fatalf("component bounds do not match spaced view: %+v %q", node.Bounds, lines)
 		}
 		m.height = len(lines)
 		if !m.needsBasic() {
 			t.Fatal("short terminal must use numbered input")
 		}
+	}
+}
+
+func TestInlineReorder(t *testing.T) {
+	s := freshSession(t)
+	s.derive()
+	s.state = "order.ready"
+	q := s.question()
+	m := newPrompt(q, 80)
+	if got := m.Inspect().Children[0]; got.Kind != "reorder" || !got.Focused {
+		t.Fatalf("order field: %+v", got)
+	}
+	// A semantic move and keyboard grab both change the same submitted order.
+	next, cmd := m.Update(inspect.Invoke("order.move-down"))
+	m = requirePrompt(t, next)
+	if cmd == nil || m.currentValue() == q.value {
+		t.Fatal("semantic move did not reorder")
+	}
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeySpace})
+	m = requirePrompt(t, next)
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = requirePrompt(t, next)
+	moved := m.currentValue()
+	if moved == q.value {
+		t.Fatal("grabbed item did not move")
+	}
+	if _, err := permutation(moved, s.selected); err != nil {
+		t.Fatal(err)
+	}
+	// Resizing hands the current order to basic input without resetting it.
+	next, _ = m.Update(tea.WindowSizeMsg{Width: 30, Height: 12})
+	m = requirePrompt(t, next)
+	if !errors.Is(m.result.err, errBasic) || m.currentValue() != moved {
+		t.Fatal("resize lost order")
+	}
+	q.value = moved
+	restored := newPrompt(q, 80)
+	if restored.currentValue() != moved {
+		t.Fatal("recreated field lost order")
+	}
+	next, _ = restored.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if requirePrompt(t, next).result.value != moved {
+		t.Fatal("submitted stale order")
+	}
+	var out bytes.Buffer
+	runtime := testRuntime(t, "\n", filepath.Join(t.TempDir(), "config.toml"))
+	term := terminal{runtime: runtime, out: &out}
+	defer func() {
+		if err := term.close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	got, err := term.basic(context.Background(), q)
+	if err != nil || got != moved || !strings.Contains(out.String(), "1. ") {
+		t.Fatalf("basic order = %q, %v; %s", got, err, out.String())
+	}
+}
+
+func TestInlineMultiselectActions(t *testing.T) {
+	m := newPrompt(question{title: "Modules", choices: []string{"cpu", "mem"}, multiple: true}, 80)
+	next, cmd := m.Update(inspect.Invoke("modules.toggle"))
+	m = requirePrompt(t, next)
+	if cmd == nil || m.currentValue() != "cpu" {
+		t.Fatal("semantic checkbox did not toggle")
+	}
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = requirePrompt(t, next)
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeySpace})
+	m = requirePrompt(t, next)
+	next, _ = m.Update(inspect.Invoke("modules.submit"))
+	if requirePrompt(t, next).result.value != "cpu,mem" {
+		t.Fatal("submitted stale selection")
 	}
 }

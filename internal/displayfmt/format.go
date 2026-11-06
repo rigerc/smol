@@ -1,5 +1,5 @@
-// Package format provides shared display options and value formatting.
-package format
+// Package displayfmt provides shared display options and value formatting.
+package displayfmt
 
 import (
 	"fmt"

@@ -1,8 +1,8 @@
 1:
-2: "Replace /home/ada/config.toml?"
-3:
-4: "▸ No                                                                            " [fg=Accent]
-5: "  Yes                                                                           " [fg=Text]
-6:
-7: "up/down choose; Enter accepts; Esc back; Ctrl+C cancels"
+2: "◆" [fg=Info bold] | "  " | "Replace /home/ada/config.toml?" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "No" [fg=Text bold]
+4: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Yes" [fg=TextMuted]
+5: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+6: "└" [fg=TextFaint]
+7: "Enter accepts; Esc back; Ctrl+C cancels"
 8:
