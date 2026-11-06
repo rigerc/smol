@@ -1,14 +1,13 @@
 
-Review configuration
-
-▸ Save
-  Edit face
-  Edit modules
-  Edit icons
-  Edit styles
-  Edit colors
-  Edit shell
-  Cancel
-
-up/down choose; Enter accepts; Esc
-back; Ctrl+C cancels
+◆  Save · Review configuration
+│  ❯ ● Save
+│    ○ Edit face
+│    ○ Edit modules
+│    ○ Edit icons
+│    ○ Edit styles
+│    ○ Edit colors
+│    ○ Edit shell
+│    ○ Cancel
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

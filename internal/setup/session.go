@@ -12,6 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/ishan5ain/tuiweave/reorder"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rigerc/smol/internal/config"
 	"github.com/rigerc/smol/internal/face"
@@ -290,7 +291,7 @@ func (s *session) question() question {
 	q := question{}
 	switch s.state {
 	case "destination.ready":
-		q = question{title: "Config: " + s.path + "\nDestination is fixed for this session.", choices: []string{"Continue", "Cancel"}, value: "Continue"}
+		q = question{title: "Destination", label: "Destination", action: true, description: "Fixed for this session.", choices: []string{"Continue", "Cancel"}, value: "Continue"}
 	case "preset.ready":
 		choices := []string{"default", "minimal", "banner", "prompt", "server", "icons"}
 		if s.preset == "existing" || s.snap.exists && validConfig(s.path, s.snap.data) {
@@ -324,13 +325,13 @@ func (s *session) question() question {
 			}}
 		}
 	case "face.error":
-		q = question{title: "Face generation failed; configuration was not written", choices: []string{"Retry", "Back", "Exit"}, value: "Retry"}
+		q = question{title: "Face generation failed; configuration was not written", action: true, choices: []string{"Retry", "Back", "Exit"}, value: "Retry"}
 	case "face.sample":
 		choices := []string{"Accept"}
 		if strings.HasPrefix(s.faceMode, "random-") {
 			choices = append(choices, "Reroll")
 		}
-		q = question{title: "Face sample", choices: choices, value: "Accept"}
+		q = question{title: "Face sample", action: true, choices: choices, value: "Accept"}
 	case "face.expression":
 		states := face.States()
 		sort.Strings(states)
@@ -339,7 +340,7 @@ func (s *session) question() question {
 	case "modules.ready":
 		names := without(modules.Names(), "face")
 		sort.Strings(names)
-		q = question{title: "System modules (face: " + s.faceMode + "; Esc returns to Face setup)\nChanging selection, fields or order normalizes format literals to · separators.", choices: names, checked: without(s.selected, "face"), multiple: true, validate: func(v string) error {
+		q = question{title: "System modules (face: " + s.faceMode + "; Esc returns to Face setup)\nChanging selection, fields or order normalizes format literals to · separators.", label: "Modules", choices: names, checked: without(s.selected, "face"), multiple: true, validate: func(v string) error {
 			if v == "" && !contains(s.selected, "face") {
 				return errors.New("select at least one module, including face")
 			}
@@ -358,20 +359,21 @@ func (s *session) question() question {
 		}
 		q = question{title: name + " field", choices: choices, value: value}
 	case "order.ready":
-		var rows, indices []string
+		var items []reorder.Item
+		var indices []string
 		for i, name := range s.selected {
 			label := name
 			if f := s.fields[name]; f != "" {
 				label += " (" + f + ")"
 			}
-			rows = append(rows, fmt.Sprintf("%d. %s", i+1, label))
+			items = append(items, reorder.Item{ID: strconv.Itoa(i + 1), Label: label})
 			indices = append(indices, strconv.Itoa(i+1))
 		}
-		q = question{title: "Module order: enter every number once\n" + strings.Join(rows, "\n"), value: strings.Join(indices, " "), validate: func(v string) error { _, err := permutation(v, s.selected); return err }}
+		q = question{title: "Module order", label: "Order", order: items, value: strings.Join(indices, " "), validate: func(v string) error { _, err := permutation(v, s.selected); return err }}
 	case "color.ready":
 		q = question{title: "Output color policy", choices: []string{"auto", "always", "never"}, value: s.draft.Color}
 	case "styles.ready":
-		q = question{title: "Module styles (inactive styles are preserved)", choices: []string{"Keep styles", "Edit styles", "Edit foregrounds"}, value: "Keep styles"}
+		q = question{title: "Module styles (inactive styles are preserved)", label: "Styles", choices: []string{"Keep styles", "Edit styles", "Edit foregrounds"}, value: "Keep styles"}
 	case "style.field":
 		name := s.selected[s.index]
 		colors := append([]string{"terminal default"}, render.ColorNames()...)
@@ -383,19 +385,40 @@ func (s *session) question() question {
 	case "shell.ready":
 		q = question{title: "Print shell startup instructions (no shell files are modified)", choices: []string{"none", "bash", "zsh", "fish"}, value: s.shell}
 	case "review.ready":
-		q = question{title: "Review configuration", choices: []string{"Save", "Edit face", "Edit modules", "Edit icons", "Edit styles", "Edit colors", "Edit shell", "Cancel"}, value: "Save"}
+		q = question{title: "Review configuration", label: "Review", action: true, choices: []string{"Save", "Edit face", "Edit modules", "Edit icons", "Edit styles", "Edit colors", "Edit shell", "Cancel"}, value: "Save"}
 	case "confirm.ready":
 		verb := "Create "
 		if s.snap.exists {
 			verb = "Replace "
 		}
-		q = question{title: verb + s.path + "?", choices: []string{"No", "Yes"}, value: "No"}
+		q = question{title: verb + s.path + "?", label: "Confirm", action: true, choices: []string{"No", "Yes"}, value: "No"}
 	}
 	if q.title == "" {
 		q = s.styleQuestion()
 	}
+	q.section = sectionName(s.state)
+	q.key = s.state + ":" + strconv.Itoa(s.index)
 	return q
 }
+
+// sectionName groups adjacent prompts into one stage of the setup flow.
+func sectionName(state string) string {
+	switch {
+	case state == "destination.ready" || state == "preset.ready":
+		return "Configuration"
+	case strings.HasPrefix(state, "face."):
+		return "Face"
+	case state == "modules.ready" || state == "fields.ready" || state == "order.ready":
+		return "Modules"
+	case state == "icons.ready" || state == "icons.set" || state == "color.ready" || state == "styles.ready" || strings.HasPrefix(state, "style."):
+		return "Appearance"
+	case state == "shell.ready":
+		return "Shell"
+	default:
+		return "Save"
+	}
+}
+
 func (s *session) accept(ctx context.Context, value string) error {
 	switch s.state {
 	case "destination.ready":

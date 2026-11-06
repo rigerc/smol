@@ -1,4 +1,4 @@
-package format //nolint:revive // Tests share the display formatting package name, distinct from go/format.
+package displayfmt
 
 import "testing"
 

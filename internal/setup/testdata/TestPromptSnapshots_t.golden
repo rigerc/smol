@@ -3,10 +3,11 @@ Replace
 /home/ada/config.to
 ml?
 
-▸ No
-  Yes
-
-up/down choose;
+◆
+│  ❯ ● No
+│    ○ Yes
+│  ↑/↓ to navigate…
+└
 Enter accepts; Esc
 back; Ctrl+C
 cancels

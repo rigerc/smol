@@ -8,17 +8,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rigerc/smol/internal/format"
+	"github.com/rigerc/smol/internal/displayfmt"
 )
 
 func sizeResult(used, free, total uint64, env Env) Result {
 	o := display(env)
-	f := map[string]string{"used": format.Size(used, o.Size), "free": format.Size(free, o.Size), "total": format.Size(total, o.Size)}
+	f := map[string]string{"used": displayfmt.Size(used, o.Size), "free": displayfmt.Size(free, o.Size), "total": displayfmt.Size(total, o.Size)}
 	pct := 0.0
 	if total > 0 {
 		pct = float64(used) / float64(total) * 100
 	}
-	f["percent"], f["bar"] = format.Percent(pct, o.Percent)
+	f["percent"], f["bar"] = displayfmt.Percent(pct, o.Percent)
 	return Result{Text: f["used"] + " / " + f["total"], Fields: f}
 }
 func coreResult(name, text string, data []byte, env Env) Result {
@@ -51,7 +51,7 @@ func coreResult(name, text string, data []byte, env Env) Result {
 		v, _, _ := strings.Cut(s, " ")
 		secs, _ := strconv.ParseFloat(v, 64)
 		n := int64(secs)
-		r.Text = format.Duration(n, o.Duration)
+		r.Text = displayfmt.Duration(n, o.Duration)
 		for k, v := range map[string]int64{"days": n / 86400, "hours": n % 86400 / 3600, "minutes": n % 3600 / 60, "seconds": n % 60} {
 			r.Fields[k] = strconv.FormatInt(v, 10)
 		}
@@ -60,7 +60,7 @@ func coreResult(name, text string, data []byte, env Env) Result {
 		_, n := parseCPUInfo(data)
 		v, _ := strconv.ParseFloat(strings.Fields(text)[0], 64)
 		if n > 0 {
-			r.Fields["percent"], _ = format.Percent(v/float64(n)*100, o.Percent)
+			r.Fields["percent"], _ = displayfmt.Percent(v/float64(n)*100, o.Percent)
 		}
 	case "cpu":
 		_, n := parseCPUInfo(data)
@@ -83,7 +83,7 @@ func coreResult(name, text string, data []byte, env Env) Result {
 			r.Fields["freq"] = strconv.FormatFloat(freq/1000, 'f', 2, 64) + " GHz"
 		}
 		if temp, ok := cpuTemperature(env); ok {
-			r.Fields["temp"] = format.Temperature(temp, o.Temp)
+			r.Fields["temp"] = displayfmt.Temperature(temp, o.Temp)
 		}
 	}
 	return r
@@ -131,6 +131,6 @@ func memoryResult(info map[string]uint64, env Env) Result {
 	}
 	avail = min(avail, total)
 	r := sizeResult((total-avail)*1024, min(info["MemFree"], total)*1024, total*1024, env)
-	r.Fields["available"] = format.Size(avail*1024, o.Size)
+	r.Fields["available"] = displayfmt.Size(avail*1024, o.Size)
 	return r
 }

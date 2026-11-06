@@ -1,27 +1,29 @@
 
-System modules (face: seed; Esc returns to Face setup)
+Modules · System modules (face: seed; Esc returns to Face setup)
 Changing selection, fields or order normalizes format literals to · separators.
 
-▸ [ ] battery
-  [ ] cpu
-  [ ] desktop
-  [ ] disk
-  [ ] host
-  [ ] init
-  [x] kernel
-  [ ] load
-  [ ] localip
-  [ ] machine
-  [x] mem
-  [x] os
-  [ ] packages
-  [ ] processes
-  [ ] shell
-  [ ] swap
-  [ ] terminal
-  [ ] time
-  [x] uptime
-  [ ] user
-  [ ] virt
-
-Space toggles; Enter continues; Esc back; Ctrl+C cancels
+◆
+│  ❯ ◻ battery
+│    ◻ cpu
+│    ◻ desktop
+│    ◻ disk
+│    ◻ host
+│    ◻ init
+│    ◼ kernel
+│    ◻ load
+│    ◻ localip
+│    ◻ machine
+│    ◼ mem
+│    ◼ os
+│    ◻ packages
+│    ◻ processes
+│    ◻ shell
+│    ◻ swap
+│    ◻ terminal
+│    ◻ time
+│    ◼ uptime
+│    ◻ user
+│    ◻ virt
+│  ↑/↓ to navigate • Space: select • Enter: submit
+└
+Enter accepts; Esc back; Ctrl+C cancels

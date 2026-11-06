@@ -1,13 +1,12 @@
 
-mem field
-
-▸ default text
-  used
-  free
-  available
-  total
-  percent
-  bar
-
-up/down choose; Enter accepts; Esc
-back; Ctrl+C cancels
+◆  Modules · mem field
+│  ❯ ● default text
+│    ○ used
+│    ○ free
+│    ○ available
+│    ○ total
+│    ○ percent
+│    ○ bar
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

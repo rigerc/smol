@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lsferreira42/figlet-go/figlet"
+	"github.com/ishan5ain/tuiweave/banner"
 )
 
 // Art returns the authoritative FIGlet Standard lettering without ANSI escapes.
 func Art() (string, error) {
-	text, err := figlet.Render("smol", figlet.WithFont("standard"), figlet.WithWidth(120), figlet.WithJustification(0), figlet.WithParser("terminal"))
+	text, err := banner.Render(banner.Config{Text: "smol", Font: "standard", Width: 120, Parser: "terminal", Color: "white"})
 	return strings.TrimRight(text, "\n"), err
 }
 
