@@ -1,0 +1,9 @@
+1:
+2: "◆" [fg=Info bold] | "  " | "Appearance · Icon details" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "Done" [fg=Text bold]
+4: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Separator" [fg=TextMuted]
+5: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Module overrides" [fg=TextMuted]
+6: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+7: "└" [fg=TextFaint]
+8: "Enter accepts; Esc back; Ctrl+C cancels"
+9:

@@ -1,0 +1,10 @@
+
+Modules · Custom output format
+Use {module}, {module:field}, and {{ /
+}} for literal braces. Repeated modules
+and custom separators are supported.
+
+◆
+│  › os} · {kernel} · {uptime} · {mem}
+└
+Enter accepts; Esc back; Ctrl+C cancels

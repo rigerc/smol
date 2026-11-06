@@ -44,10 +44,10 @@ test-coverage:
 
 build:
 	@mkdir -p dist
-	$(GO) build -trimpath -o $(BIN) ./cmd/app
+	$(GO) build -trimpath -o $(BIN) ./cmd/smol
 
 run:
-	$(GO) run ./cmd/app
+	$(GO) run ./cmd/smol
 
 # Refresh the committed README gifs; requires VHS (https://github.com/charmbracelet/vhs).
 demos:

@@ -20,7 +20,12 @@ func (s *session) styleQuestion() question {
 			"ascii":     "Plain text labels: OS CPU MEM",
 		}}
 	case "style.module":
-		return question{title: "Choose a module to style", choices: append(append([]string{}, s.selected...), "Edit foregrounds", "Done"), labels: map[string]string{"Edit foregrounds": "Set foregrounds in order"}, value: "Done"}
+		choices := append([]string{}, s.selected...)
+		if len(s.selected) > 0 {
+			choices = append(choices, "Edit foregrounds")
+		}
+		choices = append(choices, "Done")
+		return question{title: "Choose a module to style", choices: choices, labels: map[string]string{"Edit foregrounds": "Set foregrounds in order"}, value: "Done"}
 	case "style.property":
 		return question{title: s.selected[s.index] + " style", choices: []string{"Foreground", "Background", "Attributes", "Done"}, value: "Done"}
 	case "style.color":

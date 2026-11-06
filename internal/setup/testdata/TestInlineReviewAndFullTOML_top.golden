@@ -15,7 +15,7 @@ color = 'auto'
 mode = 'never'
 set = 'nerd-font'
 separator = ' '
-Lines 1-7 of 116
+Lines 1-7 of 120
 
 up/down scroll; PgUp/PgDn page
 Enter returns; Esc back; Ctrl+C cancels

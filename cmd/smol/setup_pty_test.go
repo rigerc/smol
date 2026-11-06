@@ -130,7 +130,7 @@ func TestSetupTerminal(t *testing.T) {
 			case "rich-save", "rich-fallback-save":
 				_, err = io.WriteString(master, "\r")
 				// Bubble Tea may retain the unchanged "display" suffix when replacing uptime with mem.
-				prompts := []string{"Configuration preset", "Character", "System modules", "os display", "kernel display", "uptime display", "mem ", "Module order", "Output icons", "Icon set", "Output colors", "Module styles", "Shell instructions", "Review configuration", "Exact TOML to save", "Review configuration", "Create "}
+				prompts := []string{"Configuration preset", "Character", "System modules", "os display", "kernel display", "uptime display", "mem ", "Module order", "Additional settings", "Output icons", "Icon set", "Output colors", "Module styles", "Shell instructions", "Review configuration", "Exact TOML to save", "Review configuration", "Create "}
 				offset := transcript.Len()
 				for i, prompt := range prompts {
 					found := false
@@ -178,7 +178,7 @@ func TestSetupTerminal(t *testing.T) {
 					t.Fatal("80x24 wizard switched to numbered forms")
 				}
 			case "basic-save":
-				_, err = io.WriteString(master, strings.Repeat("\n", 15)+"2\n")
+				_, err = io.WriteString(master, strings.Repeat("\n", 16)+"2\n")
 			case "rich-term":
 				err = command.Process.Signal(syscall.SIGTERM)
 			case "narrow-cancel":

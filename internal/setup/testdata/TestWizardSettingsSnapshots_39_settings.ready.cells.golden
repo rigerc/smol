@@ -1,0 +1,16 @@
+1:
+2: "Modules · Additional settings"
+3: "Configure module options, display"
+4: "formatting, custom format, or icon"
+5: "details."
+6:
+7: "◆" [fg=Info bold]
+8: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "Continue" [fg=Text bold]
+9: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Module options" [fg=TextMuted]
+10: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Display formatting" [fg=TextMuted]
+11: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Custom format" [fg=TextMuted]
+12: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Icon details" [fg=TextMuted]
+13: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+14: "└" [fg=TextFaint]
+15: "Enter accepts; Esc back; Ctrl+C cancels"
+16:

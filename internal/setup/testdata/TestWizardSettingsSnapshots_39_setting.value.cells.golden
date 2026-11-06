@@ -1,0 +1,8 @@
+1:
+2: "◆" [fg=Info bold] | "  " | "Modules · Colors: swatch shape" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "blocks" [fg=Text bold]
+4: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "circles" [fg=TextMuted]
+5: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+6: "└" [fg=TextFaint]
+7: "Enter accepts; Esc back; Ctrl+C cancels"
+8:

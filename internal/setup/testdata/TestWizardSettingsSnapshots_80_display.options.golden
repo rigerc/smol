@@ -1,0 +1,16 @@
+
+◆  Appearance · Display formatting
+│  ❯ ● Done
+│    ○ Size: unit system: iec
+│    ○ Size: decimal digits (-1 automatic, 0–6): -1
+│    ○ Duration: abbreviate units: true
+│    ○ Duration: space before unit: false
+│    ○ Duration: omit zero units: false
+│    ○ Duration: round to nearest minute: false
+│    ○ Percentage: decimal digits (0–6): 0
+│    ○ Percentage: bar width (1–100): 10
+│    ○ Temperature: unit: c
+│    ○ Temperature: decimal digits (0–6): 0
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

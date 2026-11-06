@@ -2,6 +2,7 @@ package render
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -10,6 +11,47 @@ import (
 
 	"github.com/rigerc/smol/internal/modules"
 )
+
+func TestRenderPalette(t *testing.T) {
+	for _, shape := range []string{"blocks", "circles"} {
+		for _, shell := range []Shell{ShellNone, ShellBash, ShellZsh, ShellFish} {
+			t.Run(shape+"/"+string(shell), func(t *testing.T) {
+				env := fixtureEnv(nil)
+				moduleOpts := modules.DefaultOptions()
+				moduleOpts.Colors.Shape = shape
+				env.Options = &moduleOpts
+				opts := Options{Color: true, Shell: shell, Styles: map[string]Style{"colors": {FG: "red", BG: "blue", Bold: true}}}
+				glyph := "██"
+				if shape == "circles" {
+					glyph = "●"
+				}
+				var want []string
+				for i := range 16 {
+					code := 30 + i
+					if i >= 8 {
+						code = 90 + i - 8
+					}
+					open, reset := fmt.Sprintf("\x1b[%dm", code), "\x1b[0m"
+					switch shell {
+					case ShellBash:
+						open, reset = `\[`+open+`\]`, `\[`+reset+`\]`
+					case ShellZsh:
+						open, reset = "%{"+open+"%}", "%{"+reset+"%}"
+					}
+					want = append(want, open+glyph+reset)
+				}
+				toks := mustParse(t, "palette {colors} done")
+				if got := Render(context.Background(), toks, env, opts); got != "palette "+strings.Join(want, " ")+" done" {
+					t.Fatalf("palette: %q", got)
+				}
+				opts.Color = false
+				if got, want := Render(context.Background(), toks, env, opts), "palette "+strings.TrimSuffix(strings.Repeat(glyph+" ", 16), " ")+" done"; got != want {
+					t.Fatalf("plain palette: %q, want %q", got, want)
+				}
+			})
+		}
+	}
+}
 
 func fixtureEnv(vars map[string]string) modules.Env {
 	return modules.Env{

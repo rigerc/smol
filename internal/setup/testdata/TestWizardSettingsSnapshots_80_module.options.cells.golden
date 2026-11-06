@@ -1,0 +1,15 @@
+1:
+2: "◆" [fg=Info bold] | "  " | "Modules · Module options" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "Options take effect when the module is included in the format." [fg=TextMuted]
+4: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "Done" [fg=Text bold]
+5: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Colors: swatch shape: blocks" [fg=TextMuted]
+6: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Disk: absolute mount path: /" [fg=TextMuted]
+7: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Time: Go layout (15:04, Mon 15:04, ...): 15:04" [fg=TextMuted]
+8: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Battery: device (empty selects first battery): " [fg=TextMuted]
+9: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Local IP: interface (empty selects automatically): " [fg=TextMuted]
+10: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Local IP: address family: ipv4" [fg=TextMuted]
+11: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Packages: database: auto" [fg=TextMuted]
+12: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+13: "└" [fg=TextFaint]
+14: "Enter accepts; Esc back; Ctrl+C cancels"
+15:

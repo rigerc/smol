@@ -14,6 +14,10 @@ Shell instructions: none
 │    ○ Edit colors
 │    ○ Edit shell
 │    ○ Cancel
+│    ○ Edit module options
+│    ○ Edit display
+│    ○ Edit format
+│    ○ Edit icon details
 │  ↑/↓ to navigate • Enter: confirm
 └
 Enter accepts; Esc back; Ctrl+C cancels

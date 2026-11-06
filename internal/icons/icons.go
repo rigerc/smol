@@ -88,6 +88,8 @@ func (o Options) Prefix(module, osID string) string {
 
 func ascii(name string) string {
 	switch name {
+	case "colors":
+		return "CLR"
 	case "battery":
 		return "BAT"
 	case "cpu":
@@ -137,6 +139,8 @@ func ascii(name string) string {
 
 func nerd(name, osID string) string {
 	switch name {
+	case "colors":
+		return fa.Palette.String()
 	case "battery":
 		return fa.BatteryHalf.String()
 	case "cpu":

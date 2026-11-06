@@ -11,12 +11,16 @@ import (
 
 // ModulesConfig uses explicit tables so unknown options remain errors.
 type ModulesConfig struct {
+	Colors   *ColorsConfig   `toml:"colors,omitempty"`
 	Disk     *DiskConfig     `toml:"disk,omitempty"`
 	Time     *TimeConfig     `toml:"time,omitempty"`
 	Battery  *BatteryConfig  `toml:"battery,omitempty"`
 	LocalIP  *LocalIPConfig  `toml:"localip,omitempty"`
 	Packages *PackagesConfig `toml:"packages,omitempty"`
 }
+
+// ColorsConfig selects the palette swatch shape.
+type ColorsConfig = modules.ColorsOptions
 
 // DiskConfig selects the filesystem mount.
 type DiskConfig = modules.DiskOptions
@@ -35,12 +39,15 @@ type PackagesConfig = modules.PackagesOptions
 
 func defaultModules() ModulesConfig {
 	o := modules.DefaultOptions()
-	return ModulesConfig{Disk: &o.Disk, Time: &o.Time, Battery: &o.Battery, LocalIP: &o.LocalIP, Packages: &o.Packages}
+	return ModulesConfig{Colors: &o.Colors, Disk: &o.Disk, Time: &o.Time, Battery: &o.Battery, LocalIP: &o.LocalIP, Packages: &o.Packages}
 }
 
 // Options copies configuration to independent module inputs.
 func (m ModulesConfig) Options() modules.Options {
 	o := modules.DefaultOptions()
+	if m.Colors != nil {
+		o.Colors = *m.Colors
+	}
 	if m.Disk != nil {
 		o.Disk = *m.Disk
 	}
@@ -60,6 +67,9 @@ func (m ModulesConfig) Options() modules.Options {
 }
 func (m ModulesConfig) validate() error {
 	o := m.Options()
+	if o.Colors.Shape != "blocks" && o.Colors.Shape != "circles" {
+		return fmt.Errorf("modules.colors.shape: expected blocks or circles")
+	}
 	if !filepath.IsAbs(o.Disk.Mount) {
 		return fmt.Errorf("modules.disk.mount: must be absolute")
 	}
@@ -113,6 +123,9 @@ func Search(getenv func(string) string, exists func(string) bool) []Candidate {
 func TOML(c Config) (string, error) {
 	defaults := modules.DefaultOptions()
 	o := c.Modules.Options()
+	if o.Colors == defaults.Colors {
+		c.Modules.Colors = nil
+	}
 	if o.Disk == defaults.Disk {
 		c.Modules.Disk = nil
 	}

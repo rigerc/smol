@@ -35,6 +35,29 @@ func writeConfig(t *testing.T, body string) string {
 	return p
 }
 
+func TestColorsModulePolicy(t *testing.T) {
+	for _, tc := range []struct {
+		name, mode string
+		vars       map[string]string
+		tty, color bool
+	}{
+		{"terminal", "auto", nil, true, true},
+		{"redirected", "auto", nil, false, false},
+		{"no-color", "auto", map[string]string{"NO_COLOR": "1"}, true, false},
+		{"dumb", "auto", map[string]string{"TERM": "dumb"}, true, false},
+		{"always", "always", map[string]string{"NO_COLOR": "1"}, false, true},
+		{"never", "never", nil, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := writeConfig(t, "format='{colors}'\n[modules.colors]\nshape='circles'\n")
+			code, out, diag := runCLI(t, tc.vars, tc.tty, "--config", path, "--color", tc.mode)
+			if code != 0 || diag != "" || strings.Count(out, "●") != 16 || strings.Contains(out, "\x1b[") != tc.color {
+				t.Fatalf("code=%d stdout=%q stderr=%q", code, out, diag)
+			}
+		})
+	}
+}
+
 func TestVersionAndList(t *testing.T) {
 	if code, out, _ := runCLI(t, nil, false, "--version"); code != 0 || !strings.HasPrefix(out, "smol ") {
 		t.Errorf("--version: code=%d out=%q", code, out)

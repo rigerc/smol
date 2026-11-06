@@ -24,7 +24,7 @@ dependency upgrades or releases.
 
 ## Structure
 
-- `cmd/app/` is the composition root; the executable is `dist/smol`.
+- `cmd/smol/` is the composition root; the executable is `dist/smol`.
 - `internal/app/` runs the CLI with injected runtime inputs and writers.
 - `internal/config/` loads and validates TOML configuration.
 - `internal/modules/` fetches system info; `internal/render/` formats output.

@@ -1,0 +1,12 @@
+1:
+2: "◆" [fg=Info bold] | "  " | "Modules · Additional settings" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "Configure module options, display formatting, custom format, or icon details." [fg=TextMuted]
+4: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "Continue" [fg=Text bold]
+5: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Module options" [fg=TextMuted]
+6: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Display formatting" [fg=TextMuted]
+7: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Custom format" [fg=TextMuted]
+8: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Icon details" [fg=TextMuted]
+9: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+10: "└" [fg=TextFaint]
+11: "Enter accepts; Esc back; Ctrl+C cancels"
+12:

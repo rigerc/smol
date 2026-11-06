@@ -1,0 +1,11 @@
+1:
+2: "Modules · Custom output format"
+3: "Use {module}, {module:field}, and {{ /"
+4: "}} for literal braces. Repeated modules"
+5: "and custom separators are supported."
+6:
+7: "◆" [fg=Info bold]
+8: "│" [fg=TextFaint] | "  " | "› " [fg=Info bold] | "os} · {kernel} · {uptime} · {mem}" [fg=Text] | " " [fg=Text reverse]
+9: "└" [fg=TextFaint]
+10: "Enter accepts; Esc back; Ctrl+C cancels"
+11:

@@ -1,0 +1,9 @@
+1:
+2: "◆" [fg=Info bold] | "  " | "Appearance · colors icon" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "Built-in icon" [fg=Text bold]
+4: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Hide icon" [fg=TextMuted]
+5: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Custom icon" [fg=TextMuted]
+6: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+7: "└" [fg=TextFaint]
+8: "Enter accepts; Esc back; Ctrl+C cancels"
+9:

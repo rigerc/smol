@@ -1,0 +1,17 @@
+1:
+2: "◆" [fg=Info bold] | "  " | "Appearance · Display formatting" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "Done" [fg=Text bold]
+4: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Size: unit system: iec" [fg=TextMuted]
+5: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Size: decimal digits (-1 automatic, 0–6): -1" [fg=TextMuted]
+6: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Duration: abbreviate units: true" [fg=TextMuted]
+7: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Duration: space before unit: false" [fg=TextMuted]
+8: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Duration: omit zero units: false" [fg=TextMuted]
+9: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Duration: round to nearest minute: false" [fg=TextMuted]
+10: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Percentage: decimal digits (0–6): 0" [fg=TextMuted]
+11: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Percentage: bar width (1–100): 10" [fg=TextMuted]
+12: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Temperature: unit: c" [fg=TextMuted]
+13: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Temperature: decimal digits (0–6): 0" [fg=TextMuted]
+14: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+15: "└" [fg=TextFaint]
+16: "Enter accepts; Esc back; Ctrl+C cancels"
+17:

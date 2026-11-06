@@ -62,6 +62,7 @@ func buildRegistry() []Module {
 		name, desc, fields string
 		fetch              func(context.Context, Env) (Result, error)
 	}{
+		{"colors", "Terminal 16-color palette", "", colors},
 		{"cpu", "CPU model and logical threads", "threads cores freq temp", cpuModule{}.Fetch},
 		{"host", "Hostname", "", hostModule{}.Fetch},
 		{"kernel", "Kernel release", "arch release name", kernelModule{}.Fetch},

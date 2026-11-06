@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          go build -trimpath -o "$RUNNER_TEMP/smol" ./cmd/app && echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+          go build -trimpath -o "$RUNNER_TEMP/smol" ./cmd/smol && echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - name: Install VHS
         uses: charmbracelet/vhs-action@60ed28058cc5ec1ac4edbf3a6380a1ea17b89c42 # v2.1.1
         with:

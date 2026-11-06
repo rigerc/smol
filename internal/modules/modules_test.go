@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -24,6 +25,7 @@ func TestFetch(t *testing.T) {
 		vars    map[string]string
 		want    string
 	}{
+		{"colors default", "colors", "x86", nil, strings.TrimSuffix(strings.Repeat("██ ", 16), " ")},
 		{"os pretty name", "os", "x86", nil, "Ubuntu 24.04.1 LTS"},
 		{"os fallback to usr/lib and NAME", "os", "arm", nil, "Alpine Linux"},
 		{"kernel", "kernel", "x86", nil, "6.8.0-48-generic"},
@@ -110,7 +112,7 @@ func TestParseOSReleaseQuoting(t *testing.T) {
 }
 
 func TestNamesSortedAndComplete(t *testing.T) {
-	want := []string{"battery", "cpu", "desktop", "disk", "face", "host", "init", "kernel", "load", "localip", "machine", "mem", "os", "packages", "processes", "shell", "swap", "terminal", "time", "uptime", "user", "virt"}
+	want := []string{"battery", "colors", "cpu", "desktop", "disk", "face", "host", "init", "kernel", "load", "localip", "machine", "mem", "os", "packages", "processes", "shell", "swap", "terminal", "time", "uptime", "user", "virt"}
 	got := Names()
 	if len(got) != len(want) {
 		t.Fatalf("Names() = %v, want %v", got, want)

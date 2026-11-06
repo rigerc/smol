@@ -1,0 +1,17 @@
+
+Modules · Module options
+Options take effect when the module is
+included in the format.
+
+◆
+│  ❯ ● Done
+│    ○ Colors: swatch shape: blocks
+│    ○ Disk: absolute mount path: /
+│    ○ Time: Go layout (15:04, Mon 15:…
+│    ○ Battery: device (empty selects …
+│    ○ Local IP: interface (empty sele…
+│    ○ Local IP: address family: ipv4
+│    ○ Packages: database: auto
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

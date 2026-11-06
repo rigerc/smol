@@ -48,6 +48,10 @@ type session struct {
 	queue         []string
 	index         int
 	styleProperty string
+	settingKey    string
+	settingReturn string
+	settingsExit  string
+	iconModule    string
 	dirty         bool
 	faceMode      string
 	sampleSeed    string
@@ -405,7 +409,7 @@ func (s *session) question() question {
 	case "shell.ready":
 		q = question{title: "Shell instructions", description: "No shell files are modified.", choices: []string{"none", "bash", "zsh", "fish"}, value: s.shell}
 	case "review.ready":
-		q = question{title: "Review configuration", label: "Review", action: true, description: s.reviewSummary(), choices: []string{"Save", "View full TOML", "Edit face", "Edit modules", "Edit icons", "Edit styles", "Edit colors", "Edit shell", "Cancel"}, value: "Save"}
+		q = question{title: "Review configuration", label: "Review", action: true, description: s.reviewSummary(), choices: []string{"Save", "View full TOML", "Edit face", "Edit modules", "Edit icons", "Edit styles", "Edit colors", "Edit shell", "Cancel", "Edit module options", "Edit display", "Edit format", "Edit icon details"}, value: "Save"}
 	case "review.toml":
 		q = question{title: "Exact TOML to save", action: true, document: s.review, value: "Back to review"}
 	case "confirm.ready":
@@ -418,9 +422,21 @@ func (s *session) question() question {
 	if q.title == "" {
 		q = s.styleQuestion()
 	}
+	if q.title == "" {
+		q = s.settingsQuestion()
+	}
 	q.phase = setupPhase(s.state)
 	q.section = sectionName(s.state)
 	q.key = s.state + ":" + strconv.Itoa(s.index)
+	if s.state == "setting.value" {
+		q.key += ":" + s.settingKey
+	}
+	if s.state == "icons.override" || s.state == "icons.custom" {
+		q.key += ":" + s.iconModule
+	}
+	if s.state == "setting.value" && strings.HasPrefix(s.settingKey, "display.") {
+		q.phase, q.section = "3/4 · Appearance", "Appearance"
+	}
 	return q
 }
 
@@ -428,9 +444,9 @@ func setupPhase(state string) string {
 	switch {
 	case state == "destination.ready" || state == "preset.ready" || strings.HasPrefix(state, "face."):
 		return "1/4 · Start"
-	case state == "modules.ready" || state == "fields.ready" || state == "order.ready":
+	case state == "modules.ready" || state == "fields.ready" || state == "order.ready" || state == "settings.ready" || state == "module.options" || state == "setting.value" || state == "format.custom":
 		return "2/4 · Modules"
-	case strings.HasPrefix(state, "icons.") || strings.HasPrefix(state, "style") || state == "color.ready":
+	case strings.HasPrefix(state, "icons.") || strings.HasPrefix(state, "style") || state == "color.ready" || state == "display.options":
 		return "3/4 · Appearance"
 	default:
 		return "4/4 · Finish"
@@ -444,9 +460,9 @@ func sectionName(state string) string {
 		return "Configuration"
 	case strings.HasPrefix(state, "face."):
 		return "Face"
-	case state == "modules.ready" || state == "fields.ready" || state == "order.ready":
+	case state == "modules.ready" || state == "fields.ready" || state == "order.ready" || state == "settings.ready" || state == "module.options" || state == "setting.value" || state == "format.custom":
 		return "Modules"
-	case state == "icons.ready" || state == "icons.set" || state == "color.ready" || state == "styles.ready" || strings.HasPrefix(state, "style."):
+	case strings.HasPrefix(state, "icons.") || state == "color.ready" || state == "styles.ready" || strings.HasPrefix(state, "style.") || state == "display.options":
 		return "Appearance"
 	case state == "shell.ready":
 		return "Shell"
@@ -593,7 +609,8 @@ func (s *session) accept(ctx context.Context, value string) error {
 		if s.dirty {
 			s.normalize()
 		}
-		s.state = "icons.ready"
+		s.settingsExit = "icons.ready"
+		s.state = "settings.ready"
 	case "color.ready":
 		s.draft.Color = value
 		s.state = "styles.ready"
@@ -637,6 +654,18 @@ func (s *session) accept(ctx context.Context, value string) error {
 			s.state = "color.ready"
 		case "Edit shell":
 			s.state = "shell.ready"
+		case "Edit module options":
+			s.settingsExit = "review.ready"
+			s.state = "module.options"
+		case "Edit display":
+			s.settingsExit = "review.ready"
+			s.state = "display.options"
+		case "Edit format":
+			s.settingsExit = "review.ready"
+			s.state = "format.custom"
+		case "Edit icon details":
+			s.settingsExit = "review.ready"
+			s.state = "icons.options"
 		case "Cancel":
 			return errCancel
 		}
@@ -649,7 +678,7 @@ func (s *session) accept(ctx context.Context, value string) error {
 			s.state = "review.ready"
 		}
 	default:
-		s.acceptStyle(value)
+		return s.acceptSettings(value)
 	}
 	return nil
 }
@@ -685,8 +714,23 @@ func (s *session) back() {
 			s.state = "fields.ready"
 			s.index = len(s.queue) - 1
 		}
-	case "icons.ready":
+	case "settings.ready":
 		s.state = "order.ready"
+		if s.settingsExit == "review.ready" {
+			s.state = "review.ready"
+		}
+	case "module.options", "display.options", "format.custom", "icons.options":
+		s.state = "settings.ready"
+	case "setting.value":
+		s.state = s.settingReturn
+	case "icons.separator", "icons.module":
+		s.state = "icons.options"
+	case "icons.override":
+		s.state = "icons.module"
+	case "icons.custom":
+		s.state = "icons.override"
+	case "icons.ready":
+		s.state = "settings.ready"
 	case "icons.set":
 		s.state = "icons.ready"
 	case "color.ready":

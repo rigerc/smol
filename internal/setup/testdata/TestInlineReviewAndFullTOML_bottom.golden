@@ -15,7 +15,7 @@ bold = true
 [style.virt]
 fg = 'cyan'
 bold = false
-Lines 110-116 of 116
+Lines 114-120 of 120
 
 up/down scroll; PgUp/PgDn page
 Enter returns; Esc back; Ctrl+C cancels

@@ -246,6 +246,8 @@ state = "idle"
 # digits = 0
 
 # Module options only apply when referenced in format.
+# [modules.colors]
+# shape = "blocks" # blocks | circles; add {colors} to format
 # [modules.disk]
 # mount = "/"
 # [modules.time]

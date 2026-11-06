@@ -76,6 +76,7 @@ type question struct {
 	multiple    bool
 	seed        bool
 	action      bool
+	allowEmpty  bool
 	validate    func(string) error
 }
 type answer struct {
@@ -636,7 +637,11 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 				}
 			}
 		}
-		if err := t.say("\n[" + def + "] Enter accepts; :back / :cancel at choices"); err != nil {
+		hint := "Enter accepts; :back / :cancel at choices"
+		if q.allowEmpty && len(q.choices) == 0 {
+			hint += "; :empty clears"
+		}
+		if err := t.say("\n[" + def + "] " + hint); err != nil {
 			return "", err
 		}
 		line, err := t.lines.ReadString('\n')
@@ -686,6 +691,9 @@ func (t *terminal) basic(ctx context.Context, q question) (string, error) {
 			value = strings.Join(chosen, ",")
 		} else if value == "" {
 			value = q.value
+		}
+		if q.allowEmpty && len(q.choices) == 0 && line == ":empty" {
+			value = ""
 		}
 		if q.validate != nil {
 			if validationErr := q.validate(value); validationErr != nil {

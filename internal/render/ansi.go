@@ -123,6 +123,16 @@ func (s Style) sgr() string {
 
 const sgrReset = "\x1b[0m"
 
+// paintPalette uses the terminal's named colors rather than fixed RGB values.
+func paintPalette(value string, sh Shell) string {
+	swatches := strings.Fields(value)
+	colors := ColorNames()
+	for i := range swatches {
+		swatches[i] = paint(escapeValue(swatches[i], sh), Style{FG: colors[i%len(colors)]}, sh)
+	}
+	return strings.Join(swatches, " ")
+}
+
 // wrapZeroWidth marks an escape sequence as non-printing for the given shell.
 func wrapZeroWidth(esc string, sh Shell) string {
 	switch sh {

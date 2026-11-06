@@ -31,7 +31,14 @@ make build
 ./dist/smol --list-modules
 ```
 
-`make build` produces `dist/smol`; install it somewhere on your `PATH` if desired.
+`make build` produces `dist/smol`. To install the `smol` command with Go:
+
+```sh
+go install github.com/rigerc/smol/cmd/smol@latest
+```
+
+From a local checkout, use `go install ./cmd/smol`. Ensure Go's binary directory
+(`GOBIN`, or `$(go env GOPATH)/bin` by default) is on your `PATH`.
 `make run` runs the command directly. The module path is `github.com/rigerc/smol`.
 
 System files are read directly; smol does not spawn commands or make network
@@ -58,11 +65,18 @@ requests. The default format is unchanged. Additional modules are opt-in:
 | `machine` | Machine model | `vendor`, `board`, `bios` |
 | `localip` | First non-loopback IPv4 | `ipv6`, `interface` |
 | `packages` | Installed package count | — |
+| `colors` | Terminal's 16-color palette as blocks | — |
 
 `--list-modules` prints `name: description`; `--list-fields` prints
 `module.field: description`. A module is fetched once even when several fields
 are referenced. Missing fields disappear with their separator, and unknown
 fields are configuration errors. Fields do not apply to `{face}`.
+
+Add `{colors}` to your format to show the terminal's eight normal colors followed
+by its eight bright colors. Set `[modules.colors] shape = "circles"` for round
+swatches, or keep the default `"blocks"`. The palette follows `--color` and shell
+prompt escaping; with color disabled, it shows plain swatch glyphs. Per-module
+styles do not override the swatch colors.
 
 Desktop, terminal, and virtualization detection use environment markers and
 system files and are best effort. Bare metal has no `virt` value. `host` remains
@@ -104,6 +118,15 @@ inline form, including in an 80×24 terminal. Scrolling menus show their visible
 range, and module selection shows how many are selected. Limited terminals use numbered choices, comma-separated
 module numbers, numeric module order, and `:back` / `:cancel`; use `none` to remove all system modules
 when keeping a face. These words are ordinary text in a seed prompt.
+
+After module ordering, **Additional settings** opens controls for every module
+option, including **Colors: swatch shape** (`blocks` or `circles`), disk mount,
+time layout, battery device, network interface/address family, and package
+manager. It also offers display units, precision, duration formatting and bar
+width; a custom format editor; and icon separators and per-module overrides
+(built-in, hidden, or custom). These controls are also available from the final
+review. Changes appear in the preview and are saved to TOML. In numbered-input
+mode, `:empty` clears optional text fields; Enter keeps the current value.
 
 A tuiweave FIGlet Standard banner introduces setup in a Phoenix red-to-amber gradient.
 The dark palette runs from `#F83600` to `#FCDF57`; the light palette uses darker
@@ -250,6 +273,8 @@ width = 10 # 1..100; ASCII bars like [#####-----]
 unit = "c" # c | f | k
 digits = 0 # 0..6
 
+[modules.colors]
+shape = "blocks" # blocks | circles
 [modules.disk]
 mount = "/" # used = total - all free blocks
 [modules.time]
@@ -357,7 +382,7 @@ The first lint run requires the `golangci-lint` builder and network access.
 Use `make lint`, not stock `golangci-lint run`, to load the plugin.
 Run `make audit` with `govulncheck` before dependency upgrades or releases.
 
-- `cmd/app/`: process entry point, built as `smol`.
+- `cmd/smol/`: process entry point, built as `smol`.
 - `internal/app/`: CLI execution with injected filesystem, environment, and writers.
 - `internal/config/`: TOML defaults, strict parsing, and validation.
 - `internal/modules/`: built-in system-info modules and injected detection hooks.

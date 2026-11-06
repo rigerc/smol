@@ -57,6 +57,29 @@ func TestExpandedModules(t *testing.T) {
 		})
 	}
 }
+
+func TestColorsShapes(t *testing.T) {
+	for _, tc := range []struct{ shape, glyph string }{{"blocks", "██"}, {"circles", "●"}, {"invalid", ""}} {
+		t.Run(tc.shape, func(t *testing.T) {
+			env := testEnv(nil, nil)
+			env.Options.Colors.Shape = tc.shape
+			m, ok := Get("colors")
+			if !ok {
+				t.Fatal("colors module missing")
+			}
+			r, err := m.Fetch(context.Background(), env)
+			if tc.glyph == "" {
+				if err == nil {
+					t.Fatal("accepted invalid shape")
+				}
+				return
+			}
+			if want := strings.TrimSuffix(strings.Repeat(tc.glyph+" ", 16), " "); err != nil || r.Text != want {
+				t.Fatalf("got %q, %v; want %q", r.Text, err, want)
+			}
+		})
+	}
+}
 func TestModuleHooks(t *testing.T) {
 	env := testEnv(nil, nil)
 	env.Now = func() time.Time { return time.Date(2026, 1, 2, 15, 4, 5, 0, time.UTC) }

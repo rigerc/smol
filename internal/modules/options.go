@@ -2,11 +2,17 @@ package modules
 
 // Options holds immutable per-run module settings.
 type Options struct {
+	Colors   ColorsOptions
 	Disk     DiskOptions
 	Time     TimeOptions
 	Battery  BatteryOptions
 	LocalIP  LocalIPOptions
 	Packages PackagesOptions
+}
+
+// ColorsOptions selects the palette swatch shape.
+type ColorsOptions struct {
+	Shape string `toml:"shape"`
 }
 
 // DiskOptions selects a mount.
@@ -37,7 +43,7 @@ type PackagesOptions struct {
 
 // DefaultOptions returns independent default settings.
 func DefaultOptions() Options {
-	return Options{Disk: DiskOptions{Mount: "/"}, Time: TimeOptions{Format: "15:04"}, LocalIP: LocalIPOptions{Family: "ipv4"}, Packages: PackagesOptions{Manager: "auto"}}
+	return Options{Colors: ColorsOptions{Shape: "blocks"}, Disk: DiskOptions{Mount: "/"}, Time: TimeOptions{Format: "15:04"}, LocalIP: LocalIPOptions{Family: "ipv4"}, Packages: PackagesOptions{Manager: "auto"}}
 }
 func options(env Env) Options {
 	if env.Options != nil {

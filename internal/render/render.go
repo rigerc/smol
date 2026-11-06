@@ -160,12 +160,20 @@ func Assemble(toks []Token, vals map[string]modules.Result, opts Options) string
 		if emitted {
 			b.WriteString(escapeValue(sep, opts.Shell))
 		}
+		prefix := ""
 		if opts.ShowIcons {
-			v = cleanValue(opts.Icons.Prefix(t.Module, result.Fields["id"])) + v
+			prefix = cleanValue(opts.Icons.Prefix(t.Module, result.Fields["id"]))
 		}
-		v = escapeValue(v, opts.Shell)
-		if opts.Color {
-			v = paint(v, opts.Styles[t.Module], opts.Shell)
+		if opts.Color && t.Module == "colors" {
+			if prefix != "" {
+				prefix = paint(escapeValue(prefix, opts.Shell), opts.Styles[t.Module], opts.Shell)
+			}
+			v = prefix + paintPalette(v, opts.Shell)
+		} else {
+			v = escapeValue(prefix+v, opts.Shell)
+			if opts.Color {
+				v = paint(v, opts.Styles[t.Module], opts.Shell)
+			}
 		}
 		b.WriteString(v)
 		emitted = true

@@ -25,7 +25,7 @@ func (s *session) previewDraft() func(string) (config.Config, error) {
 		next.fields = maps.Clone(base.fields)
 		next.selected = slices.Clone(base.selected)
 		switch next.state {
-		case "preset.ready", "modules.ready", "fields.ready", "order.ready", "color.ready", "icons.ready", "icons.set", "style.field", "style.color", "style.custom", "style.attributes":
+		case "preset.ready", "modules.ready", "fields.ready", "order.ready", "color.ready", "icons.ready", "icons.set", "style.field", "style.color", "style.custom", "style.attributes", "setting.value", "format.custom", "icons.separator", "icons.override", "icons.custom":
 			if err := next.accept(context.Background(), value); err != nil {
 				return base.draft, err
 			}
@@ -62,7 +62,7 @@ func cloneDraft(cfg config.Config) config.Config {
 	cfg.Style = maps.Clone(cfg.Style)
 	cfg.Icons.Overrides = maps.Clone(cfg.Icons.Overrides)
 	opts := cfg.Modules.Options()
-	cfg.Modules = config.ModulesConfig{Disk: &opts.Disk, Time: &opts.Time, Battery: &opts.Battery, LocalIP: &opts.LocalIP, Packages: &opts.Packages}
+	cfg.Modules = config.ModulesConfig{Colors: &opts.Colors, Disk: &opts.Disk, Time: &opts.Time, Battery: &opts.Battery, LocalIP: &opts.LocalIP, Packages: &opts.Packages}
 	if cfg.Face.Seed != nil {
 		seed := *cfg.Face.Seed
 		cfg.Face.Seed = &seed

@@ -47,6 +47,8 @@ interface="eth0"
 family="ipv6"
 [modules.packages]
 manager="apk"
+[modules.colors]
+shape="circles"
 `
 	c, err := Parse("test", []byte(body))
 	if err != nil {
@@ -67,6 +69,9 @@ manager="apk"
 		t.Fatal("explicit false lost")
 	}
 	o := c.Modules.Options()
+	if o.Colors.Shape != "circles" {
+		t.Fatal(o.Colors)
+	}
 	if o.Disk.Mount != "/home" || o.Packages.Manager != "apk" || o.LocalIP.Family != "ipv6" || o.LocalIP.Interface != "eth0" || o.Battery.Device != "BAT1" || o.Time.Format != "Mon 15:04" {
 		t.Fatal(o)
 	}
@@ -82,6 +87,11 @@ manager="apk"
 	}
 }
 func TestExpandedConfigErrors(t *testing.T) {
+	for _, body := range []string{"[modules.colors]\nshape='triangle'", "[modules.colors]\nshape=''", "[modules.colors]\nunknown=true"} {
+		if _, err := Parse("test", []byte(body)); err == nil {
+			t.Errorf("accepted %s", body)
+		}
+	}
 	for _, body := range []string{`format="{face:anything}"`, `format="{mem:unknown}"`, `format="{mem:}"`, `format="{mem:percent:extra}"`, "[modules.diks]\nmount='/'", "[modules.disk]\nunknown=true", "[modules.disk]\nmount='relative'", "[modules.localip]\nfamily='bad'", "[modules.battery]\ndevice='../BAT0'", "[modules.packages]\nmanager='rpm'", "[modules.packages]\nmanager='bad'", "[display.temp]\nunit='bad'"} {
 		if _, err := Parse("test", []byte(body)); err == nil {
 			t.Errorf("accepted %s", body)
@@ -105,19 +115,19 @@ func TestPresetsAndRegisteredFields(t *testing.T) {
 }
 
 func TestModuleDefaults(t *testing.T) {
-	for _, body := range []string{"", "[modules.disk]\n[modules.time]\n[modules.battery]\n[modules.localip]\n[modules.packages]"} {
+	for _, body := range []string{"", "[modules.colors]\n[modules.disk]\n[modules.time]\n[modules.battery]\n[modules.localip]\n[modules.packages]"} {
 		c, err := Parse("defaults", []byte(body))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if c.Modules.Disk == nil || c.Modules.Time == nil || c.Modules.Battery == nil || c.Modules.LocalIP == nil || c.Modules.Packages == nil {
+		if c.Modules.Colors == nil || c.Modules.Disk == nil || c.Modules.Time == nil || c.Modules.Battery == nil || c.Modules.LocalIP == nil || c.Modules.Packages == nil {
 			t.Fatal(c.Modules)
 		}
 		if c.Modules.Options() != modules.DefaultOptions() {
 			t.Fatal(c.Modules.Options())
 		}
 		printed, err := TOML(c)
-		if err != nil || strings.Contains(printed, "[modules.disk]") {
+		if err != nil || strings.Contains(printed, "[modules.disk]") || strings.Contains(printed, "[modules.colors]") {
 			t.Fatal(printed, err)
 		}
 	}
