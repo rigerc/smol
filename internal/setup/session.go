@@ -12,13 +12,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/ishan5ain/tuiweave/reorder"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rigerc/smol/internal/config"
 	"github.com/rigerc/smol/internal/face"
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/render"
 	"github.com/rigerc/smol/presets"
+	"github.com/rigerc/tuiweave/reorder"
 )
 
 // Runtime contains process resources required by interactive setup. Destination

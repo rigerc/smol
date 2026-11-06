@@ -10,14 +10,14 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/ishan5ain/tuiweave"
-	"github.com/ishan5ain/tuiweave/focus"
-	"github.com/ishan5ain/tuiweave/inspect"
-	"github.com/ishan5ain/tuiweave/layout"
 	"github.com/muesli/cancelreader"
 	"github.com/rigerc/smol/internal/config"
 	"github.com/rigerc/smol/internal/modules"
 	"github.com/rigerc/smol/internal/render"
+	"github.com/rigerc/tuiweave"
+	"github.com/rigerc/tuiweave/focus"
+	"github.com/rigerc/tuiweave/inspect"
+	"github.com/rigerc/tuiweave/layout"
 )
 
 // wizardBridge serializes the existing save/navigation workflow with one renderer.

@@ -6,8 +6,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/colorprofile"
-	"github.com/ishan5ain/tuiweave"
-	"github.com/ishan5ain/tuiweave/spinner"
+	"github.com/rigerc/tuiweave"
+	"github.com/rigerc/tuiweave/spinner"
 )
 
 type workDone struct{ err error }

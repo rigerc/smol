@@ -54,8 +54,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rigerc/faceroll/go v0.0.0-20261105204108-438e351603d1 h1:W2Se4lxUDfGcu8NrY9HsuHWrN2nbjUJFeGb0NxfSvPc=
 github.com/rigerc/faceroll/go v0.0.0-20261105204108-438e351603d1/go.mod h1:fqjdypFY7pV4+fGjXEYr4vgZAjdAkF11VvIzLTnAKiM=
-github.com/rigerc/tuiweave v0.0.0-20261106011857-3031d7d7d052 h1:IvfIKgiUidzjOk3wnA6L8qlzwliNw2duTrd2yoDk9xM=
-github.com/rigerc/tuiweave v0.0.0-20261106011857-3031d7d7d052/go.mod h1:b7Z0HwYVoGK2Jz5+mYUqcebYSkTX+LdzAyWtEPCCXys=
+github.com/rigerc/tuiweave v0.0.0-20261106174541-7100b03ecf40 h1:dpA/FeFWSmym2mmJ1u/x1TiwRVIxDIh0IscxikHmer0=
+github.com/rigerc/tuiweave v0.0.0-20261106174541-7100b03ecf40/go.mod h1:/G9idsibFsAN122mlYCT2X+Fr51AcxXbvaxqhOSgu3w=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=

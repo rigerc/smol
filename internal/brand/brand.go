@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ishan5ain/tuiweave/banner"
+	"github.com/rigerc/tuiweave/banner"
 )
 
 // Art returns the authoritative FIGlet Standard lettering without ANSI escapes.

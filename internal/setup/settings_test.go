@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/ishan5ain/tuiweave"
-	"github.com/ishan5ain/tuiweave/snaptest"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rigerc/smol/internal/config"
 	"github.com/rigerc/smol/internal/modules"
+	"github.com/rigerc/tuiweave"
+	"github.com/rigerc/tuiweave/snaptest"
 )
 
 func TestWizardSettingsSave(t *testing.T) {
