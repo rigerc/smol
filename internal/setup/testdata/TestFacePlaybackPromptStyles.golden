@@ -1,0 +1,8 @@
+
+◆  Face animation
+│  Uses an image shaped like text; the face is not selectable as characters.
+│    ○ Static face
+│  ❯ ● Animate after smol exits
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

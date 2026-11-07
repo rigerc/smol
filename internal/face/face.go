@@ -11,10 +11,11 @@ import (
 
 // Options selects a deterministic or random character identity and expression.
 type Options struct {
-	Random bool    `toml:"random,omitempty"`
-	Preset string  `toml:"preset,omitempty"`
-	Seed   *string `toml:"seed,omitempty"`
-	State  string  `toml:"state"`
+	Random         bool    `toml:"random,omitempty"`
+	Preset         string  `toml:"preset,omitempty"`
+	Seed           *string `toml:"seed,omitempty"`
+	State          string  `toml:"state"`
+	AnimatePersist bool    `toml:"animate-persist,omitempty"`
 }
 
 // Validate checks identifiers even when the format does not reference face.

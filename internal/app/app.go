@@ -19,6 +19,7 @@ import (
 	"github.com/rigerc/smol/internal/config"
 	"github.com/rigerc/smol/internal/face"
 	"github.com/rigerc/smol/internal/modules"
+	"github.com/rigerc/smol/internal/persistent"
 	"github.com/rigerc/smol/internal/playback"
 	"github.com/rigerc/smol/internal/render"
 	"github.com/rigerc/smol/internal/setup"
@@ -37,6 +38,7 @@ type Runtime struct {
 	StdoutIsTTY bool
 	Version     string
 	Playback    playback.Options
+	Persistent  func(context.Context) (persistent.Terminal, error)
 }
 
 // Run executes the command and returns its process exit code.
@@ -71,6 +73,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		listPresets     = fl.Bool("list-face-presets", false, "list face preset identifiers and exit")
 		listStates      = fl.Bool("list-face-states", false, "list face expressions and exit")
 		animate         = fl.Bool("animate", false, "animate {face} on an interactive terminal")
+		persist         = fl.Bool("animate-persist", false, "upload looping {face} images and exit (requires terminal graphics animation)")
 		duration        = fl.Duration("duration", 0, "animation duration; omit to run until interrupted")
 		showVersion     = fl.Bool("version", false, "print version and exit")
 	)
@@ -81,12 +84,18 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		return 2
 	}
 
+	supplied := make(map[string]bool)
+	fl.Visit(func(f *flag.Flag) { supplied[f.Name] = true })
 	if fl.NArg() != 0 {
 		report(stderr, "smol: unexpected argument: "+fl.Arg(0))
 		return 2
 	}
 	if *timeout <= 0 {
 		report(stderr, "smol: timeout must be positive")
+		return 2
+	}
+	if *persist && (*animate || supplied["duration"]) {
+		report(stderr, "smol: --animate-persist cannot be combined with --animate or --duration")
 		return 2
 	}
 	if *debug && *animate {
@@ -165,8 +174,6 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		cfg = config.Default()
 	}
 
-	supplied := make(map[string]bool)
-	fl.Visit(func(f *flag.Flag) { supplied[f.Name] = true })
 	if supplied["format"] {
 		if err := config.ValidateFormat(*format); err != nil {
 			report(stderr, "smol: "+err.Error())
@@ -232,8 +239,13 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		return 0
 	}
 	hasFace := slices.Contains(render.ModuleNames(toks), "face")
-	if *animate && (!hasFace || shell != render.ShellNone) {
-		report(stderr, "smol: --animate requires {face} and --shell none")
+	if !supplied["animate-persist"] {
+		// A saved preference applies to direct output. Explicit foreground animation
+		// and shell prompt wrapping retain their existing behavior.
+		*persist = cfg.Face.AnimatePersist && hasFace && shell == render.ShellNone && !*animate
+	}
+	if (*animate || *persist) && (!hasFace || shell != render.ShellNone) {
+		report(stderr, "smol: animation requires {face} and --shell none")
 		return 2
 	}
 	moduleOptions := cfg.Modules.Options()
@@ -288,6 +300,11 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, runtime R
 		values["face"] = modules.Result{Text: animation.Still}
 	}
 	line := render.Assemble(toks, values, opts)
+	if *persist && hasFace && stdoutIsTTY && getenv("TERM") != "dumb" {
+		if handled, code := runPersistent(ctx, stdout, stderr, runtime, animation, toks, values, opts, getenv); handled {
+			return code
+		}
+	}
 	if !*animate || !stdoutIsTTY || getenv("TERM") == "dumb" {
 		return writeLine(stdout, stderr, line)
 	}

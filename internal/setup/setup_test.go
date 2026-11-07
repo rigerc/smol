@@ -348,7 +348,7 @@ func TestBackNavigation(t *testing.T) {
 		from, to    string
 		index, want int
 	}{
-		{"preset.ready", "destination.ready", 0, 0}, {"face.mode", "preset.ready", 0, 0}, {"face.identity", "face.mode", 0, 0}, {"face.sample", "face.identity", 0, 0}, {"face.expression", "face.sample", 0, 0}, {"modules.ready", "face.expression", 0, 0}, {"fields.ready", "fields.ready", 1, 0}, {"fields.ready", "modules.ready", 0, 0}, {"order.ready", "fields.ready", 0, 1}, {"settings.ready", "order.ready", 0, 0}, {"icons.ready", "settings.ready", 0, 0}, {"icons.set", "icons.ready", 0, 0}, {"color.ready", "icons.set", 0, 0}, {"styles.ready", "color.ready", 0, 0}, {"style.field", "style.field", 1, 0}, {"style.field", "styles.ready", 0, 0}, {"shell.ready", "styles.ready", 0, 0}, {"review.ready", "shell.ready", 0, 0}, {"confirm.ready", "review.ready", 0, 0},
+		{"preset.ready", "destination.ready", 0, 0}, {"face.mode", "preset.ready", 0, 0}, {"face.identity", "face.mode", 0, 0}, {"face.sample", "face.identity", 0, 0}, {"face.expression", "face.sample", 0, 0}, {"face.playback", "face.expression", 0, 0}, {"modules.ready", "face.playback", 0, 0}, {"fields.ready", "fields.ready", 1, 0}, {"fields.ready", "modules.ready", 0, 0}, {"order.ready", "fields.ready", 0, 1}, {"settings.ready", "order.ready", 0, 0}, {"icons.ready", "settings.ready", 0, 0}, {"icons.set", "icons.ready", 0, 0}, {"color.ready", "icons.set", 0, 0}, {"styles.ready", "color.ready", 0, 0}, {"style.field", "style.field", 1, 0}, {"style.field", "styles.ready", 0, 0}, {"shell.ready", "styles.ready", 0, 0}, {"review.ready", "shell.ready", 0, 0}, {"confirm.ready", "review.ready", 0, 0},
 	} {
 		t.Run(tc.from+strconv.Itoa(tc.index), func(t *testing.T) {
 			s := freshSession(t)
@@ -496,7 +496,7 @@ func TestAllQuestionsAndBackEdges(t *testing.T) {
 	s := freshSession(t)
 	s.derive()
 	s.queue = []string{"mem"}
-	for _, state := range []string{"destination.ready", "preset.ready", "face.mode", "face.identity", "face.sample", "face.expression", "modules.ready", "fields.ready", "order.ready", "color.ready", "styles.ready", "style.field", "shell.ready", "review.ready", "confirm.ready"} {
+	for _, state := range []string{"destination.ready", "preset.ready", "face.mode", "face.identity", "face.sample", "face.expression", "face.playback", "modules.ready", "fields.ready", "order.ready", "color.ready", "styles.ready", "style.field", "shell.ready", "review.ready", "confirm.ready"} {
 		s.state = state
 		s.index = 0
 		if q := s.question(); q.title == "" {
@@ -652,7 +652,7 @@ func TestRichEOF(t *testing.T) {
 func TestWizardPromptStates(t *testing.T) {
 	for _, width := range []int{39, 80} {
 		t.Run(strconv.Itoa(width), func(t *testing.T) {
-			for _, state := range []string{"destination.ready", "preset.ready", "face.mode", "face.identity", "face.sample", "face.expression", "modules.ready", "fields.ready", "order.ready", "color.ready", "styles.ready", "style.field", "shell.ready", "review.ready", "confirm.ready"} {
+			for _, state := range []string{"destination.ready", "preset.ready", "face.mode", "face.identity", "face.sample", "face.expression", "face.playback", "modules.ready", "fields.ready", "order.ready", "color.ready", "styles.ready", "style.field", "shell.ready", "review.ready", "confirm.ready"} {
 				t.Run(state, func(t *testing.T) {
 					s := freshSession(t)
 					s.path = "/home/ada/.config/smol/config.toml"

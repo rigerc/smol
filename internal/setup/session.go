@@ -36,29 +36,30 @@ type Runtime struct {
 }
 
 type session struct {
-	term          *terminal
-	env           modules.Env
-	path          string
-	snap          snapshot
-	draft         config.Config
-	state         string
-	preset        string
-	selected      []string
-	fields        map[string]string
-	queue         []string
-	index         int
-	styleProperty string
-	settingKey    string
-	settingReturn string
-	settingsExit  string
-	iconModule    string
-	dirty         bool
-	faceMode      string
-	sampleSeed    string
-	shell         string
-	review        string
-	instructions  string
-	store         store
+	term           *terminal
+	env            modules.Env
+	path           string
+	snap           snapshot
+	draft          config.Config
+	state          string
+	preset         string
+	selected       []string
+	fields         map[string]string
+	queue          []string
+	index          int
+	styleProperty  string
+	settingKey     string
+	settingReturn  string
+	settingsExit   string
+	playbackReturn string
+	iconModule     string
+	dirty          bool
+	faceMode       string
+	sampleSeed     string
+	shell          string
+	review         string
+	instructions   string
+	store          store
 }
 
 // Run executes setup, keeping all interaction on stderr and emitting a saved
@@ -352,6 +353,12 @@ func (s *session) question() question {
 		sort.Strings(states)
 		states = append([]string{"idle"}, without(states, "idle")...)
 		q = question{title: "Face expression", choices: states, value: s.draft.Face.State}
+	case "face.playback":
+		value := "static"
+		if s.draft.Face.AnimatePersist {
+			value = "persist"
+		}
+		q = question{title: "Face animation", description: "Supported terminals, including Ghostty 1.4+, can keep the face moving after smol exits. Other terminals show a still face.", choices: []string{"static", "persist"}, value: value, labels: map[string]string{"static": "Static face", "persist": "Animate after smol exits"}, details: map[string]string{"persist": "Uses an image shaped like text; the face is not selectable as characters."}}
 	case "modules.ready":
 		names := without(modules.Names(), "face")
 		sort.Strings(names)
@@ -409,7 +416,7 @@ func (s *session) question() question {
 	case "shell.ready":
 		q = question{title: "Shell instructions", description: "No shell files are modified.", choices: []string{"none", "bash", "zsh", "fish"}, value: s.shell}
 	case "review.ready":
-		q = question{title: "Review configuration", label: "Review", action: true, description: s.reviewSummary(), choices: []string{"Save", "View full TOML", "Edit face", "Edit modules", "Edit icons", "Edit styles", "Edit colors", "Edit shell", "Cancel", "Edit module options", "Edit display", "Edit format", "Edit icon details"}, value: "Save"}
+		q = question{title: "Review configuration", label: "Review", action: true, description: s.reviewSummary(), choices: []string{"Save", "View full TOML", "Edit face", "Edit modules", "Edit icons", "Edit styles", "Edit colors", "Edit shell", "Cancel", "Edit module options", "Edit display", "Edit format", "Edit icon details", "Edit animation"}, value: "Save"}
 	case "review.toml":
 		q = question{title: "Exact TOML to save", action: true, document: s.review, value: "Back to review"}
 	case "confirm.ready":
@@ -546,7 +553,21 @@ func (s *session) accept(ctx context.Context, value string) error {
 		s.state = "face.expression"
 	case "face.expression":
 		s.draft.Face.State = value
-		s.state = "modules.ready"
+		s.playbackReturn = "modules.ready"
+		s.state = "face.playback"
+	case "face.playback":
+		switch value {
+		case "static":
+			s.draft.Face.AnimatePersist = false
+		case "persist":
+			s.draft.Face.AnimatePersist = true
+		default:
+			return errors.New("choose static or persistent animation")
+		}
+		s.state = s.playbackReturn
+		if s.state == "" {
+			s.state = "modules.ready"
+		}
 	case "modules.ready":
 		chosen := []string{}
 		if value != "" {
@@ -644,6 +665,12 @@ func (s *session) accept(ctx context.Context, value string) error {
 			s.state = "review.toml"
 		case "Edit face":
 			s.state = "face.mode"
+		case "Edit animation":
+			s.playbackReturn = "review.ready"
+			s.state = "face.playback"
+			if !contains(s.selected, "face") {
+				s.state = "face.mode"
+			}
 		case "Edit modules":
 			s.state = "modules.ready"
 		case "Edit icons":
@@ -697,10 +724,16 @@ func (s *session) back() {
 		}
 	case "face.expression":
 		s.state = "face.sample"
+	case "face.playback":
+		s.state = "face.expression"
+		if s.playbackReturn == "review.ready" {
+			s.state = "review.ready"
+		}
 	case "modules.ready":
 		s.state = "face.mode"
 		if s.faceMode != "disabled" {
-			s.state = "face.expression"
+			s.playbackReturn = "modules.ready"
+			s.state = "face.playback"
 		}
 	case "fields.ready":
 		if s.index > 0 {
@@ -806,6 +839,9 @@ func (s *session) showFace() error {
 	return s.term.say(label + animation.Still)
 }
 func (s *session) setFace(enabled bool) {
+	if !enabled {
+		s.draft.Face.AnimatePersist = false
+	}
 	present := contains(s.selected, "face")
 	if present == enabled {
 		return

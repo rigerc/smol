@@ -1,0 +1,9 @@
+1:
+2: "◆" [fg=Info bold] | "  " | "Face animation" [fg=Text bold]
+3: "│" [fg=TextFaint] | "  " | "Uses an image shaped like text; the face is not selectable as characters." [fg=TextMuted]
+4: "│" [fg=TextFaint] | "    " | "○" [fg=TextMuted] | " " | "Static face" [fg=TextMuted]
+5: "│" [fg=TextFaint] | "  " | "❯ " [fg=Info bold] | "●" [fg=Success bold] | " " | "Animate after smol exits" [fg=Text bold]
+6: "│" [fg=TextFaint] | "  " | "↑/↓ to navigate • Enter: confirm" [fg=TextMuted]
+7: "└" [fg=TextFaint]
+8: "Enter accepts; Esc back; Ctrl+C cancels"
+9:

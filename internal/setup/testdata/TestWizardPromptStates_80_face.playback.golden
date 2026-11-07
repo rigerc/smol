@@ -1,0 +1,11 @@
+
+Face animation
+Supported terminals, including Ghostty 1.4+, can keep the face moving after smol
+exits. Other terminals show a still face.
+
+◆
+│  ❯ ● Static face
+│    ○ Animate after smol exits
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels

@@ -2,6 +2,7 @@
 Save · Review configuration
 Modules: os, kernel, uptime, mem
 Face: seed · Color: auto · Icons: never
+Face animation: static
 Shell instructions: none
 
 ◆
@@ -18,6 +19,7 @@ Shell instructions: none
 │    ○ Edit display
 │    ○ Edit format
 │    ○ Edit icon details
+│    ○ Edit animation
 │  ↑/↓ to navigate • Enter: confirm
 └
 Enter accepts; Esc back; Ctrl+C cancels

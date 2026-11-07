@@ -221,13 +221,15 @@ separator = " "
 # Optional character. Add {face} to format to show it.
 [face]
 state = "idle"
+# animate-persist = true # keep animating after exit in supported terminals
 # preset = "kitty"
 # Or choose a deterministic seed (do not combine with preset):
 # seed = "smol"
 # Or generate a fresh identity each run (excludes seed/preset):
 # random = true
 
-# Animation is enabled by --animate, and cannot be combined with --debug.
+# Foreground animation: --animate (cannot combine with --debug).
+# Terminal-managed animation after exit: --animate-persist (requires Kitty graphics animation).
 
 # Optional display controls (defaults shown).
 # [display.size]

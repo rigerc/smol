@@ -25,7 +25,7 @@ func (s *session) previewDraft() func(string) (config.Config, error) {
 		next.fields = maps.Clone(base.fields)
 		next.selected = slices.Clone(base.selected)
 		switch next.state {
-		case "preset.ready", "modules.ready", "fields.ready", "order.ready", "color.ready", "icons.ready", "icons.set", "style.field", "style.color", "style.custom", "style.attributes", "setting.value", "format.custom", "icons.separator", "icons.override", "icons.custom":
+		case "preset.ready", "modules.ready", "fields.ready", "order.ready", "color.ready", "icons.ready", "icons.set", "style.field", "style.color", "style.custom", "style.attributes", "setting.value", "format.custom", "icons.separator", "icons.override", "icons.custom", "face.playback":
 			if err := next.accept(context.Background(), value); err != nil {
 				return base.draft, err
 			}

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	faceroll "github.com/rigerc/faceroll/go"
+
 	"github.com/rigerc/smol/internal/icons"
 	"github.com/rigerc/smol/internal/modules"
 )
@@ -123,6 +125,24 @@ func Fetch(ctx context.Context, toks []Token, env modules.Env, opts Options) map
 
 // Assemble formats already-fetched values; it performs no I/O.
 func Assemble(toks []Token, vals map[string]modules.Result, opts Options) string {
+	return assemble(toks, vals, opts, 0).Text
+}
+
+// FaceLine preserves normal formatting while reserving face cells for images.
+type FaceLine struct {
+	Text    string
+	Columns int
+	Faces   []int
+}
+
+// AssembleFaceLine replaces each face value with a fixed-width blank area.
+// Icon prefixes and separator elision follow exactly the normal text renderer.
+func AssembleFaceLine(toks []Token, vals map[string]modules.Result, opts Options, faceWidth int) FaceLine {
+	return assemble(toks, vals, opts, faceWidth)
+}
+
+func assemble(toks []Token, vals map[string]modules.Result, opts Options, faceWidth int) FaceLine {
+	line := FaceLine{}
 	firstMod, lastMod := -1, -1
 	for i, t := range toks {
 		if t.Module != "" {
@@ -143,6 +163,7 @@ func Assemble(toks []Token, vals map[string]modules.Result, opts Options) string
 			switch {
 			case firstMod < 0, i < firstMod, i > lastMod:
 				b.WriteString(escapeValue(t.Literal, opts.Shell))
+				line.Columns += faceroll.CellWidth(t.Literal)
 			default:
 				sep = t.Literal
 			}
@@ -159,11 +180,17 @@ func Assemble(toks []Token, vals map[string]modules.Result, opts Options) string
 		}
 		if emitted {
 			b.WriteString(escapeValue(sep, opts.Shell))
+			line.Columns += faceroll.CellWidth(sep)
 		}
 		prefix := ""
 		if opts.ShowIcons {
 			prefix = cleanValue(opts.Icons.Prefix(t.Module, result.Fields["id"]))
 		}
+		if faceWidth > 0 && t.Module == "face" {
+			line.Faces = append(line.Faces, line.Columns+faceroll.CellWidth(prefix))
+			v = strings.Repeat(" ", faceWidth)
+		}
+		line.Columns += faceroll.CellWidth(prefix + v)
 		if opts.Color && t.Module == "colors" {
 			if prefix != "" {
 				prefix = paint(escapeValue(prefix, opts.Shell), opts.Styles[t.Module], opts.Shell)
@@ -179,7 +206,8 @@ func Assemble(toks []Token, vals map[string]modules.Result, opts Options) string
 		emitted = true
 		sep = ""
 	}
-	return b.String()
+	line.Text = b.String()
+	return line
 }
 
 // cleanValue prevents data from proc files and environment values from

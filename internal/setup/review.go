@@ -45,7 +45,11 @@ func (s *session) reviewSummary() string {
 	width := max(1, s.term.runtime.Width)
 	modules := "Modules: " + strings.Join(s.selected, ", ")
 	appearance := "Face: " + s.faceMode + " · Color: " + s.draft.Color + " · Icons: " + s.draft.Icons.Mode
-	return ansi.Truncate(safe(modules), width, "…") + "\n" + ansi.Truncate(safe(appearance), width, "…") + "\nShell instructions: " + s.shell
+	playback := "static"
+	if contains(s.selected, "face") && s.draft.Face.AnimatePersist {
+		playback = "after exit"
+	}
+	return ansi.Truncate(safe(modules), width, "…") + "\n" + ansi.Truncate(safe(appearance), width, "…") + "\nFace animation: " + playback + "\nShell instructions: " + s.shell
 }
 
 func (s *session) buildReview(ctx context.Context) (string, error) {

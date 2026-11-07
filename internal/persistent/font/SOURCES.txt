@@ -1,0 +1,15 @@
+Faceroll: v0.0.0-20261105204108-438e351603d1
+Glyph tiles: 40x40, 16 columns, 28px source fonts.
+See generate.py for regeneration.
+
+DejaVuSans.ttf
+DejaVuSansMono.ttf
+NotoSansCJK-Regular.ttc
+NotoSans-Regular.ttf
+NotoSansCanadianAboriginal-Regular.ttf
+NotoSansGujarati-Regular.ttf
+NotoSansKannada-Regular.ttf
+NotoSansMath-Regular.ttf
+NotoSansThai-Regular.ttf
+NotoSansYi-Regular.ttf
+NotoSerifTibetan-Regular.ttf

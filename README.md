@@ -111,7 +111,9 @@ accumulate as collapsed tuiweave fields under Configuration, Face, Modules,
 Appearance, Shell, and Save. Choose a preset, optional face, system modules,
 fields, order, icons, styles, and shell instructions. Highlighting a choice previews it before Enter; invalid input
 keeps the last valid preview. Module values are cached during setup, and random
-face samples stay stable until rerolled. Enter accepts; Esc goes back; Ctrl+C or EOF cancels. Space
+face samples stay stable until rerolled. The Face animation step offers a static
+face or animation that continues after smol exits; the choice is saved in
+`[face] animate-persist`. Enter accepts; Esc goes back; Ctrl+C or EOF cancels. Space
 toggles system modules. For module order, Space grabs or drops an item and
 arrows move it; Shift+Up/Down moves it directly. Long lists scroll within the
 inline form, including in an 80×24 terminal. Scrolling menus show their visible
@@ -357,6 +359,55 @@ Width is estimated using faceroll's terminal cell-width rules; fonts can vary.
 Animation is rejected when `{face}` is absent or `--shell` is set to anything
 other than `none`; shell-prompt embedding uses static faces.
 
+To keep the face animating **after smol exits**, use terminal-managed playback:
+
+```sh
+./dist/smol --format '{face} {host} · {mem}' --face-preset kitty --animate-persist
+```
+
+`--animate-persist` renders the face into transparent images, uploads its frames
+once, starts an infinite loop, and exits. There is no background smol process.
+The face looks like text but is an image and cannot be selected as characters;
+the surrounding system information remains ordinary text. Repeated `{face}`
+tokens share one animation with separate placements.
+
+The wizard's **Face animation → Animate after smol exits** choice saves this
+preference, so the generated shell startup command needs no extra flags. You
+can also enable it manually:
+
+```toml
+[face]
+state = "idle"
+animate-persist = true
+```
+
+`--animate-persist=false` overrides the saved preference for one run. Explicit
+`--animate` selects foreground playback instead; `--shell bash`, `zsh`, or
+`fish` keeps configured playback static for prompt embedding.
+
+This requires a terminal with Kitty graphics **animation** support, such as
+[Ghostty 1.4 or newer](https://ghostty.org/docs/install/release-notes/1-4-0).
+Use it as a direct command or in shell startup, with `--shell none`. It cannot be
+combined with `--animate` or `--duration`, and is not intended for prompt command
+substitution. Detection reads replies from the controlling terminal for at most
+200ms and restores its input settings before returning.
+
+Pipes, `TERM=dumb`, tmux/screen, unsupported terminals, single-frame expressions,
+insufficient space, and unavailable glyphs produce static text. A bundled glyph
+atlas covers the pinned faceroll character set without a runtime font dependency;
+its appearance can differ from your terminal font. Plain foreground colors are
+supported, with named/indexed colors using the standard xterm palette. Bold,
+dim, italic, underline, reverse, or background face styles fall back to text;
+`--color never` bypasses those styles. `--debug` reports detection and
+rasterization failures.
+
+The terminal owns successful image placements after exit: they scroll with the
+output and clearing the screen removes visible placements. Existing images keep
+their original cell allocation when the terminal is resized; smol cannot relayout
+them after exiting. The terminal may evict images to satisfy its storage limits.
+See the [Kitty graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
+for playback and image-lifecycle details.
+
 Playback restores the cursor and ends the final frame with a newline on duration
 expiry, interruption, or resize. It attempts the same cleanup after a write
 failure. SIGINT exits **130**, SIGTERM exits **143**, and output failure exits
@@ -390,6 +441,7 @@ Run `make audit` with `govulncheck` before dependency upgrades or releases.
 - `internal/render/`: format parsing, module snapshots, separators, and color escapes.
 - `internal/face/`: faceroll character selection, validation, and discovery.
 - `internal/playback/`: synchronous animation with checked writes and terminal cleanup.
+- `internal/persistent/`: glyph rasterization and terminal-managed image animation.
 - `testdata/`: x86 and ARM Linux fixtures used by deterministic tests.
 
 Caching, `smol init`, GPU modules, and width truncation are not

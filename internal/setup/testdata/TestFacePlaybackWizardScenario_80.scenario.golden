@@ -1,0 +1,49 @@
+## initial
+command: no
+smol · setup · 1/4 · Start
+
+╭ Preview ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│ ꒰■ڡ■꒱ thinkpad                                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Face animation
+Supported terminals, including Ghostty 1.4+, can keep the face moving after smol
+exits. Other terminals show a still face.
+
+◆
+│  ❯ ● Static face
+│    ○ Animate after smol exits
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels
+
+## choose persistent animation
+command: no
+smol · setup · 1/4 · Start
+
+╭ Preview ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│ ꒰■ڡ■꒱ thinkpad                                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+◆  Face animation
+│  Uses an image shaped like text; the face is not selectable as characters.
+│    ○ Static face
+│  ❯ ● Animate after smol exits
+│  ↑/↓ to navigate • Enter: confirm
+└
+Enter accepts; Esc back; Ctrl+C cancels
+
+## accept playback
+command: yes
+smol · setup · 1/4 · Start
+
+╭ Preview ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│ ꒰■ڡ■꒱ thinkpad                                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Updating…

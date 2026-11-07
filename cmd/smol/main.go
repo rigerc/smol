@@ -13,6 +13,7 @@ import (
 
 	"github.com/rigerc/smol/internal/app"
 	"github.com/rigerc/smol/internal/face"
+	"github.com/rigerc/smol/internal/persistent"
 	"github.com/rigerc/smol/internal/playback"
 	"github.com/rigerc/smol/internal/setup"
 	"github.com/xo/terminfo"
@@ -67,7 +68,8 @@ func run() int {
 		Setup:   setupInputs,
 		Entropy: rand.Reader,
 		FS:      os.DirFS("/"), Getenv: os.Getenv, StdoutIsTTY: terminalColumns(os.Stdout) > 0, Version: version,
-		Playback: playback.Options{Columns: func() int { return terminalColumns(os.Stdout) }, Resize: resized},
+		Persistent: func(ctx context.Context) (persistent.Terminal, error) { return detectPersistent(ctx, os.Stdout) },
+		Playback:   playback.Options{Columns: func() int { return terminalColumns(os.Stdout) }, Resize: resized},
 	}))
 	var stopped interruption
 	if (len(os.Args) < 2 || os.Args[1] != "init") && errors.As(context.Cause(ctx), &stopped) {

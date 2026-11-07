@@ -324,7 +324,7 @@ func TestPreviewPanelIsTransparent(t *testing.T) {
 func TestQuestionGroupsAndTitles(t *testing.T) {
 	for _, tc := range []struct{ state, section string }{
 		{"destination.ready", "Configuration"}, {"preset.ready", "Configuration"},
-		{"face.mode", "Face"}, {"face.identity", "Face"}, {"face.sample", "Face"}, {"face.expression", "Face"},
+		{"face.mode", "Face"}, {"face.identity", "Face"}, {"face.sample", "Face"}, {"face.expression", "Face"}, {"face.playback", "Face"},
 		{"modules.ready", "Modules"}, {"fields.ready", "Modules"}, {"order.ready", "Modules"},
 		{"icons.ready", "Appearance"}, {"icons.set", "Appearance"}, {"color.ready", "Appearance"}, {"styles.ready", "Appearance"}, {"style.field", "Appearance"},
 		{"shell.ready", "Shell"}, {"review.ready", "Save"}, {"confirm.ready", "Save"},
