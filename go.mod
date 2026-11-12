@@ -9,7 +9,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2
 	github.com/pelletier/go-toml/v2 v2.2.3
 	github.com/rigerc/faceroll/go v0.0.0-20261105204108-438e351603d1
-	github.com/xo/terminfo v1.0.0
+	github.com/xo/terminfo v1.2.0
 	golang.org/x/sys v0.47.0
 )
 
